@@ -5,7 +5,7 @@ import pandas as pd
 import sys
 sys.path.insert(0, 'scripts/')
 
-from qc_samplesheet import sanity_barcodes, sanity_samples
+from sanity_checks import sanity_barcodes, sanity_samples
 
 # Initialization ----
 

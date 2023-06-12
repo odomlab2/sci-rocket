@@ -88,6 +88,15 @@ def sanity_barcodes(path_barcodes):
             print("Sanity check (Barcodes) - Barcode {} is duplicated in type {}".format(barcode, barcodes.query("barcode == @barcode")["type"].unique()[0]))
 
         return False
+    
+    # Check if barcode sequences contain only valid nucleotides (ATCG).
+    if not barcodes["sequence"].str.contains("^[ATCG]+$").all():
+
+        # Print the invalid barcodes
+        invalid_barcodes = barcodes[~barcodes["sequence"].str.contains("^[ATCG]+$")]
+
+        print("Sanity check (Barcodes) - Barcodes file contains invalid nucleotides (only ATCG allowed):\n ", invalid_barcodes)
+        return False
 
     # If all checks pass, the barcodes file is valid.
     return True
