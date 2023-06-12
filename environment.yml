@@ -1,0 +1,24 @@
+name: snakemake-sciseq
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::snakemake>=7.25.0
+
+  # Binaries used in workflow.
+  
+  - bioconda::fastp>=0.23.2
+  
+  - bioconda::star>=2.7.10b
+  - bioconda::sambamba>=1.0
+  - bioconda::tabix>=1.11
+  - bioconda::subread>=2.0.3
+  - bioconda::pbgzip
+
+  # Python and required modules.
+  - conda-forge::python>=3.10
+  - bioconda::pysam>=0.20.0
+  - conda-forge::numpy>=1.24.2
+  - conda-forge::pandas>=1.5.3
+  - conda-forge::rich>=13.3.3
+  - conda-forge::openpyxl>=3.1.1
