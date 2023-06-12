@@ -4,8 +4,11 @@
 # Path to sample sheet; see README for details.
 path_samples: "~/jvanriet/git/snakemake-sciseq/workflow/examples/example_samplesheet.tsv"
 
+# Path to barcode files for demultiplexing. See examples/barcodes.tsv for an example and README for details.
+path_barcodes: "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv"
+
 # Path to the folder containing the (raw/untrimmed) fastq files.
-dir_fastq: "/omics/groups/OE0538/internal/"  
+dir_fastq: "/omics/groups/OE0538/internal/projects/sexomics/data/rawData/fastq/230225/rawReads"  
 
 # Path to the output folder.
 dir_output: "/omics/groups/OE0538/internal/projects/sexomics/runJob/"
@@ -22,10 +25,6 @@ species:
   human:
     genome: "/omics/groups/OE0538/internal/projects/sharedData/hsapiens/genome/xxx.fa"
     genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/hsapiens/annotation/xxx.gtf"
-
-
-# Path to barcode files for demultiplexing. See examples/barcodes.tsv for an example and README for details.
-path_barcodes: "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv"
 
 #################################
 # --- Additional parameters ----#

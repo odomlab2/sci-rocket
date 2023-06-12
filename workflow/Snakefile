@@ -1,24 +1,27 @@
+# Load modules ----
+
 from snakemake.utils import min_version
+import sys
 import pandas as pd
 
-# Add the scripts directory to the path.
-import sys
-sys.path.insert(0, 'scripts/')
-
+# Add the custom scripts directory to the path.
+sys.path.insert(0, "scripts/")
 from sanity_checks import sanity_barcodes, sanity_samples
 
 # Initialization ----
 
 # Set min. snakemake version for compatability.
-min_version("7.25.0")
+min_version("7.28.0")
+
 
 # Specify configuration file.
 configfile: "config.yaml"
 
-# Read sample metadata.
-samples = pd.read_csv(config["path_samples"], sep="\t")
 
 ## Sanity checks of input data. ----
+
+# Read sample metadata.
+samples = pd.read_csv(config["path_samples"], sep="\t")
 
 if not sanity_barcodes(config["path_barcodes"]):
     raise ValueError("Barcode file is not valid.")
@@ -29,25 +32,29 @@ if not sanity_samples(samples, config):
 
 # Constrain wildcard values to resolve downstream mixtures. ----
 wildcard_constraints:
-    sample='|'.join([re.escape(x) for x in samples['sample']]),
-    species='|'.join([re.escape(x) for x in samples['species']])
+    sample="|".join([re.escape(x) for x in samples["sample"]]),
+    species="|".join([re.escape(x) for x in samples["species"]]),
+
+
+# Workflow output. ----
 
 
 # Set working directory to output directory.
 workdir: config["dir_output"]
 
-# Workflow output. ----
 
 rule DEMUX:
     input:
         lambda w: [
             "demultiplex_fastq/untrimmed/{sample}_R1.fq.gz".format(
-                sample=sample, 
+                sample=sample,
                 species=species,
-            ) for sample, species in zip(samples['sample'], samples['species'])
-        ]
+            )
+            for sample, species in zip(samples["sample"], samples["species"])
+        ],
 
 
 # Load rules ----
+
 
 include: "rules/step1_demultiplexing_fastq.smk"
