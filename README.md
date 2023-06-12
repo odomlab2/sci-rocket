@@ -9,8 +9,8 @@
 ---
 
 1. Check for sanity of provided barcodes and sample-sheet.
-2. Demultiplexes (paired-end) sequencing (.fastq) using the supplied sample-specific RT and ligation design.
-    - Generates sample-specific fastq file(s) with correct read-name for R2.
+2. Demultiplexes (paired-end) sequencing using the supplied sample-specific RT and ligation design.
+    - Generates sample-specific .fastq file(s) with correct read-name for R2.
 3. Performs adapter and low-quality base-trimming (**fastp**).
 4. Performs quality control (**fastqc**).
 5. Aligns reads to the supplied reference genome (**STAR**).

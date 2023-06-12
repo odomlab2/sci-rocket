@@ -50,4 +50,4 @@ rule DEMUX:
 
 # Load rules ----
 
-# include: "rules/step1_sanity_samplesheet.smk"
+include: "rules/step1_demultiplexing_fastq.smk"
