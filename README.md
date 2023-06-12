@@ -17,7 +17,6 @@
 6. Marks duplicates (**sambamba**).
 7. Generates QC:
    - Alignment stats (**sambamba**)
-   - Insert size distribution (**picard**)
    - Sequencing coverage (**mosdepth**)
 
 > **Note**  
@@ -46,11 +45,14 @@ The workflow is configured using a `config.yaml` file. See `workflow/config.yaml
 
 The workflow requires a sample sheet (.tsv) with at least the following required columns:
 
-- **sample**: Name of the sequencing sample (e.g. AS-123456)
-- **sample_name**: Descriptive name of the sample
+- **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the samples during demultiplexing.
+- **sample**: Name of the sequencing sample, used to determine respective .fastq file(s).
+- **species**: Reference species (e.g. mouse or human).
 
 > **Note**  
-> **sample** is used to retrieve multiple lane-specific runs of the same sample which are merged together after alignment and duplicate marking.
+>
+> - **sample** is used to retrieve multiple lane-specific runs of the same sample which are merged together after alignment and duplicate marking.  
+> - **species** should be present in the `config.yaml` file with their respective genome sequences (.fa) and gene-annotations (.gtf) used to generate mapping indexes.
 
 ## Usage
 
