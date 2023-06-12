@@ -8,7 +8,7 @@
 
 ---
 
-1. Imports and sanity-checks the supplied sample sheet.
+1. Check for sanity of provided barcodes and sample-sheet.
 2. Demultiplexes (paired-end) sequencing (.fastq) using the supplied sample-specific RT and ligation design.
     - Generates sample-specific fastq file(s) with correct read-name for R2.
 3. Performs adapter and low-quality base-trimming (**fastp**).
@@ -54,6 +54,14 @@ The workflow requires a sample sheet (.tsv) with at least the following required
 > - **sample** is used to retrieve multiple lane-specific runs of the same sample which are merged together after alignment and duplicate marking.  
 > - **species** should be present in the `config.yaml` file with their respective genome sequences (.fa) and gene-annotations (.gtf) used to generate mapping indexes.
 
+### Barcode design
+
+The workflow requires a file (.tsv) containing the barcodes used in the experiment with at least the following required columns:
+
+- **type**: Type of barcode (`ligation`, `p5`, `p7` or `rt`).
+- **barcode**: Name of the barcode (e.g. A01).
+- **sequence**: Nucleotide sequence of the barcode.
+
 ## Usage
 
 To run this workflow on the DKFZ LSF cluster, first [set-up the proper LSF profile](https://github.com/Snakemake-Profiles/lsf) and run the following command for either the WGS or WTS workflow:
@@ -76,7 +84,7 @@ The major output files are the following:
   - `alignment/{reference}/{sample}_sortedByCoord.bam`
 
 > **Note**  
-> {sample} is based on the sample name in the sample sheet.
+> {sample} is based on **sample** in the sample sheet.
 
 ## Methodology
 

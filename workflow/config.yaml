@@ -2,16 +2,16 @@
 # --- Required parameters ----#
 
 # Path to sample sheet; see README for details.
-path_samples: "/omics/groups/OE0538/internal/projects/LesionSegregration_F1/metadata/SupplTable1_OverviewSequencing.xlsx"
+path_samples: "~/jvanriet/git/snakemake-sciseq/workflow/examples/example_samplesheet.tsv"
 
 # Path to the folder containing the (raw/untrimmed) fastq files.
-dir_fastq: "/omics/groups/OE0538/internal/projects/LesionSegregration_F1/data/rawreads"  
+dir_fastq: "/omics/groups/OE0538/internal/"  
 
 # Path to the output folder.
-dir_output: "/omics/groups/OE0538/internal/projects/LesionSegregration_F1/results/"
+dir_output: "/omics/groups/OE0538/internal/projects/sexomics/runJob/"
 
 # Path to temporary folder for storing the intermediates of several large processes.
-dir_tmp: "/omics/groups/OE0538/internal/projects/LesionSegregration_F1/data/tmp/"
+dir_tmp: "/omics/groups/OE0538/internal/projects/tmp/"
 
 # Path to fasta and GTF file containing the main reference genome and annotations.
 # The identifier (e.g. Mouse) is used to identify the species as specified in the sample sheet.
@@ -24,9 +24,8 @@ species:
     genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/hsapiens/annotation/xxx.gtf"
 
 
-# Path to barcode files for demultiplexing. See examples/barcodes.tsv for an example.
-# Format (TSV): name barcode_sequence
-path_barcodes: examples/barcodes.tsv"
+# Path to barcode files for demultiplexing. See examples/barcodes.tsv for an example and README for details.
+path_barcodes: "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv"
 
 #################################
 # --- Additional parameters ----#

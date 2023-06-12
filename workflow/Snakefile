@@ -1,0 +1,53 @@
+from snakemake.utils import min_version
+import pandas as pd
+
+# Add the scripts directory to the path.
+import sys
+sys.path.insert(0, 'scripts/')
+
+from qc_samplesheet import sanity_barcodes, sanity_samples
+
+# Initialization ----
+
+# Set min. snakemake version for compatability.
+min_version("7.25.0")
+
+# Specify configuration file.
+configfile: "config.yaml"
+
+# Read sample metadata.
+samples = pd.read_csv(config["path_samples"], sep="\t")
+
+## Sanity checks of input data. ----
+
+if not sanity_barcodes(config["path_barcodes"]):
+    raise ValueError("Barcode file is not valid.")
+
+if not sanity_samples(samples, config):
+    raise ValueError("Sample metadata is not valid.")
+
+
+# Constrain wildcard values to resolve downstream mixtures. ----
+wildcard_constraints:
+    sample='|'.join([re.escape(x) for x in samples['sample']]),
+    species='|'.join([re.escape(x) for x in samples['species']])
+
+
+# Set working directory to output directory.
+workdir: config["dir_output"]
+
+# Workflow output. ----
+
+rule DEMUX:
+    input:
+        lambda w: [
+            "demultiplex_fastq/untrimmed/{sample}_R1.fq.gz".format(
+                sample=sample, 
+                species=species,
+            ) for sample, species in zip(samples['sample'], samples['species'])
+        ]
+
+
+# Load rules ----
+
+# include: "rules/step1_sanity_samplesheet.smk"
