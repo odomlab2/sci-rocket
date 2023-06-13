@@ -105,7 +105,7 @@ For sample-demultiplexing, the following steps are performed:
       Example R1:  
       ACTTGATTGTGAGAGCTCCGTGAAAGGTTAGCAT
       
-      First 10nt:  Ligation barcode
+      First 9 or 10nt:  Ligation barcode
       Next 8nt:    UMI
       Next 6nt:    Primer
       Last 10nt:   RT Barcode (sample-specific)
@@ -113,6 +113,7 @@ For sample-demultiplexing, the following steps are performed:
       Anatomy of R1:
       |ACTTGATTGT| |GAGAGCTC| |CGTGAA| |AGGTTAGCAT|
       |-LIGATION-| |---UMI--| |Primer| |----RT----|
+
       ```
 
 2. If no match, correct RT barcode to nearest match (with max. 1nt difference). If multiple close matches, discard read-pair.
