@@ -29,5 +29,7 @@ species:
 #################################
 # --- Additional parameters ----#
 settings:
+  # Output additional messages for tracing/debugging purposes.
+  verbose: True
   fastp: "--qualified_quality_phred 15 --dont_eval_duplication --dup_calc_accuracy 3 --length_required 10"
   star: ""

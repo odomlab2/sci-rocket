@@ -2,8 +2,8 @@
 #   Rules related to demultiplexing the initial sequencing reads.
 #############
 
-
-rule demultiplex_samples:
+# Demultiplexing an entire sequencing run to generate sample-specific fastq files.
+rule demultiplex_fastq:
     input:
         lambda w: [
             "{fastq}/{sequencing_name}-LR-67093_R1.fastq.gz".format(
@@ -14,9 +14,14 @@ rule demultiplex_samples:
             ),
         ],
     output:
-        [
-            "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R1.fq.gz",
-            "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R2.fq.gz",
-        ],
+        directory("demultiplex_fastq/untrimmed/{sequencing_name}/")
+    shell:
+        "1"
+
+rule demultiplex_samples:
+    input:
+        directory("demultiplex_fastq/untrimmed/{sequencing_name}/")
+    output:
+        "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R1.fq.gz"
     shell:
         "1"

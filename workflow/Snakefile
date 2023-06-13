@@ -1,6 +1,9 @@
 # Set min. snakemake version for compatability.
 snakemake.utils.min_version("7.28.0")
+
+
 configfile: "config.yaml"
+
 
 # Import modules. ----
 

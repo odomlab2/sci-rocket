@@ -36,29 +36,22 @@ def sanity_samples(log, samples, barcodes, config):
 
     # Check if the sample sheet contains species which are not defined in the config.
     if not set(samples["species"].unique()).issubset(config["species"].keys()):
-        log.error(
-            "Sanity check (Sample sheet) - Contains species which are not defined in the config: {}".format(
-                ", ".join(set(samples["species"].unique()).difference(config["species"].keys()))
-            )
-        )
+        log.error("Sanity check (Sample sheet) - Contains species which are not defined in the config: {}".format(", ".join(set(samples["species"].unique()).difference(config["species"].keys()))))
         return False
 
-    # Read in the barcodes, as defined in the config.
+    # Retrieve the RT barcodes.
     barcodes_rt = barcodes.query("type == 'rt'")["barcode"].unique()
 
     # Check if the sample sheet contains RT barcodes which are not defined in the config.
     if not set(samples["barcode_rt"].unique()).issubset(barcodes_rt):
-        log.error(
-            "Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the config: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt)))
-        )
+        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the config: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
         return False
 
     # Check if different species are assigned to the same sample name.
     if samples.groupby("sample_name")["species"].apply(lambda x: len(x.unique()) > 1).any():
-        
         # Check which samples have different species assigned.
         samples_with_different_species = samples.groupby("sample_name")["species"].apply(lambda x: ", ".join(x.unique())).reset_index()
-        
+
         # Print the samples with different species assigned.
         for _, row in samples_with_different_species.iterrows():
             if len(row["species"].split(", ")) > 1:
@@ -77,7 +70,6 @@ def sanity_barcodes(log, barcodes):
     Args:
         log (logging.Logger): Logger object.
         barcodes (pandas.DataFrame): Imported barcodes.
-
 
     Returns:
         bool: True if the barcodes file is valid, False otherwise.

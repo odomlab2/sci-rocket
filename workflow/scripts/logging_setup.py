@@ -2,7 +2,7 @@ import logging
 from rich.console import Console
 from rich.logging import RichHandler
 
-def init_logger():
+def init_logger(verbose: bool = False):
     """
     Initial a Logger with rich handler.
 
@@ -18,5 +18,8 @@ def init_logger():
     ch.setFormatter(formatter)
     log.addHandler(ch)
     log.propagate = False
+
+    if verbose:
+        log.setLevel(logging.DEBUG)
 
     return log

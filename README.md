@@ -115,8 +115,8 @@ For sample-demultiplexing, the following steps are performed:
       |-LIGATION-| |---UMI--| |Primer| |----RT----|
       ```
 
-2. (**Optional**): If no match, correct RT and ligation barcode to nearest match (with <=1 edit-distance).
+2. If no match, correct RT barcode to nearest match (with max. 1nt difference). If multiple close matches, discard read-pair.
 3. Set the RT, ligation barcode and UMI as read-name in read 2 (R2).
 
 > **Note**  
-> Reads with unmatched RT or ligation barcodes are discarded.
+> Read-pairs with unmatched RT barcodes are discarded into separate R1/R2 fastq.gz files.
