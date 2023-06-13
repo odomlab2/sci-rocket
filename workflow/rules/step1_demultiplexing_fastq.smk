@@ -6,17 +6,17 @@
 rule demultiplex_samples:
     input:
         lambda w: [
-            "{fastq}/{sample}_R1.fastq.gz".format(
-                fastq=config["dir_fastq"], sample=w.sample
+            "{fastq}/{sequencing_name}-LR-67093_R1.fastq.gz".format(
+                fastq=config["dir_fastq"], sequencing_name=w.sequencing_name
             ),
-            "{fastq}/{sample}_R2.fastq.gz".format(
-                fastq=config["dir_fastq"], sample=w.sample
+            "{fastq}/{sequencing_name}-LR-67093_R2.fastq.gz".format(
+                fastq=config["dir_fastq"], sequencing_name=w.sequencing_name
             ),
         ],
     output:
         [
-            "demultiplex_fastq/untrimmed/{sample}_R1.fq.gz",
-            "demultiplex_fastq/untrimmed/{sample}_R2.fq.gz",
+            "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R1.fq.gz",
+            "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R2.fq.gz",
         ],
     shell:
         "1"

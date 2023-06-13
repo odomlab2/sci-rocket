@@ -4,6 +4,24 @@ from snakemake.utils import min_version
 import sys
 import pandas as pd
 
+# Logging parameters. ----
+import logging
+import os
+
+from rich.console import Console
+from rich.logging import RichHandler
+
+# Logging parameters.
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+
+console = Console(force_terminal=True)
+ch = RichHandler(show_path=False, console=console, show_time=False)
+formatter = logging.Formatter('snakemake-sciseq: %(message)s')
+ch.setFormatter(formatter)
+log.addHandler(ch)
+log.propagate = False
+
 # Add the custom scripts directory to the path.
 sys.path.insert(0, "scripts/")
 from sanity_checks import sanity_barcodes, sanity_samples
@@ -23,16 +41,17 @@ configfile: "config.yaml"
 # Read sample metadata.
 samples = pd.read_csv(config["path_samples"], sep="\t")
 
-if not sanity_barcodes(config["path_barcodes"]):
+if not sanity_barcodes(log, config["path_barcodes"]):
     raise ValueError("Barcode file is not valid.")
 
-if not sanity_samples(samples, config):
+if not sanity_samples(log, samples, config):
     raise ValueError("Sample metadata is not valid.")
 
 
 # Constrain wildcard values to resolve downstream mixtures. ----
 wildcard_constraints:
-    sample="|".join([re.escape(x) for x in samples["sample"]]),
+    sequencing_name="|".join([re.escape(x) for x in samples["sequencing_name"]]),
+    sample_name="|".join([re.escape(x) for x in samples["sample_name"]]),
     species="|".join([re.escape(x) for x in samples["species"]]),
 
 
@@ -46,11 +65,12 @@ workdir: config["dir_output"]
 rule DEMUX:
     input:
         lambda w: [
-            "demultiplex_fastq/untrimmed/{sample}_R1.fq.gz".format(
-                sample=sample,
+            "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R1.fq.gz".format(
+                sequencing_name=sequencing_name,
+                sample_name=sample_name,
                 species=species,
             )
-            for sample, species in zip(samples["sample"], samples["species"])
+            for sequencing_name, sample_name, species in zip(samples["sequencing_name"], samples["sample_name"], samples["species"])
         ],
 
 

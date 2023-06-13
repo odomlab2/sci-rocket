@@ -47,13 +47,13 @@ The workflow is configured using a `config.yaml` file. See `workflow/config.yaml
 
 The workflow requires a sample sheet (.tsv) with at least the following required columns:
 
-- **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the samples during demultiplexing.
-- **sample**: Name of the sequencing sample, used to determine respective .fastq file(s).
+- **sequencing_name**: Sequencing sample (e.g. AS-123456), used to determine respective .fastq file(s) and from which sample-specific BAM file(s) are generated.
+- **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
+- **sample_name**: Name of the RT-barcoded sample.
 - **species**: Reference species (e.g. mouse or human).
 
 > **Note**  
 >
-> - **sample** is used to retrieve multiple lane-specific runs of the same sample which are merged together after alignment and duplicate marking.  
 > - **species** should be present in the `config.yaml` file with their respective genome sequences (.fa) and gene-annotations (.gtf) used to generate mapping indexes.
 
 ### Barcode design
@@ -92,10 +92,30 @@ The major output files are the following:
 
 ### Demultiplexing scheme
 
-For demultiplexing, the following steps are performed:
+See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.html) for more information on the library generation of the sci-RNA-Seq3 protocol.
 
-1. Extracts RT and ligation barcode from read 1 (R1).
-2. (Optional): If no match, correct RT and ligation barcode to nearest match (with edit distance <= 1).
+#### **Sample demultiplexing**
+
+For sample-demultiplexing, the following steps are performed:
+
+1. Extracts ligation and RT barcodes from read 1 (R1).
+    - The following scheme is used for paired-end Illumina NovaSeq:
+
+    ```text
+      Example R1:  
+      ACTTGATTGTGAGAGCTCCGTGAAAGGTTAGCAT
+      
+      First 10nt:  Ligation barcode
+      Next 8nt:    UMI
+      Next 6nt:    Primer
+      Last 10nt:   RT Barcode (sample-specific)
+
+      Anatomy of R1:
+      |ACTTGATTGT| |GAGAGCTC| |CGTGAA| |AGGTTAGCAT|
+      |-LIGATION-| |---UMI--| |Primer| |----RT----|
+      ```
+
+2. (**Optional**): If no match, correct RT and ligation barcode to nearest match (with <=1 edit-distance).
 3. Set the RT, ligation barcode and UMI as read-name in read 2 (R2).
 
 > **Note**  
