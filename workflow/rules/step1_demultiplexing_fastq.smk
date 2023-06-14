@@ -14,14 +14,20 @@ rule demultiplex_fastq:
             ),
         ],
     output:
-        directory("demultiplex_fastq/untrimmed/{sequencing_name}/")
+        directory("demultiplex_fastq/raw/{sequencing_name}/")
+    log: 
+        "logs/demultiplex_fastq/{sequencing_name}.log"
+    params:
+        path_samples=config['path_samples'],
+        path_barcodes=config['path_barcodes']
     shell:
-        "1"
+        "python3.10 {workflow.basedir}/scripts/sciseq_sample_demultiplexing -sequencing_name {wildcards.sequencing_name} -path_samples {params.path_samples} -path_barcodes {params.path_barcodes} -path_r1 {input[0]} -path_r2 {input[1]} -path_out {output} &> {log}"
 
 rule demultiplex_samples:
     input:
-        directory("demultiplex_fastq/untrimmed/{sequencing_name}/")
+        "demultiplex_fastq/raw/{sequencing_name}/"
     output:
-        "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R1.fq.gz"
+        R1 = "demultiplex_fastq/fastp/{sequencing_name}_{sample_name}_R1.fq.gz",
+        R2 = "demultiplex_fastq/fastp/{sequencing_name}_{sample_name}_R2.fq.gz"
     shell:
-        "1"
+        "{output.R1} + {output.R2}"

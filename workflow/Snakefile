@@ -14,6 +14,7 @@ import pandas as pd
 sys.path.insert(0, "scripts/")
 import logging_setup
 import sanity_checks
+from demultiplex_samples_fastq import sciseq_sample_demultiplexing
 
 # Set up logging. ----
 
@@ -56,7 +57,7 @@ workdir: config["dir_output"]
 rule DEMUX:
     input:
         lambda w: [
-            "demultiplex_fastq/untrimmed/{sequencing_name}_{sample_name}_R1.fq.gz".format(
+            "demultiplex_fastq/fastp/{sequencing_name}_{sample_name}_R1.fq.gz".format(
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
                 species=species,
