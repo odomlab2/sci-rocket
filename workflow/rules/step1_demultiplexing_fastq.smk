@@ -17,6 +17,8 @@ rule demultiplex_fastq:
         directory("demultiplex_fastq/raw/{sequencing_name}/")
     log: 
         "logs/demultiplex_fastq/{sequencing_name}.log"
+    resources:
+        mem_mb=10000
     params:
         path_samples=config['path_samples'],
         path_barcodes=config['path_barcodes']

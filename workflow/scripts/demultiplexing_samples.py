@@ -271,10 +271,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-        # region Lookup the ligation barcode in the dictionary. --------------------------------------------------------------------------------
-
-        # endregion --------------------------------------------------------------------------------------------------------------------------------
-
         # region Lookup the RT barcode in the dictionary. --------------------------------------------------------------------------
 
         try:
@@ -335,12 +331,11 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         samples_dict[sample_name]["rt"][match_rt] += 1
 
         # Print running statistics.
-        if verbose and qc["n_pairs"] % 1000 == 0:
-            printLogging_reads(log, qc)
-
-        # Pretty print the dictionary with sample statistics.
-        if verbose and qc["n_pairs"] % 10000 == 0:
-            printLogging_samples(log, samples_dict)
+        if qc["n_pairs"] % 10000 == 0:
+            if verbose:
+                printLogging_reads(log, qc, samples_dict)
+            else:
+                log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -357,14 +352,13 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             fh.close()
 
     # Print final statistics.
-    printLogging_reads(log, qc)
-    printLogging_samples(log, samples_dict)
+    printLogging_reads(log, qc, samples_dict)
 
     # Exit the program.
     sys.exit(0)
 
 
-def printLogging_reads(log, qc):
+def printLogging_reads(log, qc, samples_dict):
     log.info("Processed %d read-pairs", qc["n_pairs"])
     log.info("  - %d read-pairs with correct RT barcode", qc["n_pairs_success"])
     log.info("     - %d read-pairs with corrected RT barcode", qc["n_corrected_pairs"])
@@ -378,9 +372,6 @@ def printLogging_reads(log, qc):
     log.info("  - %d read-pairs with empty R1", qc["n_empty_r1"])
     log.info("  - %d read-pairs with R1 <34nt", qc["n_short_r1"])
     log.info("  - %d read-pairs with R1 >34nt", qc["n_longer_r1"])
-
-
-def printLogging_samples(log, samples_dict):
     log.info("Sample statistics:")
     for sample in samples_dict:
         log.info("  - %s: %d read-pairs", sample, samples_dict[sample]["n_pairs_success"])
