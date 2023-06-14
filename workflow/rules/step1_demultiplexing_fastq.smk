@@ -6,10 +6,10 @@
 rule demultiplex_fastq:
     input:
         lambda w: [
-            "{fastq}/{sequencing_name}-LR-67093_R1.fastq.gz".format(
+            "{fastq}/{sequencing_name}_R1.fastq.gz".format(
                 fastq=config["dir_fastq"], sequencing_name=w.sequencing_name
             ),
-            "{fastq}/{sequencing_name}-LR-67093_R2.fastq.gz".format(
+            "{fastq}/{sequencing_name}_R2.fastq.gz".format(
                 fastq=config["dir_fastq"], sequencing_name=w.sequencing_name
             ),
         ],
@@ -21,7 +21,7 @@ rule demultiplex_fastq:
         path_samples=config['path_samples'],
         path_barcodes=config['path_barcodes']
     shell:
-        "python3.10 {workflow.basedir}/scripts/sciseq_sample_demultiplexing -sequencing_name {wildcards.sequencing_name} -path_samples {params.path_samples} -path_barcodes {params.path_barcodes} -path_r1 {input[0]} -path_r2 {input[1]} -path_out {output} &> {log}"
+        "python3.10 {workflow.basedir}/scripts/demultiplexing_samples.py --sequencing_name {wildcards.sequencing_name} --samples {params.path_samples} --barcodes {params.path_barcodes} --r1 {input[0]} --r2 {input[1]} --out {output} &> {log}"
 
 rule demultiplex_samples:
     input:
@@ -30,4 +30,4 @@ rule demultiplex_samples:
         R1 = "demultiplex_fastq/fastp/{sequencing_name}_{sample_name}_R1.fq.gz",
         R2 = "demultiplex_fastq/fastp/{sequencing_name}_{sample_name}_R2.fq.gz"
     shell:
-        "{output.R1} + {output.R2}"
+        "echo {output.R1} {output.R2}"

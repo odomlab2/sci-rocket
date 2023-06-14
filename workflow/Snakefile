@@ -14,7 +14,6 @@ import pandas as pd
 sys.path.insert(0, "scripts/")
 import logging_setup
 import sanity_checks
-from demultiplex_samples_fastq import sciseq_sample_demultiplexing
 
 # Set up logging. ----
 
@@ -38,6 +37,10 @@ if not sanity_checks.sanity_samples(log, samples, barcodes, config):
 samples_unique = samples.drop_duplicates(
     subset=["sequencing_name", "sample_name", "species"]
 )
+
+# Close log file.
+log.handlers[0].close()
+log.removeHandler(log.handlers[0])
 
 
 # Constrain wildcard values to resolve downstream mixtures. ----

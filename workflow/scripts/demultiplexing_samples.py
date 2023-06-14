@@ -37,13 +37,16 @@
 
 
 # --------------------------------------------------------------------------------------------------------------------------------
-import pysam
+import argparse
 import sys
-import gzip
-import difflib
 import os
 import logging
 import pandas as pd
+
+import pysam
+import gzip
+import difflib
+
 
 import logging_setup
 
@@ -339,9 +342,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         if verbose and qc["n_pairs"] % 10000 == 0:
             printLogging_samples(log, samples_dict)
 
-        if qc["n_pairs"] == 11000:
-            break
-
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     # Close the input file handlers.
@@ -389,15 +389,42 @@ def printLogging_samples(log, samples_dict):
         for rt in samples_dict[sample]["rt"]:
             log.info("        - %s: %d", rt, samples_dict[sample]["rt"][rt])
 
-def main():
-    """
-    ! Setup argparser
-    """
-    # Parse arguments.
-    args = parseArguments()
 
-    # Set up logging.
+def main(arguments):
+    # Setup argument parser.
+    parser = argparse.ArgumentParser(description="Demultiplexes raw sci-rna-seqv3 .fastq into sample-specific .fastq files.", add_help=False)
+    parser.add_argument("--r1", required=True, type=str, help="(.fq) Input fastq (R1).")
+    parser.add_argument("--r2", required=True, type=str, help="(.fq) Input fastq (R2).")
+    parser.add_argument("--sequencing_name", required=True, type=str, help="(str) Sequencing sample name.")
+    parser.add_argument("--samples", required=True, type=str, help="(str) Path to sample-sheet.")
+    parser.add_argument("--barcodes", required=True, type=str, help="(str) Path to barcodes file.")
+    parser.add_argument("--out", required=True, type=str, help="(str) Path to output directory.")
+
+    parser.add_argument("-v", "--verbose", action="store_true", help="Should additional (debug) logging message be displayed?")
+    parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Display help and exit.")
+
+    # Parse arguments.
+    args = parser.parse_args()
+
+    # Initialize logging.
     log = logging_setup.init_logger(args.verbose)
 
+    # Open sample-sheet.
+    samples = pd.read_csv(args.samples, sep="\t", index_col=0)
+
+    # Open barcode-sheet.
+    barcodes = pd.read_csv(args.barcodes, sep="\t", index_col=0)
+
+    # Generate output directory if not exists.
+    if not os.path.exists(args.out):
+        os.makedirs(args.out)
+
     # Run the program.
-    sciseq_sample_demultiplexing(log, args.verbose, args.input_r1, args.input_r2, args.input_samples, args.output_dir)
+    sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out, verbose=args.verbose)
+
+    log.info("Sample demultiplexing for %s is finished.".format(args.sequencing_name.name))
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+    sys.exit()
