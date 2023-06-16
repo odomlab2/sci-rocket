@@ -22,7 +22,7 @@ log = logging_setup.init_logger()
 ## Sanity checks of input data. ----
 
 # Read sample metadata.
-samples = pd.read_csv(config["path_samples"], sep="\t")
+samples = pd.read_csv(config["path_samples"], sep="\t", dtype=str)
 
 # Read barcodes.
 barcodes = pd.read_csv(config["path_barcodes"], sep="\t", comment="#")
@@ -35,7 +35,7 @@ if not sanity_checks.sanity_samples(log, samples, barcodes, config):
 
 # Select unique samples for which to generate sample-specific files.
 samples_unique = samples.drop_duplicates(
-    subset=["sequencing_name", "sample_name", "species"]
+    subset=["path_bcl", "sequencing_name", "sample_name", "experiment_name", "species"]
 )
 
 # Close log file.
@@ -45,9 +45,10 @@ log.removeHandler(log.handlers[0])
 
 # Constrain wildcard values to resolve downstream mixtures. ----
 wildcard_constraints:
-    sequencing_name="|".join([re.escape(x) for x in samples_unique["sequencing_name"]]),
-    sample_name="|".join([re.escape(x) for x in samples_unique["sample_name"]]),
-    species="|".join([re.escape(x) for x in samples_unique["species"]]),
+    sequencing_name="|".join([re.escape(str(x)) for x in samples_unique["sequencing_name"]]),
+    sample_name="|".join([re.escape(str(x)) for x in samples_unique["sample_name"]]),
+    experiment_name="|".join([re.escape(str(x)) for x in samples_unique["experiment_name"]]),
+    species="|".join([re.escape(str(x)) for x in samples_unique["species"]]),
 
 
 # Workflow output. ----
@@ -60,14 +61,16 @@ workdir: config["dir_output"]
 rule DEMUX:
     input:
         lambda w: [
-            "demultiplex_fastq/fastp/{sequencing_name}_{sample_name}_R1.fq.gz".format(
+            "fastq/{sequencing_name}/raw/Undetermined_S0_L001_R1_001.fastq.gz".format(
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
-                species=species,
+                experiment_name=experiment_name,
+                species=species
             )
-            for sequencing_name, sample_name, species in zip(
+            for sequencing_name, sample_name, experiment_name, species in zip(
                 samples_unique["sequencing_name"],
                 samples_unique["sample_name"],
+                samples_unique["experiment_name"],
                 samples_unique["species"],
             )
         ],

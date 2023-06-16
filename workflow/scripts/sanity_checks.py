@@ -1,3 +1,7 @@
+from collections import Counter
+import pandas as pd
+
+
 def sanity_samples(log, samples, barcodes, config):
     """
     Checks the provided sample sheet for sanity and inconsistensies with the supplied config.
@@ -12,6 +16,8 @@ def sanity_samples(log, samples, barcodes, config):
         bool: True if the sample sheet is valid, False otherwise.
     """
 
+    samples = pd.read_csv("~/jvanriet/git/snakemake-sciseq/workflow/examples/example_samplesheet.tsv", sep="\t") 
+
     log.info("Checking sanity: Sample sheet.")
 
     # Check if the sample sheet is empty.
@@ -20,31 +26,14 @@ def sanity_samples(log, samples, barcodes, config):
         return False
 
     # Check if the sample sheet contains the required columns.
-    required_columns = set(["sequencing_name", "barcode_rt", "sample_name", "species"])
+    required_columns = set(["path_bcl", "sequencing_name", "experiment_name", "well_start", "well_end", "barcode_rt", "sample_name", "species"])
     if not required_columns.issubset(samples.columns):
         log.error("Sanity check (Sample sheet) - Missing required column(s): {}".format(", ".join(required_columns.difference(samples.columns))))
-        return False
-
-    # Check for duplicate RT barcodes within the same sequencing sample.
-    if samples.groupby("sequencing_name")["barcode_rt"].apply(lambda x: x.duplicated().any()).any():
-        log.error(
-            "Sanity check (Sample sheet) - SContains duplicate RT barcodes within the same sequencing sample: {}".format(
-                ", ".join(samples.groupby("sequencing_name")["barcode_rt"].apply(lambda x: x[x.duplicated()]).unique()),
-            )
-        )
         return False
 
     # Check if the sample sheet contains species which are not defined in the config.
     if not set(samples["species"].unique()).issubset(config["species"].keys()):
         log.error("Sanity check (Sample sheet) - Contains species which are not defined in the config: {}".format(", ".join(set(samples["species"].unique()).difference(config["species"].keys()))))
-        return False
-
-    # Retrieve the RT barcodes.
-    barcodes_rt = barcodes.query("type == 'rt'")["barcode"].unique()
-
-    # Check if the sample sheet contains RT barcodes which are not defined in the config.
-    if not set(samples["barcode_rt"].unique()).issubset(barcodes_rt):
-        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the config: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
         return False
 
     # Check if different species are assigned to the same sample name.
@@ -58,6 +47,63 @@ def sanity_samples(log, samples, barcodes, config):
                 log.error("Sanity check (Sample sheet) - Different species assigned to {}: {}".format(row["sample_name"], row["species"]))
 
         return False
+
+    # Retrieve the RT barcodes.
+    barcodes_rt = barcodes.query("type == 'rt'")["barcode"].unique()
+
+    # Check if the sample sheet contains RT barcodes which are not defined in the config.
+    if not set(samples["barcode_rt"].unique()).issubset(barcodes_rt):
+        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the config: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
+        return False
+
+    # region Sanity of 96-well coordinates --------------------------------------------------------------------------------
+    # Check if well_start and well_end fall within 96-well plate (between A:01 and H:12)
+    if not samples["well_start"].str.contains("^[A-H][0-1][0-2]$").all():
+        log.error(
+            "Sanity check (Sample sheet) - Well start is not a valid 96-well plate well coordinate (between A01 and H12): {}".format(
+                ", ".join(samples[~samples["well_start"].str.contains("^[A-H][0-1][0-2]$")]["well_start"].unique())
+            )
+        )
+        return False
+
+    if not samples["well_end"].str.contains("^[A-H][0-1][0-2]$").all():
+        log.error(
+            "Sanity check (Sample sheet) - Well end is not a valid 96-well plate well coordinate (between A:01 and H:12): {}".format(
+                ", ".join(samples[~samples["well_end"].str.contains("^[A-H][0-1][0-2]$")]["well_end"].unique())
+            )
+        )
+        return False
+
+    # Check if well_start and well_end are in the correct order.
+    if not (samples["well_start"] <= samples["well_end"]).all():
+        log.error("Sanity check (Sample sheet) - Well start is not smaller than well end: {}".format(", ".join(samples[samples["well_start"] > samples["well_end"]]["sample_name"].unique())))
+        return False
+
+    # Generate a list of all 96-wells combinations (A01 to H12).
+    wells = ["{}{}".format(chr(65 + i), "{:02d}".format(j)) for i in range(8) for j in range(1, 13)]
+
+    # Generate a list of samples + barcode_rt per well.
+    wells = pd.DataFrame(wells, columns=["well"])
+
+    # Generate a list of barcodes_rt per well, including duplicates.
+    wells["barcode_rt"] = wells["well"].apply(lambda x: samples[(samples["well_start"] <= x) & (samples["well_end"] >= x)]["barcode_rt"].values.tolist())
+
+    # Identify duplicate RT barcodes per well.
+    wells["barcode_rt_duplicates"] = wells["barcode_rt"].apply(lambda x: [item for item, count in Counter(x).items() if count > 1])
+
+    # Check if the sample sheet contains duplicate RT barcodes per well.
+    if wells["barcode_rt_duplicates"].apply(lambda x: len(x) > 0).any():
+        # Report the duplicate RT barcodes per well and add the sample_name(s) of the duplicate RT barcodes.
+        for _, row in wells[wells["barcode_rt_duplicates"].apply(lambda x: len(x) > 0)].iterrows():
+            log.error(
+                "Sanity check (Sample sheet) - Contains duplicate RT barcodes in the same 96-well for different samples: {} ({} - {})".format(
+                    row["well"], ",".join(row["barcode_rt_duplicates"]), ", ".join(samples[samples["barcode_rt"].isin(row["barcode_rt_duplicates"])]["sample_name"].unique())
+                )
+            )
+
+        return False
+
+    # endregion ----------------------------------------------------------------------------------------------------------------
 
     # Otherwise, the sample sheet is valid.
     return True

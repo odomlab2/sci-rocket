@@ -6,6 +6,7 @@ dependencies:
   - bioconda::snakemake>=7.25.0
 
   # Binaries used in workflow.
+  - bih-cubi::bcl2fastq2
   - bioconda::fastp>=0.23.2
   - bioconda::star>=2.7.10b
   - bioconda::sambamba>=1.0

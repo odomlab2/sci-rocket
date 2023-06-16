@@ -76,6 +76,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     Returns:
         None
+
+    ! Search for p5 primer sequence in R1 read (first 10 bp).
     """
 
     log.info("Starting sample-based demultiplexing of %s:\n(R1) %s\n(R2) %s", sequencing_name, path_r1, path_r2)
@@ -159,10 +161,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     qc["n_unmatched_pairs"] = 0  # Total number of read-pairs with mismatching RT barcode to any sample.
     qc["n_corrected_pairs"] = 0  # Total number of read-pairs with mismatching RT barcode to any sample, but corrected to a sample.
-
-    qc["n_contains_N_ligation"] = 0  # Total number of read-pairs with N in ligation barcode.
-    qc["n_contains_N_rt"] = 0  # Total number of read-pairs with N in RT barcode.
-    qc["n_contains_N_UMI"] = 0  # Total number of read-pairs with N in UMI.
 
     # Dictionary to store the number of (succesfull) read-pairs, no. and type of identified RT barcodes, total UMI and total unique UMI per sample.
     samples_dict = {k: {"n_pairs_success": 0, "rt": {}, "umi_unique": set()} for k in samples_sequencing}
@@ -255,22 +253,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-        # region Sanity checks on the barcodes. --------------------------------------------------------------------------------------------------
-
-        if "N" in sequence_ligation:
-            log.debug("(Read #%d - R1: %s) Contains Ns - Ligation: %s", qc["n_pairs"], read1.name, sequence_ligation)
-            qc["n_contains_N_ligation"] += 1
-
-        if "N" in sequence_rt:
-            log.debug("(Read #%d - R1: %s) Contains Ns - RT: %s", qc["n_pairs"], read1.name, sequence_rt)
-            qc["n_contains_N_rt"] += 1
-
-        if "N" in sequence_umi:
-            log.debug("(Read #%d - R1: %s) Contains Ns - UMI: %s", qc["n_pairs"], read1.name, sequence_umi)
-            qc["n_contains_N_UMI"] += 1
-
-        # endregion --------------------------------------------------------------------------------------------------------------------------------
-
         # region Lookup the RT barcode in the dictionary. --------------------------------------------------------------------------
 
         try:
@@ -338,6 +320,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
+        if qc["n_pairs"] == 300000:
+            break
 
     # Close the input file handlers.
     fh_r1.close()
@@ -364,9 +348,6 @@ def printLogging_reads(log, qc, samples_dict):
     log.info("     - %d read-pairs with corrected RT barcode", qc["n_corrected_pairs"])
     log.info("     - %d read-pairs with corrected ligation barcode", qc["n_corrected_ligation"])
     log.info("     - %d read-pairs with uncorrectable ligation barcode", qc["n_uncorrectable_ligation"])
-    log.info("  - %d read-pairs with N in ligation barcode", qc["n_contains_N_ligation"])
-    log.info("  - %d read-pairs with N in RT barcode", qc["n_contains_N_rt"])
-    log.info("  - %d read-pairs with N in UMI", qc["n_contains_N_UMI"])
     log.info("Discarded read-pairs:")
     log.info("  - %d read-pairs with no matching RT barcode", qc["n_unmatched_pairs"])
     log.info("  - %d read-pairs with empty R1", qc["n_empty_r1"])

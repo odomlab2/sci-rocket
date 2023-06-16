@@ -1,33 +1,33 @@
-sequencing_name	barcode_rt	sample_name	species
-AS-951357-LR-67093	P01-A01	cc_snap	mouse
-AS-951357-LR-67093	P01-A02	cc_slow	mouse
-AS-951357-LR-67093	P01-A03	liver_r3	mouse
-AS-951357-LR-67093	P01-A04	liver_r5	mouse
-AS-951357-LR-67093	P01-B01	cc_snap	mouse
-AS-951357-LR-67093	P01-B02	cc_slow	mouse
-AS-951357-LR-67093	P01-B03	liver_r3	mouse
-AS-951357-LR-67093	P01-B04	liver_r5	mouse
-AS-951357-LR-67093	P01-C01	cc_snap	mouse
-AS-951357-LR-67093	P01-C02	cc_slow	mouse
-AS-951357-LR-67093	P01-C03	liver_r3	mouse
-AS-951357-LR-67093	P01-C04	liver_r5	mouse
-AS-951357-LR-67093	P01-D01	cc_snap	mouse
-AS-951357-LR-67093	P01-D02	cc_slow	mouse
-AS-951357-LR-67093	P01-D03	liver_r3	mouse
-AS-951357-LR-67093	P01-D04	liver_r5	mouse
-AS-951357-LR-67093	P01-E01	cc_snap	mouse
-AS-951357-LR-67093	P01-E02	liver_r3	mouse
-AS-951357-LR-67093	P01-E03	liver_r4	mouse
-AS-951357-LR-67093	P01-E04	cc_snap	mouse
-AS-951357-LR-67093	P01-F01	cc_snap	mouse
-AS-951357-LR-67093	P01-F02	liver_r3	mouse
-AS-951357-LR-67093	P01-F03	liver_r4	mouse
-AS-951357-LR-67093	P01-F04	cc_snap	mouse
-AS-951357-LR-67093	P01-G01	cc_snap	mouse
-AS-951357-LR-67093	P01-G02	liver_r3	mouse
-AS-951357-LR-67093	P01-G03	liver_r4	mouse
-AS-951357-LR-67093	P01-G04	cc_snap	mouse
-AS-951357-LR-67093	P01-H01	cc_snap	mouse
-AS-951357-LR-67093	P01-H02	liver_r3	mouse
-AS-951357-LR-67093	P01-H03	liver_r4	mouse
-AS-951357-LR-67093	P01-H04	cc_slow	mouse
+path_bcl	sequencing_name	experiment_name	well_start	well_end	barcode_rt	sample_name	species
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-A01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-A02	cc_slow	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-A03	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-A04	liver_r5	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-B01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-B02	cc_slow	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-B03	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-B04	liver_r5	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-C01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-C02	cc_slow	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-C03	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-C04	liver_r5	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-D01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-D02	cc_slow	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-D03	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-D04	liver_r5	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-E01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-E02	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-E03	liver_r4	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-E04	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-F01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-F02	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-F03	liver_r4	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-F04	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-G01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-G02	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-G03	liver_r4	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-G04	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-H01	cc_snap	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-H02	liver_r3	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-H03	liver_r4	mouse
+/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230225_VH00211_236_AACK2KFM5/	230225	test	A01	H12	P01-H04	cc_slow	mouse
