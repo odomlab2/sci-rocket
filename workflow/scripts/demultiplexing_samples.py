@@ -1,4 +1,3 @@
-# --------------------------------------------------------------------------------------------------------------------------------
 import argparse
 import sys
 import os
@@ -9,8 +8,7 @@ from rich.logging import RichHandler
 import pandas as pd
 import pysam
 import gzip
-import difflib
-
+from Levenshtein import distance as levenshtein_distance
 
 
 def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str, verbose: bool = False):
@@ -39,7 +37,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     Returns:
         None
 
-    ! Search for p5 primer sequence in R1 read (first 10 bp).
+    ! Decrease the p5/p7 barcode dict size by removing the barcodes that are not used in the sequencing run.
     """
 
     log.info("Starting sample-based demultiplexing of %s:\n(R1) %s\n(R2) %s", sequencing_name, path_r1, path_r2)
@@ -129,11 +127,14 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     def find_closest_match(sequence, dict):
-        closest_matching = difflib.get_close_matches(sequence, dict.keys(), n=2, cutoff=0.8)
+        # Calculate the Levenshtein distance between sequence and all keys in dict.
+        distances = {k: levenshtein_distance(sequence, k) for k in dict.keys()}
+        distances = {k: v for k, v in distances.items() if v <= 1}
 
-        if len(closest_matching) == 1:
-            name = dict[closest_matching[0]]
-            sequence = closest_matching[0]
+        # If there is only one key with a distance of 1, return the name and sequence.
+        if len(distances) == 1:
+            sequence = next(iter(distances))
+            name = dict[sequence]
             return name, sequence
         else:
             return None, None
@@ -317,7 +318,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # region Logging -------------------------------------------------------------------------------------------------------------------------
 
         # Print running statistics.
-        if qc["n_pairs"] % 10000 == 0:
+        if qc["n_pairs"] % 1000000 == 0:
             if verbose:
                 printLogging_reads(log, qc, samples_dict)
             else:
