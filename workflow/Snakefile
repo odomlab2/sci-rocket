@@ -45,9 +45,13 @@ log.removeHandler(log.handlers[0])
 
 # Constrain wildcard values to resolve downstream mixtures. ----
 wildcard_constraints:
-    sequencing_name="|".join([re.escape(str(x)) for x in samples_unique["sequencing_name"]]),
+    sequencing_name="|".join(
+        [re.escape(str(x)) for x in samples_unique["sequencing_name"]]
+    ),
     sample_name="|".join([re.escape(str(x)) for x in samples_unique["sample_name"]]),
-    experiment_name="|".join([re.escape(str(x)) for x in samples_unique["experiment_name"]]),
+    experiment_name="|".join(
+        [re.escape(str(x)) for x in samples_unique["experiment_name"]]
+    ),
     species="|".join([re.escape(str(x)) for x in samples_unique["species"]]),
 
 
@@ -61,11 +65,11 @@ workdir: config["dir_output"]
 rule DEMUX:
     input:
         lambda w: [
-            "fastq/{sequencing_name}/raw/Undetermined_S0_L001_R1_001.fastq.gz".format(
+            "fastq/{sequencing_name}/fastp/{sample_name}_R1.fastq.gz".format(
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
                 experiment_name=experiment_name,
-                species=species
+                species=species,
             )
             for sequencing_name, sample_name, experiment_name, species in zip(
                 samples_unique["sequencing_name"],

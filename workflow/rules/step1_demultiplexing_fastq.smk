@@ -64,7 +64,7 @@ rule demultiplex_fastq:
             ),
         ],
     output:
-        directory("fastq/{sequencing_name}/samples/")
+        directory("fastq/{sequencing_name}/demuxing/"),
     log: 
         "logs/demux/demultiplex_fastq_{sequencing_name}.log"
     resources:
@@ -75,11 +75,25 @@ rule demultiplex_fastq:
     shell:
         "python3.10 {workflow.basedir}/scripts/demultiplexing_samples.py --sequencing_name {wildcards.sequencing_name} --samples {params.path_samples} --barcodes {params.path_barcodes} --r1 {input[0]} --r2 {input[1]} --out {output} &> {log}"
 
+rule get_demux_files:
+    input:
+        "fastq/{sequencing_name}/demuxing/",
+    output:
+        R1 = "fastq/{sequencing_name}/samples/{sample_name}_R1.fastq.gz",
+        R2 = "fastq/{sequencing_name}/samples/{sample_name}_R2.fastq.gz"
+    shell:
+        """
+        mv fastq/{wildcards.sequencing_name}/demuxing/{wildcards.sample_name}_R1.fastq.gz {output.R1}
+        mv fastq/{wildcards.sequencing_name}/demuxing/{wildcards.sample_name}_R2.fastq.gz {output.R2}
+        """
+
+
 rule demultiplex_samples:
     input:
-        "fastq/{sequencing_name}/samples/"
+        R1 = "fastq/{sequencing_name}/samples/{sample_name}_R1.fastq.gz",
+        R2 = "fastq/{sequencing_name}/samples/{sample_name}_R2.fastq.gz"
     output:
-        R1 = "fastq/{sequencing_name}/samples/fastp/{sequencing_name}_{sample_name}_R1.fq.gz",
-        R2 = "fastq/{sequencing_name}/samples/fastp/{sequencing_name}_{sample_name}_R2.fq.gz"
+        R1 = "fastq/{sequencing_name}/fastp/{sample_name}_R1.fastq.gz",
+        R2 = "fastq/{sequencing_name}/fastp/{sample_name}_R2.fastq.gz"
     shell:
         "touch {output.R1} {output.R2}"
