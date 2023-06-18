@@ -12,7 +12,8 @@ rule split_R1:
             )
         ),
     resources:
-        mem_mb=512,
+        mem_mb=256,
+    threads: 10
     params:
         out=lambda w: [
             f"-o fastq/{w.sequencing_name}/raw/R1_{i}-of-"
@@ -21,7 +22,7 @@ rule split_R1:
             for i in range(1, workflow._scatter["fastq_split"] + 1)
         ],
     message:
-        "Generating splitted R1 files."
+        "Generating multiple evenly-sized R1 chunks."
     shell:
         """
         fastqsplitter -i {input} {params.out} -t 1
@@ -38,7 +39,8 @@ rule split_R2:
             )
         ),
     resources:
-        mem_mb=512,
+        mem_mb=256,
+    threads: 10
     params:
         out=lambda w: [
             f"-o fastq/{w.sequencing_name}/raw/R2_{i}-of-"
@@ -47,7 +49,7 @@ rule split_R2:
             for i in range(1, workflow._scatter["fastq_split"] + 1)
         ],
     message:
-        "Generating splitted R2 files."
+        "Generating multiple evenly-sized R2 chunks."
     shell:
         """
         fastqsplitter -i {input} {params.out} -t 1
@@ -80,13 +82,30 @@ rule gather_demultiplex_fastq_split:
     output:
         R1_discarded="fastq/{sequencing_name}/demux/{sequencing_name}_R1_discarded.fastq.gz",
         R2_discarded="fastq/{sequencing_name}/demux/{sequencing_name}_R2_discarded.fastq.gz",
+        overview_log = "fastq/{sequencing_name}/demux/{sequencing_name}_qc_demultiplexing.log",
+        discarded_log = "fastq/{sequencing_name}/demux/{sequencing_name}_discarded_reads.log",
+    params:
+        path_demux_scatter=lambda w: "fastq/{sequencing_name}/demux_scatter/".format(
+            sequencing_name=w.sequencing_name
+        ),
     message:
         "Combining the scattered demultiplexed results."
     shell:
         """
-        touch {output.R1_discarded} {output.R2_discarded}
-        """
+        # Combine the sample-specific QC metrics.
+        python3.10 {workflow.basedir}/scripts/demultiplexing_samples_combine.py --path_log {output.overview_log} --path_scatter {params.path_demux_scatter}
 
+        # Combine the sample-specific demux-scattered files.
+        for sample in $(basename -a fastq/{wildcards.sequencing_name}/demux_scatter/*/*fastq.gz | cut -f1-3 -d_ | sort -u)
+        do
+            find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name $sample -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/$sample
+        done
+
+        for sample in $(basename -a fastq/{wildcards.sequencing_name}/demux_scatter/*/*_discarded_reads.log | cut -f1-3 -d_ | sort -u)
+        do
+            find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name $sample -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/$sample
+        done
+        """
 
 rule gather_combined_demultiplexed_samples:
     input:
@@ -99,5 +118,5 @@ rule gather_combined_demultiplexed_samples:
         "This should be a command for each sample, same discarded R1 and R2 files."
     shell:
         """
-        {input.R1} {input.R2} {output.R1} {output.R2}
+        echo "{input.R1} {input.R2} {output.R1} {output.R2}"
         """

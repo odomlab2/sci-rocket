@@ -31,7 +31,7 @@ species:
 settings:
   # Output additional messages for tracing/debugging purposes.
   verbose: True
-  # Number of splitted .fastq.gz files to generate per sample to parallize the demultiplexing per sequencing run.
+  # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
   scatter_fastq_split: 10
   fastp: "--qualified_quality_phred 15 --dont_eval_duplication --dup_calc_accuracy 3 --length_required 10"
   star: ""
