@@ -58,6 +58,11 @@ wildcard_constraints:
 # Workflow output. ----
 
 
+# Scatter-gather settings.
+scattergather:
+    fastq_split=config["settings"]["scatter_fastq_split"],
+
+
 # Set working directory to output directory.
 workdir: config["dir_output"]
 
@@ -65,7 +70,7 @@ workdir: config["dir_output"]
 rule DEMUX:
     input:
         lambda w: [
-            "fastq/{sequencing_name}/fastp/{sample_name}_R1.fastq.gz".format(
+            "fastq/{sequencing_name}/demux/{sequencing_name}_R1_discarded.fastq.gz".format(
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
                 experiment_name=experiment_name,
@@ -83,4 +88,6 @@ rule DEMUX:
 # Load rules ----
 
 
-include: "rules/step1_demultiplexing_fastq.smk"
+include: "rules/step1_bcl2fastq.smk"
+include: "rules/step2_demultiplexing_fastq.smk"
+include: "rules/step3_alignment.smk"

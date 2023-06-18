@@ -156,7 +156,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     qc["n_uncorrectable_rt"] = 0  # Total number of read-pairs with >1bp mismatch in RT.
 
     # Dictionary to store the number of (succesfull) read-pairs, no. and type of identified RT barcodes, total UMI and total unique UMI per sample.
-    samples_dict = {k: {"n_pairs_success": 0, "rt": {}, "umi_unique": set()} for k in samples_sequencing.sample_name}
+    samples_dict = {k: {"n_pairs_success": 0, "rt": {}} for k in samples_sequencing.sample_name}
 
     # Iterate over the read-pairs and search for the indexes within R1.
     # If not any index is not found, try to correct that index with 1bp mismatch and search again in respective dictionary.
@@ -305,7 +305,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
             # Keep track of correct read-pairs and RT + Ligation match per sample.
             samples_dict[sample]["n_pairs_success"] += 1
-            samples_dict[sample]["umi_unique"].add(sequence_umi)
 
             # Add the match_rt as key to the dictionary if it doesn't exist yet.
             if name_rt not in samples_dict[sample]["rt"]:
@@ -324,6 +323,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             else:
                 log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
+
+        if qc["n_pairs"] % 1000000 == 0:
+            break
+        
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     # Close the input file handlers.
@@ -362,7 +365,6 @@ def printLogging_reads(log, qc, samples_dict):
     log.info("Sample statistics:")
     for sample in samples_dict:
         log.info("  - %s: %d read-pairs", sample, samples_dict[sample]["n_pairs_success"])
-        log.info("     - %d unique UMIs", len(samples_dict[sample]["umi_unique"]))
         log.info("     - %d RT barcodes", len(samples_dict[sample]["rt"]))
         for rt in samples_dict[sample]["rt"]:
             log.info("        - %s: %d", rt, samples_dict[sample]["rt"][rt])
@@ -374,7 +376,7 @@ def init_logger():
     log.setLevel(logging.INFO)
 
     console = Console(force_terminal=True)
-    ch = RichHandler(show_path=False, console=console, show_time=True)
+    ch = RichHandler(show_path=False, console=Console(width=255), show_time=True)
     formatter = logging.Formatter("snakemake-sciseq: %(message)s")
     ch.setFormatter(formatter)
     log.addHandler(ch)
