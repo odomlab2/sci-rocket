@@ -15,9 +15,11 @@ rule split_R1:
         mem_mb=512,
     params:
         out=lambda w: [
-            f"-o fastq/{w.sequencing_name}/raw/R1_{i}-of-"+str(workflow._scatter["fastq_split"])+".fastq.gz"
+            f"-o fastq/{w.sequencing_name}/raw/R1_{i}-of-"
+            + str(workflow._scatter["fastq_split"])
+            + ".fastq.gz"
             for i in range(1, workflow._scatter["fastq_split"] + 1)
-        ]
+        ],
     message:
         "Generating splitted R1 files."
     shell:
@@ -39,9 +41,11 @@ rule split_R2:
         mem_mb=512,
     params:
         out=lambda w: [
-            f"-o fastq/{w.sequencing_name}/raw/R2_{i}-of-"+str(workflow._scatter["fastq_split"])+".fastq.gz"
+            f"-o fastq/{w.sequencing_name}/raw/R2_{i}-of-"
+            + str(workflow._scatter["fastq_split"])
+            + ".fastq.gz"
             for i in range(1, workflow._scatter["fastq_split"] + 1)
-        ]
+        ],
     message:
         "Generating splitted R2 files."
     shell:

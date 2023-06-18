@@ -9,6 +9,7 @@ import pandas as pd
 import pysam
 import gzip
 from Levenshtein import distance as levenshtein_distance
+import pickle
 
 
 def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str, verbose: bool = False):
@@ -141,6 +142,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # QC metrics.
     qc = {}
+    qc["sequencing_name"] = sequencing_name
+    qc["path_R1"] = path_r1
+    qc["path_R2"] = path_r2,
     qc["n_pairs"] = 0  # Total number of initial read-pairs.
     qc["n_pairs_success"] = 0  # Total number of read-pairs with correct RT, p5, p7 and ligation barcodes.
     qc["n_pairs_failure"] = 0  # Total number of discarded read-pairs due to various reason.
@@ -341,8 +345,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         for fh in dict_fh_out[sample].values():
             fh.close()
 
-    # Print final statistics.
-    printLogging_reads(log, qc, samples_dict)
+    # Save QC to pickle file.
+    with open(os.path.join(path_out, "qc.pickle"), "wb") as fh:
+        pickle.dump(qc, fh)
+        pickle.dump(samples_dict, fh)
 
     # Exit the program.
     sys.exit(0)
