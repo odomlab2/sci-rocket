@@ -12,7 +12,7 @@ from Levenshtein import distance as levenshtein_distance
 import pickle
 
 
-def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str, verbose: bool = False):
+def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str):
     """
     Performs demultiplexing of the raw fastq files based on the RT and ligation barcodes to produce sample-specific R1 and R2 files.
     The RT barcode is used to identify the sample and generate the sample-specific R1 and R2 files.
@@ -33,7 +33,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         path_r1 (str): Path to R1 fastq file.
         path_r2 (str): Path to R2 fastq file.
         path_out (str): Path to output directory.
-        verbose (bool, optional): Verbose output. Defaults to False.
 
     Returns:
         None
@@ -239,6 +238,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 name_ligation = dict_ligation[sequence_ligation_10nt]
                 sequence_ligation = sequence_ligation_10nt
             except KeyError:
+                sequence_ligation = sequence_ligation_10nt
                 name_ligation, sequence_ligation = find_closest_match(sequence_ligation, dict_ligation)
                 if name_ligation != None:
                     qc["n_corrected_ligation"] += 1
@@ -320,15 +320,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         # Print running statistics.
         if qc["n_pairs"] % 1000000 == 0:
-            if verbose:
-                printLogging_reads(log, qc, samples_dict)
-            else:
-                log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
+            log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
-
-        if qc["n_pairs"] % 1000000 == 0:
-            break
-        
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     # Close the input file handlers.
@@ -420,7 +413,6 @@ def main(arguments):
     parser.add_argument("--barcodes", required=True, type=str, help="(str) Path to barcodes file.")
     parser.add_argument("--out", required=True, type=str, help="(str) Path to output directory.")
 
-    parser.add_argument("--verbose", action="store_true", help="Print verbose output.")
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Display help and exit.")
 
     # Parse arguments.
@@ -440,7 +432,7 @@ def main(arguments):
         os.makedirs(args.out)
 
     # Run the program.
-    sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out, verbose=args.verbose)
+    sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out)
 
     log.info("Sample demultiplexing for %s is finished.".format(args.sequencing_name.name))
 

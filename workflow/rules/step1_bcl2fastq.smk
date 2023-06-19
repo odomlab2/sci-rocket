@@ -26,15 +26,13 @@ rule bcl2fastq:
     output:
         R1="fastq/{sequencing_name}/raw/Undetermined_S0_L001_R1_001.fastq.gz",
         R2="fastq/{sequencing_name}/raw/Undetermined_S0_L001_R2_001.fastq.gz",
-        R1_fake=temp("fastq/{sequencing_name}/raw/fake_S1_L001_R1_001.fastq.gz"),
-        R2_fake=temp("fastq/{sequencing_name}/raw/fake_S1_L001_R2_001.fastq.gz"),
     log:
         "logs/demux/bcl2fastq_{sequencing_name}.log",
     resources:
         mem_mb=10000,
     params:
         path_out="fastq/{sequencing_name}/raw/",
-    threads: 20
+    threads: 10
     shell:
         """
         bcl2fastq \
