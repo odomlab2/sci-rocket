@@ -32,7 +32,7 @@ rule bcl2fastq:
         mem_mb=10000,
     params:
         path_out="fastq/{sequencing_name}/raw/",
-    threads: 10
+    threads: 20
     shell:
         """
         bcl2fastq \

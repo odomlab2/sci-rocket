@@ -12,5 +12,7 @@ rule fastp:
         "Running fastp on the demultiplexed samples."
     shell:
         """
-        fastp -I {input.R2} -O {output.R2} --threads {threads} &> {log}
+        #fastp -I {input.R2} -O {output.R2} --threads {threads} &> {log}
+        mkdir -p fastp/{wildcards.sequencing_name}
+        touch {output.R2}
         """

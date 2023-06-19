@@ -95,16 +95,10 @@ rule gather_demultiplex_fastq_split:
         # Combine the sample-specific QC metrics.
         python3.10 {workflow.basedir}/scripts/demultiplexing_samples_combine.py --path_log {output.overview_log} --path_scatter {params.path_demux_scatter}
 
-        # Combine the sample-specific demux-scattered files.
-        for sample in $(basename -a fastq/{wildcards.sequencing_name}/demux_scatter/*/*fastq.gz | cut -f1-3 -d_ | sort -u)
-        do
-            find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name $sample -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/$sample
-        done
-
-        for sample in $(basename -a fastq/{wildcards.sequencing_name}/demux_scatter/*/*_discarded_reads.log | cut -f1-3 -d_ | sort -u)
-        do
-            find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name $sample -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/$sample
-        done
+        # Combine the sequencing-specific R1/R2 discarded reads and logs.
+        find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/{wildcards.sequencing_name}_R1_discarded.fastq.gz
+        find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R2_discarded.fastq.gz -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/{wildcards.sequencing_name}_R2_discarded.fastq.gz
+        find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_discarded_reads.log -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/{wildcards.sequencing_name}_discarded_reads.log
         """
 
 rule gather_combined_demultiplexed_samples:
@@ -118,5 +112,6 @@ rule gather_combined_demultiplexed_samples:
         "This should be a command for each sample, same discarded R1 and R2 files."
     shell:
         """
-        echo "{input.R1} {input.R2} {output.R1} {output.R2}"
+        find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R1.fastq.gz -print0 | xargs -0 cat > {output.R1}
+        find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R2.fastq.gz -print0 | xargs -0 cat > {output.R2}
         """
