@@ -8,7 +8,7 @@ from rich.logging import RichHandler
 import pandas as pd
 import pysam
 import gzip
-from Levenshtein import distance as levenshtein_distance
+from Levenshtein import distance as hamming
 import pickle
 
 from sanity_checks import retrieve_p5_barcodes, retrieve_p7_barcodes
@@ -128,18 +128,17 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-    def find_closest_match(sequence, dict):
-        # Calculate the Levenshtein distance between sequence and all keys in dict.
-        distances = {k: levenshtein_distance(sequence, k) for k in dict.keys()}
-        distances = {k: v for k, v in distances.items() if v <= 1}
+    def find_closest_match(sequence, comparison):
+        # Calculate the hamming distance between sequence and all keys in dict.
+        distances = {k: hamming(sequence, k, score_cutoff=1) for k in comparison.keys()}
+        distances = {k: v for k, v in distances.items() if v == 1}
 
         # If there is only one key with a distance of 1, return the name and sequence.
         if len(distances) == 1:
             sequence = next(iter(distances))
-            name = dict[sequence]
-            return name, sequence
+            return comparison[sequence]
         else:
-            return None, None
+            return None
 
     # QC metrics.
     qc = {}
@@ -205,7 +204,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         try:
             name_p5 = dict_p5[sequence_p5_raw]
         except KeyError:
-            name_p5, sequence_p5 = find_closest_match(sequence_p5_raw, dict_p5)
+            name_p5 = find_closest_match(sequence_p5_raw, dict_p5)
             if name_p5 != None:
                 qc["n_corrected_p5"] += 1
             else:
@@ -213,7 +212,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         try:
             name_p7 = dict_p7[sequence_p7_raw]
         except KeyError:
-            name_p7, sequence_p7 = find_closest_match(sequence_p7_raw, dict_p7)
+            name_p7 = find_closest_match(sequence_p7_raw, dict_p7)
             if name_p7 != None:
                 qc["n_corrected_p7"] += 1
             else:
@@ -240,7 +239,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 sequence_ligation = sequence_ligation_10nt
             except KeyError:
                 sequence_ligation = sequence_ligation_10nt
-                name_ligation, sequence_ligation = find_closest_match(sequence_ligation, dict_ligation)
+                name_ligation = find_closest_match(sequence_ligation, dict_ligation)
                 if name_ligation != None:
                     qc["n_corrected_ligation"] += 1
                 else:
@@ -272,7 +271,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         try:
             name_rt = dict_rt[sequence_rt_raw]
         except KeyError:
-            name_rt, sequence_rt = find_closest_match(sequence_rt_raw, dict_rt)
+            name_rt = find_closest_match(sequence_rt_raw, dict_rt)
             if name_rt != None:
                 qc["n_corrected_rt"] += 1
             else:
@@ -296,8 +295,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                     )
                 )
             )
-            _ = fh_discarded_r1.write(str(read1) + "\n")
-            _ = fh_discarded_r2.write(str(read2) + "\n")
+            fh_discarded_r1.write(str(read1) + "\n")
+            fh_discarded_r2.write(str(read2) + "\n")
 
             qc["n_pairs_failure"] += 1
 
@@ -311,13 +310,13 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             read2.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read2.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
 
             # Write the read-pair to the correct sample file.
-            _ = dict_fh_out[sample]["R1"].write(str(read1) + "\n")
-            _ = dict_fh_out[sample]["R2"].write(str(read2) + "\n")
+            dict_fh_out[sample]["R1"].write(str(read1) + "\n")
+            dict_fh_out[sample]["R2"].write(str(read2) + "\n")
 
             # Count as a successful read-pair.
             qc["n_pairs_success"] += 1
 
-            # Keep track of correct read-pairs and RT + Ligation match per sample.
+            # Keep track of correct read-pairs per sample.
             samples_dict[sample]["n_pairs_success"] += 1
 
             # Add the match_rt as key to the dictionary if it doesn't exist yet.
@@ -352,9 +351,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     with open(os.path.join(path_out, "qc.pickle"), "wb") as fh:
         pickle.dump(qc, fh)
         pickle.dump(samples_dict, fh)
-
-    # Exit the program.
-    sys.exit(0)
 
 
 def printLogging_reads(log, qc, samples_dict):
@@ -456,3 +452,23 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+
+# import cProfile
+# args = parser.parse_args(
+#     [
+#         "--sequencing_name",
+#         "230609",
+#         "--samples",
+#         "~/jvanriet/git/snakemake-sciseq/workflow/examples/example_samplesheet.tsv",
+#         "--barcodes",
+#         "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv",
+#         "--r1",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/fastq/230609/raw/R1_1-of-20.fastq.gz",
+#         "--r2",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/fastq/230609/raw/R2_1-of-20.fastq.gz",
+#         "--out",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/fastq/230609/demux_scatter/1-of-20",
+#     ]
+# )
+# cProfile.run('sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out)')
