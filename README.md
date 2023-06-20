@@ -1,8 +1,8 @@
-# snakemake-sciseq
+# snakemake-scirocket
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Github issues](https://img.shields.io/github/issues/odomlab2/snakemake-sciseq)](https://img.shields.io/github/issues/odomlab2/snakemake-sciseq)
 
-> **snakemake-sciseq** is a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow which performs processing of sci-RNA-Seq3 data.
+> **snakemake-scirocket** is a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow which performs processing of sci-RNA-Seq3 data.
 
 ## Pipeline summary
 
@@ -62,13 +62,25 @@ The workflow is configured using a `config.yaml` file. See `workflow/config.yaml
 
 The workflow requires a sample sheet (.tsv) with at least the following required columns:
 
-- **sequencing_name**: Sequencing sample (e.g. AS-123456), used to determine respective .fastq file(s) and from which sample-specific BAM file(s) are generated.
+- **path_bcl**: Path to BCL files.
+- **sequencing_name**: Sequencing name (e.g., run123), used to store sequencing-specific files.
+- **experiment_name**: Experiment name (e.g, experiment_x).
+- **P5**: PCR (p5) index (e.g. A01:H01) used to identify the sample during demultiplexing.
+- **P7**: PCR (p7) index (e.g. G01:G12) used to identify the sample during demultiplexing.
 - **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
-- **sample_name**: Name of the RT-barcoded sample.
+- **sample_name**: Name of the demultiplexed sample.
 - **species**: Reference species (e.g. mouse or human).
 
 > **Note**
 >
+> - **P5** and **P7** are used to denote the PCR indexes belonging to a particular sample. The indexes are translated to all relevant combinations.
+>   - To specify one or multiple p5/p7 strips, use the following format:
+>     - p5 (1 strips): `A01:H01`
+>     - p5 (1.5 strips): `A01:H01,A02:D02`
+>     - p5 (2 strips): `A01:H01,A02:H02`
+>     - p7 (1 strip): `G01:G12`
+>     - p7 (1.5 strips): `G01:G12,H01:H06`
+>     - p7 (2 strips): `G01:G12,H01:H12`
 > - **species** should be present in the `config.yaml` file with their respective genome sequences (.fa) and gene-annotations (.gtf) used to generate mapping indexes.
 
 ### Barcode design
@@ -115,18 +127,19 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
 
 For sample-demultiplexing, the following steps are performed:
 
-1. Extracts ligation and RT barcodes from read 1 (R1).
+1. Extracts p5, p7 indexes from the read-name of R1 and ligation and RT barcodes from sequence of read 1 (R1).
 
    - The following scheme is used for paired-end Illumina NovaSeq:
 
    ```text
      Example R1:
+     @READNAME 1:N:0:<p5>+<p7>
      ACTTGATTGTGAGAGCTCCGTGAAAGGTTAGCAT
 
      First 9 or 10nt:  Ligation barcode
      Next 8nt:    UMI
      Next 6nt:    Primer
-     Last 10nt:   RT Barcode (sample-specific)
+     Last 10nt:   RT Barcode
 
      Anatomy of R1:
      |ACTTGATTGT| |GAGAGCTC| |CGTGAA| |AGGTTAGCAT|
@@ -134,8 +147,8 @@ For sample-demultiplexing, the following steps are performed:
 
    ```
 
-2. If no match, correct RT barcode to nearest match (with max. 1nt difference). If multiple close matches, discard read-pair.
-3. Set the RT, ligation barcode and UMI as read-name in read 2 (R2).
+2. If no match, corrects p5, p7, ligation and/or RT barcode to nearest match (with max. 1nt difference). If multiple close matches, discard read-pair.
+3. Set the p5, p7, RT, ligation barcode and UMI as read-name in read 2 (R2): `@READNAME|P5-<p5>-P7-<p7>|<ligation>|<rt>_<UMI>`
 
 > **Note**  
 > Read-pairs with unmatched RT barcodes are discarded into separate R1/R2 fastq.gz files.

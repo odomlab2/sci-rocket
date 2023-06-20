@@ -82,8 +82,8 @@ rule gather_demultiplex_fastq_split:
     output:
         R1_discarded="fastq/{sequencing_name}/demux/{sequencing_name}_R1_discarded.fastq.gz",
         R2_discarded="fastq/{sequencing_name}/demux/{sequencing_name}_R2_discarded.fastq.gz",
-        overview_log = "fastq/{sequencing_name}/demux/{sequencing_name}_qc_demultiplexing.log",
-        discarded_log = "fastq/{sequencing_name}/demux/{sequencing_name}_discarded_reads.log",
+        overview_log="fastq/{sequencing_name}/demux/{sequencing_name}_qc_demultiplexing.log",
+        discarded_log="fastq/{sequencing_name}/demux/{sequencing_name}_discarded_reads.log",
     params:
         path_demux_scatter=lambda w: "fastq/{sequencing_name}/demux_scatter/".format(
             sequencing_name=w.sequencing_name
@@ -100,6 +100,7 @@ rule gather_demultiplex_fastq_split:
         find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R2_discarded.fastq.gz -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/{wildcards.sequencing_name}_R2_discarded.fastq.gz
         find ./fastq/{wildcards.sequencing_name}/demux_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_discarded_reads.log -print0 | xargs -0 cat > fastq/{wildcards.sequencing_name}/demux/{wildcards.sequencing_name}_discarded_reads.log
         """
+
 
 rule gather_combined_demultiplexed_samples:
     input:
