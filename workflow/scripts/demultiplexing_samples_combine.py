@@ -51,19 +51,6 @@ def combine_pickles(path_scatter, path_log):
 
     # Print the QC to a JSON.
     if qc != None and sample_dict != None:
-
-        # Sort the uncorrectable barcodes by frequency.
-        qc["uncorrectable_p5"] = {k: v for k, v in sorted(qc["uncorrectable_p5"].items(), key=lambda item: item[1], reverse=True)}
-        qc["uncorrectable_p7"] = {k: v for k, v in sorted(qc["uncorrectable_p7"].items(), key=lambda item: item[1], reverse=True)}
-        qc["uncorrectable_ligation"] = {k: v for k, v in sorted(qc["uncorrectable_ligation"].items(), key=lambda item: item[1], reverse=True)}
-        qc["uncorrectable_rt"] = {k: v for k, v in sorted(qc["uncorrectable_rt"].items(), key=lambda item: item[1], reverse=True)}
-
-        # Keep the top 50 uncorrectable barcodes.
-        qc["uncorrectable_p5"] = dict(list(qc["uncorrectable_p5"].items())[:50])
-        qc["uncorrectable_p7"] = dict(list(qc["uncorrectable_p7"].items())[:50])
-        qc["uncorrectable_ligation"] = dict(list(qc["uncorrectable_ligation"].items())[:50])
-        qc["uncorrectable_rt"] = dict(list(qc["uncorrectable_rt"].items())[:50])
-
         qc["sample_dict"] = sample_dict
 
         # Create path if it does not exist

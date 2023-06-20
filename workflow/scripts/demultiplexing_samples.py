@@ -97,7 +97,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     log_discarded.propagate = False
 
     # Header of discard log.
-    log_discarded.info("Read no.\tRead name\tp5\tp7\tLigation\tRT\tUMI")
+    log_discarded.info("read_name\tp5\tp7\tligation\trt\tumi")
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -287,7 +287,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             log_discarded.info(
                 "\t".join(
                     (
-                        str(qc["n_pairs"]),
                         str(read1.name or "?"),
                         str(name_p5 or sequence_p5_raw),
                         str(name_p7 or sequence_p7_raw),
@@ -334,9 +333,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # Print running statistics.
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
-
-        if qc["n_pairs"] == 1000000:
-            break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
