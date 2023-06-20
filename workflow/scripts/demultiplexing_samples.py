@@ -11,6 +11,8 @@ import gzip
 from Levenshtein import distance as levenshtein_distance
 import pickle
 
+from sanity_checks import retrieve_p5_barcodes, retrieve_p7_barcodes
+
 
 def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str):
     """
@@ -28,7 +30,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     Args:
         log (logging.Logger): Logger.
         sequencing_name (str): Sequencing sample.
-        samples (pd.DataFrame): Sample sheet.
+        samples (pd.DataFrame): Sample sheet of the samples in the sequencing run.
         barcodes (pd.DataFrame): Barcode sheet.
         path_r1 (str): Path to R1 fastq file.
         path_r2 (str): Path to R2 fastq file.
@@ -36,8 +38,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     Returns:
         None
-
-    ! Decrease the p5/p7 barcode dict size by removing the barcodes that are not used in the sequencing run.
     """
 
     log.info("Starting sample-based demultiplexing of %s:\n(R1) %s\n(R2) %s", sequencing_name, path_r1, path_r2)
@@ -69,11 +69,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # Get the unique RT barcode and samples contained in the sequencing run.
     # Generate a dictionary with the RT barcodes as keys and the sample names as values.
-    samples_sequencing = samples.query("sequencing_name == @sequencing_name")
     dict_rt_barcodes = dict(zip(samples["barcode_rt"], samples["sample_name"]))
 
     # Open file handlers for all sample-specific output files.
-    dict_fh_out = {k: {} for k in set(samples_sequencing.sample_name)}
+    dict_fh_out = {k: {} for k in set(samples.sample_name)}
 
     for sample in dict_fh_out:
         # Generate the output paths.
@@ -111,9 +110,12 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     rt_barcodes_sequencing = samples.query("sequencing_name == @sequencing_name")["barcode_rt"].unique()
     barcodes_rt = barcodes.query("type == 'rt' & barcode in @rt_barcodes_sequencing")
 
-    # Retrieve the p5 and p7 barcodes used in this sequencing run (based on all experiments).
-    barcodes_p5 = barcodes.query("type == 'p5'")
-    barcodes_p7 = barcodes.query("type == 'p7'")
+    # Retrieve the p5 and p7 barcodes used in this sequencing run.
+    indexes_p5 = retrieve_p5_barcodes(log, samples["p5"].unique(), barcodes.query("type == 'p5'")["barcode"].unique())
+    barcodes_p5 = barcodes.query("type == 'p5' & barcode in @indexes_p5")
+
+    indexes_p7 = retrieve_p7_barcodes(log, samples["p7"].unique(), barcodes.query("type == 'p7'")["barcode"].unique())
+    barcodes_p7 = barcodes.query("type == 'p7' & barcode in @indexes_p7")
 
     # Generate dicts for fast lookup.
     dict_rt = dict(zip(barcodes_rt["sequence"], barcodes_rt["barcode"]))
@@ -157,7 +159,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     qc["n_uncorrectable_rt"] = 0  # Total number of read-pairs with >1bp mismatch in RT.
 
     # Dictionary to store the number of (succesfull) read-pairs, no. and type of identified RT barcodes, total UMI and total unique UMI per sample.
-    samples_dict = {k: {"n_pairs_success": 0, "rt": {}} for k in samples_sequencing.sample_name}
+    samples_dict = {k: {"n_pairs_success": 0, "rt": {}} for k in samples.sample_name}
 
     # Iterate over the read-pairs and search for the indexes within R1.
     # If not any index is not found, try to correct that index with 1bp mismatch and search again in respective dictionary.
@@ -198,21 +200,20 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         # region Retrieve the p5 and p7 indexes -------------------------------------------------------------------------------------------------
 
-        sequence_p7, sequence_p5 = read1.comment.split(":")[-1].split("+")
+        sequence_p7_raw, sequence_p5_raw = read1.comment.split(":")[-1].split("+")
 
         try:
-            name_p5 = dict_p5[sequence_p5]
+            name_p5 = dict_p5[sequence_p5_raw]
         except KeyError:
-            name_p5, sequence_p5 = find_closest_match(sequence_p5, dict_p5)
+            name_p5, sequence_p5 = find_closest_match(sequence_p5_raw, dict_p5)
             if name_p5 != None:
                 qc["n_corrected_p5"] += 1
             else:
                 qc["n_uncorrectable_p5"] += 1
-
         try:
-            name_p7 = dict_p7[sequence_p7]
+            name_p7 = dict_p7[sequence_p7_raw]
         except KeyError:
-            name_p7, sequence_p7 = find_closest_match(sequence_p7, dict_p7)
+            name_p7, sequence_p7 = find_closest_match(sequence_p7_raw, dict_p7)
             if name_p7 != None:
                 qc["n_corrected_p7"] += 1
             else:
@@ -253,13 +254,13 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # Check length of the ligation barcode to determine the location of the other barcodes.
         if length_ligation == 10:
             # Retrieve the RT barcode from R1 (last 10 bp).
-            sequence_rt = read1.sequence[-10:]
+            sequence_rt_raw = read1.sequence[-10:]
 
             # Retrieve the UMI from R1 (next 8 bp after the ligation barcode).
             sequence_umi = read1.sequence[10:18]
         else:
             # Retrieve the RT barcode from R1 (last 10 bp, minus one).
-            sequence_rt = read1.sequence[-11:-1]
+            sequence_rt_raw = read1.sequence[-11:-1]
 
             # Retrieve the UMI from R1 (next 8 bp after the ligation barcode).
             sequence_umi = read1.sequence[9:17]
@@ -269,9 +270,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # region Lookup the RT barcode ----------------------------------------------------------------------------------------------------------
 
         try:
-            name_rt = dict_rt[sequence_rt]
+            name_rt = dict_rt[sequence_rt_raw]
         except KeyError:
-            name_rt, sequence_rt = find_closest_match(sequence_rt, dict_rt)
+            name_rt, sequence_rt = find_closest_match(sequence_rt_raw, dict_rt)
             if name_rt != None:
                 qc["n_corrected_rt"] += 1
             else:
@@ -283,9 +284,21 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         # If p5, p7, ligation or RT barcode could not be found, discard the read-pair.
         if name_p5 == None or name_p7 == None or name_ligation == None or name_rt == None:
-            log_discarded.info("\t".join((str(qc["n_pairs"]), str(read1.name or "?"), str(name_p5 or "?"), str(name_p7 or "?"), str(name_ligation or "?"), str(name_rt or "?"), sequence_umi)))
-            fh_discarded_r1.write(str(read1) + "\n")
-            fh_discarded_r2.write(str(read2) + "\n")
+            log_discarded.info(
+                "\t".join(
+                    (
+                        str(qc["n_pairs"]),
+                        str(read1.name or "?"),
+                        str(name_p5 or sequence_p5_raw),
+                        str(name_p7 or sequence_p7_raw),
+                        str(name_ligation or sequence_ligation_10nt),
+                        str(name_rt or sequence_rt_raw),
+                        sequence_umi,
+                    )
+                )
+            )
+            _ = fh_discarded_r1.write(str(read1) + "\n")
+            _ = fh_discarded_r2.write(str(read2) + "\n")
 
             qc["n_pairs_failure"] += 1
 
@@ -299,8 +312,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             read2.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read2.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
 
             # Write the read-pair to the correct sample file.
-            dict_fh_out[sample]["R1"].write(str(read1) + "\n")
-            dict_fh_out[sample]["R2"].write(str(read2) + "\n")
+            _ = dict_fh_out[sample]["R1"].write(str(read1) + "\n")
+            _ = dict_fh_out[sample]["R2"].write(str(read2) + "\n")
 
             # Count as a successful read-pair.
             qc["n_pairs_success"] += 1
@@ -321,6 +334,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # Print running statistics.
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
+
+        if qc["n_pairs"] == 1000000:
+            break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -387,7 +403,7 @@ def init_logger():
 def main(arguments):
     description = """
     Performs 2 levels of demultiplexing on R1/R2.fastq(.gz) files generated by sci-RNA-seq v3 protocol, based on:
-        1) well-start and well-end (experiment), 2) RT-barcode (sample).
+        1) p5/p7 PCR index, 2) RT-barcode (sample).
     
     It requires that the p5 and p7 barcodes are present in the read headers of the .fastq files (bcl2fastq):
     @<read name> 1:N:0:ACGGNNGGCC+NTCATGGNGC
@@ -422,10 +438,11 @@ def main(arguments):
     log = init_logger()
 
     # Open sample-sheet.
-    samples = pd.read_csv(args.samples, sep="\t", index_col=0, dtype=str)
+    samples = pd.read_csv(args.samples, sep="\t", dtype=str)
+    samples = samples.query("sequencing_name == @args.sequencing_name")
 
     # Open barcode-sheet.
-    barcodes = pd.read_csv(args.barcodes, sep="\t", index_col=0)
+    barcodes = pd.read_csv(args.barcodes, sep="\t", dtype=str)
 
     # Generate output directory if not exists.
     if not os.path.exists(args.out):

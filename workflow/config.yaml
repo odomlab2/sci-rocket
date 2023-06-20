@@ -2,7 +2,7 @@
 # --- Required parameters ----#
 
 # Path to sample sheet; see README for details.
-path_samples: "~/jvanriet/git/snakemake-sciseq/workflow/examples/sx42_samplesheet.csv"
+path_samples: "~/jvanriet/git/snakemake-sciseq/workflow/examples/example_samplesheet.tsv"
 
 # Path to barcode files for demultiplexing. See examples/barcodes.tsv for an example and README for details.
 path_barcodes: "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv"

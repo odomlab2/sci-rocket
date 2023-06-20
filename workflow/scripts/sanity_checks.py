@@ -1,5 +1,110 @@
-from collections import Counter
 import pandas as pd
+
+
+def retrieve_p5_barcodes(log, p5, barcodes_p5):
+    """
+    Retrieves all p5 barcodes which are defined by the p5 start/end indexes.
+
+    Parameters:
+        log (logging.Logger): Logger object.
+        p5 (list): List of all unique p5 start/end coordinates (e.g., A09:H09,B09:H09).
+        barcodes_p5 (set): Set of all p5 names (e.g., A09, A10, A11, ..., H09).
+
+    Returns:
+        list or booleaan: List of p5 indexes (e.g., A09, A10, A11, ..., H09). False if the sanity check failed.
+    """
+
+    # Split the start and end indexes in case of multiple strips (, separated; e.g., A09:H09,B09:H09).
+    p5 = [i.split(",") for i in p5]
+
+    # Split the start/end indexes or p5 indexes (: separated).
+    p5 = [[j.split(":") for j in i] for i in p5]
+
+    # Retrieve the unique p5 indexes.
+    p5 = list(set([tuple(sorted(j)) for i in p5 for j in i]))
+    p5_indexes = []
+
+    # Per p5 index, check if the start index is smaller than the end index.
+    for i in p5:
+        if i[0] > i[1]:
+            log.error("Sanity check (Sample sheet) - P5 start index is larger than the end index: {} > {}".format(i[0], i[1]))
+            return False
+        else:
+            # Generate the p5 indexes in which the first letter is variable and the second number is constant.
+            letter_start = i[0][0]
+            letter_end = i[1][0]
+            number_start = int(i[0][1:])
+            number_end = int(i[1][1:])
+
+            if number_start != number_end:
+                log.error("Sanity check (Sample sheet) - P5 start and end index are not on the same row (should be {}: {} and {}".format(number_start, i[0], i[1]))
+                return False
+
+            # Add a zero to the number if it is a single digit.
+            if number_start < 10:
+                number_start = "0{}".format(number_start)
+
+            # Generate the p5 indexes.
+            p5_indexes += ["{}{}".format(letter, number_start) for letter in list(map(chr, range(ord(letter_start), ord(letter_end) + 1)))]
+
+    # Check if the p5 indexes are defined in the barcodes file.
+    if not set(p5_indexes).issubset(barcodes_p5):
+        log.error("Sanity check (Sample sheet) - Contains p5 indexes which are not defined in the barcodes file: {}".format(", ".join(set(p5_indexes).difference(barcodes_p5))))
+        return False
+
+    # Return the p5 indexes if all checks passed.
+    return p5_indexes
+
+
+def retrieve_p7_barcodes(log, p7, barcodes_p7):
+    """
+    Retrieves all p7 barcodes which are defined by the p7 start/end indexes.
+
+    Parameters:
+        log (logging.Logger): Logger object.
+        p5 (list): List of all unique p7 start/end coordinates (e.g., A01:A12,B01:B12).
+        barcodes_p5 (set): Set of all p5 names (e.g., A01, B02 etc)
+
+    Returns:
+        list or booleaan: List of p7 indexes (e.g., A09, A10, A11, ..., H09). False if the sanity check failed.
+    """
+
+    # Split the start and end indexes in case of multiple strips (, separated; e.g., A01:A12,B01:B12).
+    p7 = [i.split(",") for i in p7]
+
+    # Split the start/end indexes or p5 indexes (: separated).
+    p7 = [[j.split(":") for j in i] for i in p7]
+
+    # Retrieve the unique p5 indexes.
+    p7 = list(set([tuple(sorted(j)) for i in p7 for j in i]))
+    p7_indexes = []
+
+    # Per p7 index, check if the start index is smaller than the end index.
+    for i in p7:
+        if i[0] > i[1]:
+            log.error("Sanity check (Sample sheet) - P7 start index is larger than the end index: {} > {}".format(i[0], i[1]))
+            return False
+        else:
+            # Generate the p7 indexes in which the first letter is constant and the second number is variable.
+            letter_start = i[0][0]
+            letter_end = i[1][0]
+            number_start = int(i[0][1:])
+            number_end = int(i[1][1:])
+
+            if letter_start != letter_end:
+                log.error("Sanity check (Sample sheet) - P7 start and end index are not on the same row (should be {}: {} and {}".format(letter_start, i[0], i[1]))
+                return False
+
+            # Generate the p7 indexes.
+            p7_indexes = ["{}{}".format(letter_start, "0{}".format(number) if number < 10 else number) for number in range(number_start, number_end + 1)]
+
+    # Check if the p5 indexes are defined in the barcodes file.
+    if not set(p7_indexes).issubset(barcodes_p7):
+        log.error("Sanity check (Sample sheet) - Contains p7 indexes which are not defined in the barcodes file: {}".format(", ".join(set(p7_indexes).difference(barcodes_p7))))
+        return False
+
+    # Return the p7 indexes if all checks passed.
+    return p7_indexes
 
 
 def sanity_samples(log, samples, barcodes, config):
@@ -15,9 +120,6 @@ def sanity_samples(log, samples, barcodes, config):
     Returns:
         bool: True if the sample sheet is valid, False otherwise.
     """
-
-    samples = pd.read_csv("~/jvanriet/git/snakemake-sciseq/workflow/examples/example_samplesheet.tsv", sep="\t") 
-
     log.info("Checking sanity: Sample sheet.")
 
     # Check if the sample sheet is empty.
@@ -26,7 +128,7 @@ def sanity_samples(log, samples, barcodes, config):
         return False
 
     # Check if the sample sheet contains the required columns.
-    required_columns = set(["path_bcl", "sequencing_name", "experiment_name", "well_start", "well_end", "barcode_rt", "sample_name", "species"])
+    required_columns = set(["path_bcl", "sequencing_name", "experiment_name", "p5", "p7", "barcode_rt", "sample_name", "species"])
     if not required_columns.issubset(samples.columns):
         log.error("Sanity check (Sample sheet) - Missing required column(s): {}".format(", ".join(required_columns.difference(samples.columns))))
         return False
@@ -53,54 +155,21 @@ def sanity_samples(log, samples, barcodes, config):
 
     # Check if the sample sheet contains RT barcodes which are not defined in the config.
     if not set(samples["barcode_rt"].unique()).issubset(barcodes_rt):
-        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the config: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
+        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined barcodes file: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
         return False
 
-    # region Sanity of 96-well coordinates --------------------------------------------------------------------------------
-    # Check if well_start and well_end fall within 96-well plate (between A:01 and H:12)
-    if not samples["well_start"].str.contains("^[A-H][0-1][0-2]$").all():
-        log.error(
-            "Sanity check (Sample sheet) - Well start is not a valid 96-well plate well coordinate (between A01 and H12): {}".format(
-                ", ".join(samples[~samples["well_start"].str.contains("^[A-H][0-1][0-2]$")]["well_start"].unique())
-            )
-        )
+    # region Sanity of p5/p7 indexes ---------------------------------------------------------------
+
+    barcodes_p5 = barcodes.query("type == 'p5'")["barcode"].unique()
+    indexes_p5 = retrieve_p5_barcodes(log, samples["p5"].unique(), barcodes_p5)
+
+    if not indexes_p5:
         return False
 
-    if not samples["well_end"].str.contains("^[A-H][0-1][0-2]$").all():
-        log.error(
-            "Sanity check (Sample sheet) - Well end is not a valid 96-well plate well coordinate (between A:01 and H:12): {}".format(
-                ", ".join(samples[~samples["well_end"].str.contains("^[A-H][0-1][0-2]$")]["well_end"].unique())
-            )
-        )
-        return False
+    barcodes_p7 = barcodes.query("type == 'p7'")["barcode"].unique()
+    indexes_p7 = retrieve_p7_barcodes(log, samples["p7"].unique(), barcodes_p7)
 
-    # Check if well_start and well_end are in the correct order.
-    if not (samples["well_start"] <= samples["well_end"]).all():
-        log.error("Sanity check (Sample sheet) - Well start is not smaller than well end: {}".format(", ".join(samples[samples["well_start"] > samples["well_end"]]["sample_name"].unique())))
-        return False
-
-    # Generate a list of all 96-wells combinations (A01 to H12).
-    wells = ["{}{}".format(chr(65 + i), "{:02d}".format(j)) for i in range(8) for j in range(1, 13)]
-
-    # Generate a list of samples + barcode_rt per well.
-    wells = pd.DataFrame(wells, columns=["well"])
-
-    # Generate a list of barcodes_rt per well, including duplicates.
-    wells["barcode_rt"] = wells["well"].apply(lambda x: samples[(samples["well_start"] <= x) & (samples["well_end"] >= x)]["barcode_rt"].values.tolist())
-
-    # Identify duplicate RT barcodes per well.
-    wells["barcode_rt_duplicates"] = wells["barcode_rt"].apply(lambda x: [item for item, count in Counter(x).items() if count > 1])
-
-    # Check if the sample sheet contains duplicate RT barcodes per well.
-    if wells["barcode_rt_duplicates"].apply(lambda x: len(x) > 0).any():
-        # Report the duplicate RT barcodes per well and add the sample_name(s) of the duplicate RT barcodes.
-        for _, row in wells[wells["barcode_rt_duplicates"].apply(lambda x: len(x) > 0)].iterrows():
-            log.error(
-                "Sanity check (Sample sheet) - Contains duplicate RT barcodes in the same 96-well for different samples: {} ({} - {})".format(
-                    row["well"], ",".join(row["barcode_rt_duplicates"]), ", ".join(samples[samples["barcode_rt"].isin(row["barcode_rt_duplicates"])]["sample_name"].unique())
-                )
-            )
-
+    if not indexes_p7:
         return False
 
     # endregion ----------------------------------------------------------------------------------------------------------------

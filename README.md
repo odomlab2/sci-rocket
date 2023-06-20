@@ -17,7 +17,7 @@
 - Check for sanity of provided barcodes and sample-sheet.
 - Converts BCL files to R1/R2.fastq.gz files with p5 and p7 indexes in header (**bcl2fastq**).
 - Splits R1/R2 fastq.gz files into smaller (evenly-sized) chunks for parallization (**fastqsplitter**).
-- Demultiplexes (paired-end) sequencing using the supplied sample-specific RT and ligation barcodes.
+- Demultiplexes (paired-end) sequencing using the supplied sample-specific barcodes.
   - Finds exact or nearest match for p5, p7, ligation and/or RT barcode (<=1 Levenshtein distance with only single match).
   - Generates sample-specific .fastq.gz file(s) with correct read-name for R2.
   - Read-pairs with no p5, p7, ligation and/or RT barcode match are discarded into separate .fastq.gz files.
@@ -114,9 +114,6 @@ The major output files are the following:
 - **Sample-specific BAM file(s)**:
   - `alignment/{reference}/{sample}_sortedByCoord.bam`
 
-> **Note**  
-> {sample} is based on **sample** in the sample sheet.
-
 ## Methodology
 
 ### Demultiplexing scheme
@@ -133,7 +130,7 @@ For sample-demultiplexing, the following steps are performed:
 
    ```text
      Example R1:
-     @READNAME 1:N:0:<p5>+<p7>
+     @READNAME 1:N:0:<p7>+<p5>
      ACTTGATTGTGAGAGCTCCGTGAAAGGTTAGCAT
 
      First 9 or 10nt:  Ligation barcode
