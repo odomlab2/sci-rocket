@@ -443,11 +443,6 @@ def main(arguments):
     # Run the program.
     sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out)
 
-    log.info("Sample demultiplexing for %s is finished.".format(args.sequencing_name.name))
-
-    # Close loggers.
-    logging.shutdown()
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])
