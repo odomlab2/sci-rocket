@@ -1,0 +1,26 @@
+{
+  "__default__" :
+  {
+    "queue": "long"
+  },
+  "bcl2fastq" :
+  {
+    "queue": "medium"
+  },
+  "split_R1" :
+  {
+    "queue": "medium"
+  },
+  "split_R2" :
+  {
+    "queue": "medium"
+  },
+  "gather_demultiplex_fastq_split" :
+  {
+    "queue": "medium"
+  },
+  "gather_combined_demultiplexed_samples" :
+  {
+    "queue": "medium"
+  }
+}
