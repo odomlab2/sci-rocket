@@ -88,16 +88,17 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             log.error("Could not generate the sample-specific demultiplexed output files, please check the paths:\n(R1) %s\n(R2) %s", path_r1_out, path_r2_out)
             sys.exit(1)
 
-    # Open a second file logger to write the info for the discarded reads.
-    path_log_discarded = os.path.join(path_out, sequencing_name + "_discarded_reads.log")
-    log_discarded = logging.getLogger("log_discarded")
-    log_discarded.setLevel(logging.INFO)
-    fh_log_discarded = logging.FileHandler(path_log_discarded)
-    log_discarded.addHandler(fh_log_discarded)
-    log_discarded.propagate = False
+    # Open a file handler for the discarded reads log (gzip).
+    path_log_discarded = os.path.join(path_out, "log_" + sequencing_name + "_discarded_reads.tsv.gz")
+
+    try:
+        fh_discarded_log = gzip.open(path_log_discarded, "wt")
+    except OSError:
+        log.error("Could not generate the discarded reads log file, please check the path:\n%s", path_log_discarded)
+        sys.exit(1)
 
     # Header of discard log.
-    log_discarded.info("read_name\tp5\tp7\tligation\trt\tumi")
+    fh_discarded_log.write("read_name\tp5\tp7\tligation\trt\tumi\n")
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -283,7 +284,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         # If p5, p7, ligation or RT barcode could not be found, discard the read-pair.
         if name_p5 == None or name_p7 == None or name_ligation == None or name_rt == None:
-            log_discarded.info(
+            fh_discarded_log.write(
                 "\t".join(
                     (
                         str(read1.name or "?"),
@@ -333,6 +334,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
+        if qc["n_pairs"] == 100000:
+            break
+
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     # Close the input file handlers.
@@ -342,6 +346,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     # Close the output file handlers.
     fh_discarded_r1.close()
     fh_discarded_r2.close()
+    fh_discarded_log.close()
 
     for sample in dict_fh_out:
         for fh in dict_fh_out[sample].values():

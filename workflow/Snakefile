@@ -70,17 +70,13 @@ workdir: config["dir_output"]
 rule DEMUX:
     input:
         lambda w: [
-            "fastp/{sequencing_name}/{sample_name}_R2_fastq.gz".format(
+            "{sequencing_name}/demux_reads/{sample_name}_R2_fastp.fastq.gz".format(
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
-                experiment_name=experiment_name,
-                species=species,
             )
-            for sequencing_name, sample_name, experiment_name, species in zip(
+            for sequencing_name, sample_name in zip(
                 samples_unique["sequencing_name"],
                 samples_unique["sample_name"],
-                samples_unique["experiment_name"],
-                samples_unique["species"],
             )
         ],
 

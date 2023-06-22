@@ -95,7 +95,7 @@ The workflow requires a file (.tsv) containing the barcodes used in the experime
 
 To run this workflow on the DKFZ LSF cluster, first [set-up the proper LSF profile](https://github.com/Snakemake-Profiles/lsf) and run the following command for either the WGS or WTS workflow:
 
-`snakemake --profile lsf_dkfz -n`
+`snakemake --profile lsf_dkfz -n --configfile <config>`
 
 > **Note**  
 > Remove `-n` to disable dry-run.
@@ -105,14 +105,12 @@ To run this workflow on the DKFZ LSF cluster, first [set-up the proper LSF profi
 The major output files are the following:
 
 - **Sequence and sample-specific fastq file(s)**:
-  - `fastq/{sequencing_name}/demux/{sample_name}_R1.fastq.gz`
-  - `fastq/{sequencing_name}/demux/{sample_name}_R2.fastq.gz`
-  - `fastq/{sequencing_name}/demux/{sequencing_name}_R1_discarded.fastq.gz`
-  - `fastq/{sequencing_name}/demux/{sequencing_name}_R2_discarded.fastq.gz`
+  - `{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz`
+  - `{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz`
+  - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
+  - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
 - **Sample-specific R2 file used for alignment (fastp-trimmed)**:
-  - `fastp/{sequencing_name}/{sample_name}_R2_fastq.gz`
-- **Sample-specific BAM file(s)**:
-  - `alignment/{reference}/{sample}_sortedByCoord.bam`
+  - `{sequencing_name}/demux_reads/{sample_name}_fastp_R2.fastq.gz`
 
 ## Methodology
 
@@ -148,4 +146,5 @@ For sample-demultiplexing, the following steps are performed:
 3. Set the p5, p7, RT, ligation barcode and UMI as read-name in read 2 (R2): `@READNAME|P5-<p5>-P7-<p7>|<ligation>|<rt>_<UMI>`
 
 > **Note**  
-> Read-pairs with unmatched RT barcodes are discarded into separate R1/R2 fastq.gz files.
+> Read-pairs with unmatched p5, p7, ligation or RT barcodes are discarded into separate R1/R2 fastq.gz files.
+> Log files are generated which denote the mismatching barcodes per read (R1).

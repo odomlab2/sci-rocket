@@ -8,9 +8,9 @@ def get_bcl2fastq_input(sequencing_name):
 
 rule make_fake_samplesheet:
     output:
-        sample_sheet=temp("fastq/{sequencing_name}/fake.csv"),
+        sample_sheet=temp("{sequencing_name}/raw_reads/fake.csv"),
     params:
-        path_out="fastq/{sequencing_name}/raw/",
+        path_out="{sequencing_name}/raw_reads/",
     shell:
         """
         # Generate fake sample-sheet to allow indexes to be added to R1/R2.
@@ -22,16 +22,16 @@ rule make_fake_samplesheet:
 rule bcl2fastq:
     input:
         path_bcl=lambda w: get_bcl2fastq_input(w.sequencing_name),
-        fake_sample_sheet="fastq/{sequencing_name}/fake.csv",
+        fake_sample_sheet="{sequencing_name}/raw_reads/fake.csv",
     output:
-        R1="fastq/{sequencing_name}/raw/Undetermined_S0_L001_R1_001.fastq.gz",
-        R2="fastq/{sequencing_name}/raw/Undetermined_S0_L001_R2_001.fastq.gz",
+        R1="{sequencing_name}/raw_reads/Undetermined_S0_L001_R1_001.fastq.gz",
+        R2="{sequencing_name}/raw_reads/Undetermined_S0_L001_R2_001.fastq.gz",
     log:
-        "logs/demux/bcl2fastq_{sequencing_name}.log",
+        "logs/step1_bcl2fastq/bcl2fastq_{sequencing_name}.log",
     resources:
         mem_mb=10000,
     params:
-        path_out="fastq/{sequencing_name}/raw/",
+        path_out="{sequencing_name}/raw_reads/",
     threads: 20
     shell:
         """
