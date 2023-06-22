@@ -1,3 +1,142 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68">
-  <path d="M64.6 16.2C63 9.9 58.1 5 51.8 3.4 40 1.5 28 1.5 16.2 3.4 9.9 5 5 9.9 3.4 16.2 1.5 28 1.5 40 3.4 51.8 5 58.1 9.9 63 16.2 64.6c11.8 1.9 23.8 1.9 35.6 0C58.1 63 63 58.1 64.6 51.8c1.9-11.8 1.9-23.8 0-35.6zM33.3 36.3c-2.8 4.4-6.6 8.2-11.1 11-1.5.9-3.3.9-4.8.1s-2.4-2.3-2.5-4c0-1.7.9-3.3 2.4-4.1 2.3-1.4 4.4-3.2 6.1-5.3-1.8-2.1-3.8-3.8-6.1-5.3-2.3-1.3-3-4.2-1.7-6.4s4.3-2.9 6.5-1.6c4.5 2.8 8.2 6.5 11.1 10.9 1 1.4 1 3.3.1 4.7zM49.2 46H37.8c-2.1 0-3.8-1-3.8-3s1.7-3 3.8-3h11.4c2.1 0 3.8 1 3.8 3s-1.7 3-3.8 3z" fill="#206bc4"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   sodipodi:docname="logo-small.svg"
+   id="svg36"
+   version="1.1"
+   viewBox="0 0 22.611597 22.611597"
+   height="180.89278"
+   width="180.89278"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs40">
+    <filter
+       inkscape:label="Blueprint"
+       inkscape:menu="Image Paint and Draw"
+       inkscape:menu-tooltip="Detect color edges and retrace them in blue"
+       style="color-interpolation-filters:sRGB"
+       id="filter717"
+       x="0"
+       y="0"
+       width="1"
+       height="1">
+      <feConvolveMatrix
+         order="3 3"
+         kernelMatrix="1 1 1 1 -8 1 1 1 1"
+         in="SourceGraphic"
+         divisor="1"
+         targetX="1"
+         targetY="1"
+         preserveAlpha="true"
+         result="result0"
+         bias="0"
+         id="feConvolveMatrix713" />
+      <feColorMatrix
+         result="result3"
+         values="-0.15 -0.3 -0.05 0 1 -0.15 -0.3 -0.05 0 1 0 0 0 0 1 0 0 0 1 0"
+         id="feColorMatrix715" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="namedview38"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.48618396"
+     inkscape:cx="405.19642"
+     inkscape:cy="103.87015"
+     inkscape:window-width="1390"
+     inkscape:window-height="1027"
+     inkscape:window-x="196"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg36" />
+  <clipPath
+     id="a">
+    <path
+       d="M 100,50 C 100,77.614 77.613,100 50,100 22.386,100 0,77.614 0,50 0,22.386 22.386,0 50,0 h 50 z"
+       id="path11" />
+  </clipPath>
+  <g
+     id="g61"
+     transform="scale(0.22611597)">
+    <circle
+       fill="#33495f"
+       cx="50"
+       cy="50"
+       r="50"
+       id="circle9" />
+    <g
+       clip-path="url(#a)"
+       fill="#ffffff"
+       id="g18">
+      <path
+         opacity="0.2"
+         clip-path="url(#a)"
+         d="m 31,19.5 c 2.55,-0.45 4.051,-1.95 4.5,-4.5 0.45,2.55 1.951,4.05 4.5,4.5 -2.549,0.451 -4.05,1.95 -4.5,4.5 -0.449,-2.55 -1.95,-4.049 -4.5,-4.5 z"
+         id="path14" />
+      <path
+         opacity="0.1"
+         clip-path="url(#a)"
+         d="m 71,74.5 c 2.55,-0.45 4.051,-1.95 4.5,-4.5 0.45,2.55 1.951,4.05 4.5,4.5 -2.549,0.451 -4.05,1.95 -4.5,4.5 -0.449,-2.55 -1.95,-4.049 -4.5,-4.5 z m -60,-10 c 2.55,-0.45 4.051,-1.95 4.5,-4.5 0.45,2.55 1.951,4.05 4.5,4.5 -2.549,0.451 -4.05,1.95 -4.5,4.5 -0.449,-2.55 -1.95,-4.049 -4.5,-4.5 z"
+         id="path16" />
+    </g>
+    <g
+       clip-path="url(#a)"
+       id="g34">
+      <path
+         fill="#e94b35"
+         d="M 100,0.1 C 99.844,0.118 99.883,0.158 99.9,0 76.584,2.979 63.361,12.281 55.865,22.035 a 50.75,50.75 0 0 0 -0.782,1.047 l -0.008,0.01 C 47.015,34.196 46.087,45.812 46,49 h -1 l -1,3 4,4 3,-1 v -1 a 39.77,39.77 0 0 0 7.066,-0.773 l 0.002,0.002 C 58.797,53.047 59,53.305 59,57 v 9 c 0,1.809 0.943,2.497 1.945,1.494 2.423,-2.428 3.003,-3.023 8.5,-8.528 4.16,-4.167 4.676,-6.595 2.957,-11.059 C 83.953,41.369 96.432,27.888 100,0.1 Z"
+         id="path20" />
+      <path
+         fill="#c23824"
+         d="m 48,56 -4,-4 1,-3 h 2 l 4,4 v 2 z m 4,-28 c -1.718,-0.69 -2,-1 -4,-1 -2,0 -4.183,1.38 -6.861,4.063 -4.254,4.259 -4.85,4.839 -8.516,8.508 C 31.425,40.771 33.263,41 36,41 41.233,41 45.297,40.875 46.791,42.42 48.764,44.46 52,28 52,28 Z M 100,0 C 99.361,4.973 98.434,9.579 97.279,13.678 96.23,11.708 94.717,9.314 92.779,7.406 90.628,5.286 87.967,3.774 85.953,2.821 91.979,1.091 96.783,0.412 100,0 Z"
+         id="path22" />
+      <path
+         opacity="0.3"
+         fill="#ffffff"
+         d="m 72.402,47.907 c 1.719,4.463 1.312,6.788 -2.854,10.954 -0.844,0.844 -7.828,7.859 -8.604,8.633 C 59.941,68.496 59.033,67.809 59,66 v -0.652 c 3,-3 9.689,-8.938 11,-11.348 0.768,-1.411 0.352,-3.654 0,-5 -3.312,1.76 -11.516,4.094 -11.932,4.229 C 54.906,53.875 52.467,53.943 51,54 V 53.344 C 51,53.344 80.975,43.681 100,0 96.406,28.047 83.953,41.369 72.402,47.907 Z"
+         id="path24" />
+      <path
+         fill="#ffffff"
+         d="M 77.5,28 C 73.916,28 71,25.084 71,21.5 71,17.916 73.916,15 77.5,15 c 3.584,0 6.5,2.916 6.5,6.5 0,3.584 -2.916,6.5 -6.5,6.5 z"
+         id="path26" />
+      <path
+         fill="#c23824"
+         d="m 77.5,16 a 5.5,5.5 0 1 1 0,11 5.5,5.5 0 0 1 0,-11 m 0,-2 C 73.363,14 70,17.364 70,21.5 70,25.636 73.363,29 77.5,29 81.637,29 85,25.636 85,21.5 85,17.364 81.637,14 77.5,14 Z"
+         id="path28" />
+      <path
+         fill="#d7dcde"
+         d="M 44,52 48,56 13,92 7,86 Z"
+         id="path30" />
+      <path
+         fill="#f7f7f7"
+         d="m 43.875,52 2,2 -38.375,37.5 -3,-3 z"
+         id="path32" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:12.5px;font-family:Roboto;-inkscape-font-specification:'Roboto Bold';fill:#e94b35;stroke-width:0.125;filter:url(#filter717)"
+       x="-26.991875"
+       y="104.66335"
+       id="text200"
+       transform="matrix(0.56579172,-0.5252122,0.5252122,0.56579172,-28.531848,6.737571)"
+       inkscape:transform-center-x="8.4583802"
+       inkscape:transform-center-y="6.8276892"><tspan
+         id="tspan198"
+         style="font-size:12.5px;fill:#e94b35;stroke-width:0.125"
+         x="-26.991875"
+         y="104.66335"
+         sodipodi:role="line">sci-rocket</tspan></text>
+  </g>
 </svg>
