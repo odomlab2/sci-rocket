@@ -17,8 +17,8 @@ species:
     genome: "/omics/groups/OE0538/internal/projects/sharedData/GRCm39/genome/GRCm39.primary_assembly.genome.fa"
     genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/GRCm39/annotation/gencode.vM31.basic.annotation.gtf"
   human:
-    genome: "/omics/groups/OE0538/internal/projects/sharedData/hsapiens/genome/xxx.fa"
-    genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/hsapiens/annotation/xxx.gtf"
+    genome: "xxx.fa"
+    genome_gtf: "xxx.gtf"
 
 #################################
 # --- Additional parameters ----#

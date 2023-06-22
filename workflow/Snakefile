@@ -2,7 +2,7 @@
 snakemake.utils.min_version("7.28.0")
 
 
-configfile: "config.yaml"
+configfile: "examples/example_config.yaml"
 
 
 # Import modules. ----
