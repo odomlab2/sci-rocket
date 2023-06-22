@@ -294,7 +294,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                         str(name_rt or sequence_rt_raw),
                         sequence_umi,
                     )
-                )
+                ) + "\n"
             )
             fh_discarded_r1.write(str(read1) + "\n")
             fh_discarded_r2.write(str(read2) + "\n")
@@ -334,8 +334,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
-        if qc["n_pairs"] == 100000:
-            break
+        # if qc["n_pairs"] == 100000:
+        #     break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 

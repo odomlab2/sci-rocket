@@ -60,25 +60,6 @@ def combine_pickles(path_scatter, path_log):
         with open(path_log, "w") as handle:
             json.dump(qc, handle, indent=4)
 
-            # Add a description to the JSON file
-            description = {}
-            description["Description"] = {}
-            description["Description"]["sequencing_name"] = "Name of the sequencing run."
-            description["Description"]["n_pairs"] = "Total number of initial read-pairs."
-            description["Description"]["n_pairs_success"] = "Total number of read-pairs with correct RT, p5, p7 and ligation barcodes."
-            description["Description"]["n_pairs_failure"] = "Total number of discarded read-pairs due to various reason."
-            description["Description"]["n_corrected_p5"] = "Total number of read-pairs with 1bp mismatch in p5."
-            description["Description"]["n_corrected_p7"] = "Total number of read-pairs with 1bp mismatch in p7."
-            description["Description"]["n_corrected_ligation"] = "Total number of read-pairs with 1bp mismatch in ligation."
-            description["Description"]["n_corrected_rt"] = "Total number of read-pairs with 1bp mismatch in RT."
-            description["Description"]["n_uncorrectable_p5"] = "Total number of read-pairs with >1bp mismatch in p5."
-            description["Description"]["n_uncorrectable_p7"] = "Total number of read-pairs with >1bp mismatch in p7."
-            description["Description"]["n_uncorrectable_ligation"] = "Total number of read-pairs with >1bp mismatch in ligation."
-            description["Description"]["n_uncorrectable_rt"] = "Total number of read-pairs with >1bp mismatch in RT."
-            description["Description"]["sample_dict"] = "Dictionary with sample names as keys and a dictionary showing the number of read-pairs for each RT as values."
-
-            json.dump(description, handle, indent=4)
-
         # Close the file
         handle.close()
 

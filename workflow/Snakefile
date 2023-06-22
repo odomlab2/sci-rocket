@@ -70,7 +70,7 @@ workdir: config["dir_output"]
 rule DEMUX:
     input:
         lambda w: [
-            "{sequencing_name}/demux_reads/{sample_name}_R2_fastp.fastq.gz".format(
+            "{sequencing_name}/demux_reads/{sample_name}_fastp_R2.fastq.gz".format(
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
             )
