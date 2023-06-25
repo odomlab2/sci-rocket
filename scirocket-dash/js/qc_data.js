@@ -1,5 +1,7 @@
 var data = {
   qc_metrics: {
+    version: "v0.1",
+    sequencing_run: "sx42",
     n_total_pairs: 5000,
     n_total_pairs_success: 4000,
     n_total_pairs_failure: 1000,
@@ -42,24 +44,6 @@ var data = {
   },
 };
 
-var n_pairs_persample = data.qc_metrics.n_pairs_persample;
-var n_pairs_persample_labels = [];
-var n_pairs_persample_values = [];
-
-for (var i = 0; i < n_pairs_persample.length; i++) {
-  n_pairs_persample_labels.push(n_pairs_persample[i].sample_name);
-  n_pairs_persample_values.push(n_pairs_persample[i].n_pairs_success);
-}
-
-// Update numbers
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("n_totalsamples").innerHTML = n_pairs_persample.length;
-  document.getElementById("n_total_pairs").innerHTML = data.qc_metrics.n_total_pairs;
-  document.getElementById("n_total_pairs_success_perc").innerHTML = (data.qc_metrics.n_total_pairs_success / data.qc_metrics.n_total_pairs) * 100 + "%";
-  document.getElementById("n_total_pairs_failure_perc").innerHTML = (data.qc_metrics.n_total_pairs_failure / data.qc_metrics.n_total_pairs) * 100 + "%";
-  document.getElementById("n_total_umi").innerHTML = data.qc_metrics.n_total_umi;
-  document.getElementById("n_total_cells").innerHTML = data.qc_metrics.n_total_cells;
-});
 
 // Data for uncorrectable barcodes
 var data_top_uncorrectables_RT = [

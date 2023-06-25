@@ -1,4 +1,33 @@
-// This file houses the code for all the charts on the dashboard.
+// This file houses the code for all the interactive data and charts on the dashboard.
+
+//--------------------------------------------
+// Insert data from qc_data.js
+//--------------------------------------------
+
+var n_pairs_persample = data.qc_metrics.n_pairs_persample;
+var n_pairs_persample_labels = [];
+var n_pairs_persample_values = [];
+
+for (var i = 0; i < n_pairs_persample.length; i++) {
+  n_pairs_persample_labels.push(n_pairs_persample[i].sample_name);
+  n_pairs_persample_values.push(n_pairs_persample[i].n_pairs_success);
+}
+
+// Update numbers
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("version").innerHTML = data.qc_metrics.version;
+  document.getElementById("sequencing_run").innerHTML = data.qc_metrics.sequencing_run;
+  document.getElementById("n_totalsamples").innerHTML = n_pairs_persample.length;
+  document.getElementById("n_total_pairs").innerHTML = data.qc_metrics.n_total_pairs;
+  document.getElementById("n_total_pairs_success_perc").innerHTML = (data.qc_metrics.n_total_pairs_success / data.qc_metrics.n_total_pairs) * 100 + "%";
+  document.getElementById("n_total_pairs_failure_perc").innerHTML = (data.qc_metrics.n_total_pairs_failure / data.qc_metrics.n_total_pairs) * 100 + "%";
+  document.getElementById("n_total_umi").innerHTML = data.qc_metrics.n_total_umi;
+  document.getElementById("n_total_cells").innerHTML = data.qc_metrics.n_total_cells;
+
+  // Set the n_total_pairs_success_perc_bar width
+  document.getElementById("n_total_pairs_success_perc_bar").style.width = (data.qc_metrics.n_total_pairs_success / data.qc_metrics.n_total_pairs) * 100 + "%";
+});
+
 
 //--------------------------------------------
 // Chart - No. of succesfull pairs per sample.
