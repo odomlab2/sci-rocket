@@ -1,10 +1,39 @@
 // This file houses the code for all the interactive data and charts on the dashboard.
 
 //--------------------------------------------
+// Helper functions
+//--------------------------------------------
+
+function add_label(root, xAxis, yAxis, x_text, y_text){
+  // Add labels to the axes
+  yAxis.children.unshift(am5.Label.new(root, {
+    text: y_text,
+    fontSize: 10,
+    textAlign: 'center',
+    y: am5.p50,
+    rotation: -90,
+    fontWeight: 'bold'
+  }));
+
+  xAxis.children.push(am5.Label.new(root, {
+    text: x_text,
+    fontSize: 10,
+    textAlign: 'center',
+    x: am5.p50,
+    fontWeight: 'bold'
+  }));
+  
+}
+
+//--------------------------------------------
 // Insert data from qc_data.js
 //--------------------------------------------
 
 sample_names = Object.keys(data.samples_qc);
+
+function roundToOne(num) {
+  return +(Math.round(num + "e+1") + "e-1");
+}
 
 // Update numbers
 document.addEventListener("DOMContentLoaded", function () {
@@ -12,8 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("sequencing_run").innerHTML = data.sequencing_name;
   document.getElementById("n_totalsamples").innerHTML = Intl.NumberFormat("en-US").format(sample_names.length);
   document.getElementById("n_total_pairs").innerHTML = Intl.NumberFormat("en-US").format(data.n_pairs);
-  document.getElementById("n_total_pairs_success_perc").innerHTML = (data.n_pairs_success / data.n_pairs) * 100 + "%";
-  document.getElementById("n_total_pairs_failure_perc").innerHTML = (data.n_pairs_failure / data.n_pairs) * 100 + "%";
+  document.getElementById("n_total_pairs_success_perc").innerHTML = roundToOne((data.n_pairs_success / data.n_pairs) * 100) + "%";
+  document.getElementById("n_total_pairs_failure_perc").innerHTML = roundToOne((data.n_pairs_failure / data.n_pairs) * 100) + "%";
   document.getElementById("n_total_corrections").innerHTML = Intl.NumberFormat("en-US").format(data.n_corrected_p5 + data.n_corrected_p7 + data.n_corrected_ligation + data.n_corrected_rt);
   document.getElementById("n_total_cells").innerHTML = Intl.NumberFormat("en-US").format(data.n_cells);
 
@@ -149,7 +178,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Create axes.
     var xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 30 });
     xRenderer.labels.template.setAll({
-      rotation: -90,
+      rotation: -45,
+      fontSize: 8,
       centerY: am5.p50,
       centerX: am5.p100,
       paddingRight: 15,
@@ -198,6 +228,9 @@ document.addEventListener("DOMContentLoaded", function () {
     xAxis.data.setAll(sample_n_pairs_success);
     series.data.setAll(sample_n_pairs_success);
 
+    // Add labels.
+    add_label(root, xAxis, yAxis, "Sample name", "Frequency");
+
     // Add export menu.
     var exporting = am5plugins_exporting.Exporting.new(root, {
       menu: am5plugins_exporting.ExportingMenu.new(root, {}),
@@ -226,60 +259,58 @@ document.addEventListener("DOMContentLoaded", function () {
 function generate_sample_summary_table(data) {
   var table = document.getElementById("sample-summary-table");
   for (var sample in data) {
-      var row = table.insertRow(-1);
-      row.insertCell(0).innerHTML = sample;
-      row.insertCell(1).innerHTML = data[sample].n_pairs_success;
-      row.insertCell(2).innerHTML = data[sample].n_UMIs;
-      row.insertCell(3).innerHTML = data[sample].n_cells;
-      row.insertCell(4).innerHTML = data[sample].n_cells_umi_100;
-      row.insertCell(5).innerHTML = data[sample].n_cells_umi_1000;
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = sample;
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_pairs_success);
+    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_UMIs);
+    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_cells);
+    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_cells_umi_100);
+    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_cells_umi_1000);
 
-      // Add a progress bar for the duplication rate
-      var cell = row.insertCell(6);
-      var progress = document.createElement("div");
-      progress.className = "row align-items-center";
-      var col1 = document.createElement("div");
-      col1.className = "col-12 col-lg-auto";
-      col1.innerHTML = data[sample].duplication_rate * 100 + "%";
-      var col2 = document.createElement("div");
-      col2.className = "col";
-      var progress_bar = document.createElement("div");
-      progress_bar.className = "progress";
-      progress_bar.style = "width: 5rem";
-      var progress_bar_inner = document.createElement("div");
-      progress_bar_inner.className = "progress-bar";
-      progress_bar_inner.style = "width: " + data[sample].duplication_rate * 100 + "%";
-      progress_bar_inner.setAttribute("role", "progressbar");
-      progress_bar_inner.setAttribute("aria-valuenow", data[sample].duplication_rate);
-      progress_bar_inner.setAttribute("aria-valuemin", "0");
-      progress_bar_inner.setAttribute("aria-valuemax", "100");
-      progress_bar_inner.setAttribute("aria-label", data[sample].duplication_rate + "% Complete");
-      var span = document.createElement("span");
-      span.className = "visually-hidden";
-      span.innerHTML = data[sample].duplication_rate + "% Complete";
-      progress_bar_inner.appendChild(span);
-      progress_bar.appendChild(progress_bar_inner);
-      col2.appendChild(progress_bar);
-      progress.appendChild(col1);
-      progress.appendChild(col2);
-      cell.appendChild(progress);
+    // Add a progress bar for the duplication rate
+    var cell = row.insertCell(6);
+    var progress = document.createElement("div");
+    progress.className = "row align-items-center";
+    var col1 = document.createElement("div");
+    col1.className = "col-12 col-lg-auto";
+    col1.innerHTML = Math.round(data[sample].dup_rate * 100) + "%";
+    var col2 = document.createElement("div");
+    col2.className = "col";
+    var progress_bar = document.createElement("div");
+    progress_bar.className = "progress";
+    progress_bar.style = "width: 5rem";
+    var progress_bar_inner = document.createElement("div");
+    progress_bar_inner.className = "progress-bar";
+    progress_bar_inner.style = "width: " + data[sample].dup_rate * 100 + "%";
+    progress_bar_inner.setAttribute("role", "progressbar");
+    progress_bar_inner.setAttribute("aria-valuenow", data[sample].dup_rate);
+    progress_bar_inner.setAttribute("aria-valuemin", "0");
+    progress_bar_inner.setAttribute("aria-valuemax", "100");
+    progress_bar_inner.setAttribute("aria-label", data[sample].dup_rate + "% Complete");
+    var span = document.createElement("span");
+    span.className = "visually-hidden";
+    span.innerHTML = data[sample].dup_rate + "% Complete";
+    progress_bar_inner.appendChild(span);
+    progress_bar.appendChild(progress_bar_inner);
+    col2.appendChild(progress_bar);
+    progress.appendChild(col1);
+    progress.appendChild(col2);
+    cell.appendChild(progress);
 
-      // Set the sorting classes of td elements
-      row.cells[0].className = "sort-sample";
-      row.cells[1].className = "sort-reads";
-      row.cells[2].className = "sort-unique_umi";
-      row.cells[3].className = "sort-totalcells";
-      row.cells[4].className = "sort-totalcells_100";
-      row.cells[5].className = "sort-totalcells_1000";
-      row.cells[6].className = "sort-duplication";
-      row.cells[6].setAttribute("data-progress", data[sample].duplication_rate);
-      
+    // Set the sorting classes of td elements
+    row.cells[0].className = "sort-sample";
+    row.cells[1].className = "sort-reads";
+    row.cells[2].className = "sort-unique_umi";
+    row.cells[3].className = "sort-totalcells";
+    row.cells[4].className = "sort-totalcells_100";
+    row.cells[5].className = "sort-totalcells_1000";
+    row.cells[6].className = "sort-duplication";
+    row.cells[6].setAttribute("data-progress", data[sample].dup_rate);
   }
 }
 document.addEventListener("DOMContentLoaded", function () {
   generate_sample_summary_table(data.samples_qc);
 });
-
 
 //--------------------------------------------
 // Chart - Ligation usage.
@@ -308,12 +339,13 @@ document.addEventListener("DOMContentLoaded", function () {
     cursor.lineY.set("visible", false);
 
     // Create axes.
-    var xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 30 });
+    var xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 5 });
     xRenderer.labels.template.setAll({
       rotation: -90,
       centerY: am5.p50,
       centerX: am5.p100,
       paddingRight: 15,
+      fontSize: 8,
     });
 
     var xAxis = chart.xAxes.push(
@@ -358,6 +390,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // Set data.
     xAxis.data.setAll(data.ligation_barcode_counts);
     series.data.setAll(data.ligation_barcode_counts);
+
+    // Add labels.
+    add_label(root, xAxis, yAxis, "Ligation barcode", "Frequency");
 
     // Add export menu.
     var exporting = am5plugins_exporting.Exporting.new(root, {
@@ -603,7 +638,7 @@ function createChart_Uncorrectable(root, data, color) {
 
   // Change font of labels.
   yRenderer.labels.template.setAll({
-    fontSize: 16,
+    fontSize: 12,
     fontFamily: "Courier New",
     fill: am5.color(0x000000),
   });
@@ -618,11 +653,20 @@ function createChart_Uncorrectable(root, data, color) {
     })
   );
 
+  var xRenderer = am5xy.AxisRendererX.new(root, {
+    minGridDistance: 10,
+  });
+  xRenderer.labels.template.setAll({
+    fontSize: 8,
+    rotation: -90,
+    centerY: am5.p50,
+    centerX: am5.p100,
+    paddingRight: 15,
+  });
+
   var xAxis = chart.xAxes.push(
     am5xy.ValueAxis.new(root, {
-      renderer: am5xy.AxisRendererX.new(root, {
-        strokeOpacity: 0.1,
-      }),
+      renderer: xRenderer,
     })
   );
 
@@ -652,6 +696,9 @@ function createChart_Uncorrectable(root, data, color) {
   // Set data.
   yAxis.data.setAll(data.reverse());
   series.data.setAll(data);
+
+    // Add labels
+    add_label(root, xAxis, yAxis, "Frequency", "Barcode");
 
   // Add export menu.
   var exporting = am5plugins_exporting.Exporting.new(root, {
@@ -803,3 +850,135 @@ function createChart_Heatmap(root, data, max_color) {
   chart.appear(1000, 100);
   series.appear(1000, 100);
 }
+
+//--------------------------------------------
+// Chart - Saturation curve of UMI.
+//--------------------------------------------
+
+var sample_UMI = [];
+for (var i = 0; i < sample_names.length; i++) {
+  sample_UMI.push({
+    sample_name: sample_names[i],
+    total_UMI: data.samples_qc[sample_names[i]].n_pairs_success,
+    dup_rate: data.samples_qc[sample_names[i]].dup_rate * 100,
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  var root = am5.Root.new("chart-umi-saturation");
+  root._logo.dispose();
+  root.setThemes([am5themes_Animated.new(root)]);
+
+  var chart = root.container.children.push(
+    am5xy.XYChart.new(root, {
+      panX: true,
+      panY: true,
+      wheelX: "panX",
+      wheelY: "zoomX",
+      pinchZoomX: true,
+    })
+  );
+
+  // Add cursor
+  var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
+  cursor.lineX.set("forceHidden", true);
+  cursor.lineY.set("forceHidden", true);
+
+  var xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 30 });
+  xRenderer.labels.template.setAll({
+    rotation: -90,
+    fontSize: 8,
+    centerY: am5.p50,
+    centerX: am5.p100,
+    paddingRight: 15,
+  });
+
+  // Create axes
+  var xAxis = chart.xAxes.push(
+    am5xy.ValueAxis.new(root, {
+      renderer: xRenderer
+    }));
+
+  var yAxis = chart.yAxes.push(
+    am5xy.ValueAxis.new(root, {
+      renderer: am5xy.AxisRendererY.new(root, {}),
+    })
+  );
+
+  // Add series
+  var series = chart.series.push(
+    am5xy.LineSeries.new(root, {
+      name: "Series",
+      xAxis: xAxis,
+      yAxis: yAxis,
+      valueYField: "dup_rate",
+      valueXField: "total_UMI",
+      tooltip: am5.Tooltip.new(root, {
+        labelText: "{valueY}",
+      }),
+    })
+  );
+
+  // Add points
+  series.bullets.push(function() {
+    return am5.Bullet.new(root, {
+      sprite: am5.Circle.new(root, {
+        radius: 5,
+        fill: am5.color(0x000000),
+      })
+    });
+  });
+
+  // Add labels
+  add_label(root, xAxis, yAxis, 'Total UMI', 'Duplication rate (%)');
+  
+  series.fills.template.setAll({
+    fillOpacity: 0.2,
+    visible: true,
+  });
+
+  // Set data
+  series.data.setAll(sample_UMI);
+
+  // Set limits
+  yAxis.set("min", 0);
+  yAxis.set("max", 100);
+
+  // add series range
+  var seriesRangeDataItem = yAxis.makeDataItem({ value: 66, endValue: 0 });
+  var seriesRange = series.createAxisRange(seriesRangeDataItem);
+  seriesRange.fills.template.setAll({
+    visible: true,
+    opacity: 0.3,
+  });
+
+  seriesRange.fills.template.set("fill", am5.color(0x000000));
+  seriesRange.strokes.template.set("stroke", am5.color(0x000000));
+
+  seriesRangeDataItem.get("grid").setAll({
+    strokeOpacity: 1,
+    visible: true,
+    stroke: am5.color(0x000000),
+    strokeDasharray: [2, 2],
+  });
+
+  seriesRangeDataItem.get("label").setAll({
+    location: 0,
+    visible: true,
+    text: "Target",
+    inside: true,
+    centerX: 0,
+    centerY: am5.p100,
+    fontWeight: "bold",
+  });
+
+  // Add export menu.
+  var exporting = am5plugins_exporting.Exporting.new(root, {
+    menu: am5plugins_exporting.ExportingMenu.new(root, {}),
+    dataSource: sample_UMI,
+  });
+
+  // Animation.
+  series.appear(1000);
+  chart.appear(1000, 100);
+});
