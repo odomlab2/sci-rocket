@@ -2,7 +2,7 @@ rule fastp:
     input:
         R2="{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz",
     output:
-        R2="{sequencing_name}/demux_reads/{sample_name}_fastp_R2.fastq.gz",
+        R2="{sequencing_name}/demux_reads/fastp_{sample_name}_R2.fastq.gz",
     log:
         "logs/step3_alignment/fastp_{sequencing_name}_{sample_name}.log",
     resources:

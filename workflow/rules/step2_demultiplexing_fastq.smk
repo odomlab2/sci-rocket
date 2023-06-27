@@ -73,7 +73,7 @@ rule demultiplex_fastq_split:
     message:
         "Demultiplexing the scattered .fastq.gz files."
     shell:
-        "python3.10 {workflow.basedir}/scripts/demultiplexing_samples.py --sequencing_name {wildcards.sequencing_name} --samples {params.path_samples} --barcodes {params.path_barcodes} --r1 {input[0]} --r2 {input[1]} --out {output} &> {log}"
+        "python3.10 {workflow.basedir}/scripts/demux_rocket.py --sequencing_name {wildcards.sequencing_name} --samples {params.path_samples} --barcodes {params.path_barcodes} --r1 {input[0]} --r2 {input[1]} --out {output} &> {log}"
 
 
 rule gather_demultiplex_fastq_split:
@@ -82,7 +82,7 @@ rule gather_demultiplex_fastq_split:
     output:
         R1_discarded="{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz",
         R2_discarded="{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz",
-        overview_log="{sequencing_name}/demux_reads/{sequencing_name}_qc_demultiplexing.log",
+        dash_json="{sequencing_name}/demux_reads/{sequencing_name}_demux_dash.json",
         discarded_log="{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz",
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
@@ -93,7 +93,7 @@ rule gather_demultiplex_fastq_split:
     shell:
         """
         # Combine the sample-specific QC metrics.
-        python3.10 {workflow.basedir}/scripts/demultiplexing_samples_combine.py --path_log {output.overview_log} --path_scatter {params.path_demux_scatter}
+        python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_scatter {params.path_demux_scatter}
 
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz

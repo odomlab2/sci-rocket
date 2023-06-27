@@ -14,7 +14,7 @@ def init_logger(verbose: bool = False):
 
     console = Console(force_terminal=True)
     ch = RichHandler(show_path=False, console=console, show_time=True)
-    formatter = logging.Formatter("snakemake-sciseq: %(message)s")
+    formatter = logging.Formatter("sci-rocket: %(message)s")
     ch.setFormatter(formatter)
     log.addHandler(ch)
     log.propagate = False

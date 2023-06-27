@@ -1,17 +1,62 @@
+__version__ = "0.1"
+
+# Import modules.
 import argparse
-import sys
-import os
+import gzip
 import logging
+import os
+import pandas as pd
+import pickle
+import pysam
+import sys
+
+from Levenshtein import distance as hamming
 from rich.console import Console
 from rich.logging import RichHandler
-
-import pandas as pd
-import pysam
-import gzip
-from Levenshtein import distance as hamming
-import pickle
-
 from sanity_checks import retrieve_p5_barcodes, retrieve_p7_barcodes
+
+
+def find_closest_match(sequence, comparison):
+    """Find the closest match between a sequence and a dictionary of sequences.
+    If there is only one match with a hamming distance of 1, return the name and sequence.
+    If there are multiple matches with a hamming distance of 1, return None.
+
+    Parameters:
+        sequence (str): Sequence to compare.
+        comparison (dict): Dictionary of sequences to compare to.
+
+    Returns:
+        str: Name of the closest match.
+    """
+
+    # Calculate the hamming distance between sequence and all keys in dict.
+    distances = {k: hamming(sequence, k, score_cutoff=1) for k in comparison.keys()}
+    distances = {k: v for k, v in distances.items() if v == 1}
+
+    # If there is only one key with a distance of 1, return the name and sequence.
+    if len(distances) == 1:
+        sequence = next(iter(distances))
+        return comparison[sequence]
+    else:
+        return None
+
+
+def add_uncorrectable_sequence(sequence, dict_sequence):
+    """Add an uncorrectable sequence to the dictionary of uncorrectable sequences.
+    If the sequence is not in the dictionary, add it with a count of 1.
+
+    Parameters:
+        sequence (str): Sequence to add.
+        dict_sequence (dict): Dictionary of uncorrectable sequences.
+
+    Returns:
+        None
+    """
+
+    if sequence not in dict_sequence:
+        dict_sequence[sequence] = 1
+    else:
+        dict_sequence[sequence] += 1
 
 
 def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str):
@@ -25,9 +70,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         - The R1 read is empty.
         - The R1 read is shorter than 34nt.
         - The R1 read is longer than 34nt.
-        - The RT barcode is not found in the sample sheet (even with 1nt correction).
+        - One of the barcodes (p5, p7, ligation and/or RT) is not found within R1.
 
-    Args:
+    Parameters:
         log (logging.Logger): Logger.
         sequencing_name (str): Sequencing sample.
         samples (pd.DataFrame): Sample sheet of the samples in the sequencing run.
@@ -129,20 +174,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-    def find_closest_match(sequence, comparison):
-        # Calculate the hamming distance between sequence and all keys in dict.
-        distances = {k: hamming(sequence, k, score_cutoff=1) for k in comparison.keys()}
-        distances = {k: v for k, v in distances.items() if v == 1}
+    # region Metrics for sci-dash --------------------------------------------------------------------------------------------------------------
 
-        # If there is only one key with a distance of 1, return the name and sequence.
-        if len(distances) == 1:
-            sequence = next(iter(distances))
-            return comparison[sequence]
-        else:
-            return None
-
-    # QC metrics.
     qc = {}
+    qc["version"] = __version__
     qc["sequencing_name"] = sequencing_name
     qc["n_pairs"] = 0  # Total number of initial read-pairs.
     qc["n_pairs_success"] = 0  # Total number of read-pairs with correct RT, p5, p7 and ligation barcodes.
@@ -153,13 +188,43 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     qc["n_corrected_ligation"] = 0  # Total number of read-pairs with 1bp mismatch in ligation.
     qc["n_corrected_rt"] = 0  # Total number of read-pairs with 1bp mismatch in RT.
 
+    # For all (succesfull) reads, keep track of the number of times each index/barcode.
+    qc["p5_index_counts"] = {k: 0 for k in dict_p5.values()}
+    qc["p7_index_counts"] = {k: 0 for k in dict_p7.values()}
+    qc["ligation_barcode_counts"] = {k: 0 for k in dict_ligation.values()}
+    qc["rt_barcode_counts"] = {}
+
+    # Keep track of uncorrectable barcode(s) schemes within each R1.
+    # Structure: ["p5", "p7", "ligation", "rt"]
+    # Example: qc["uncorrectables"][True, False, True, False] to indicate that the p7 and RT barcodes are uncorrectable.
+    qc["uncorrectables_sankey"] = {}
+
+    # Add uncorrectables barcode combinations to the dict.
+    for p5 in [True, False]:
+        for p7 in [True, False]:
+            for ligation in [True, False]:
+                for rt in [True, False]:
+                    qc["uncorrectables_sankey"][p5, p7, ligation, rt] = 0
+
     qc["n_uncorrectable_p5"] = 0  # Total number of read-pairs with >1bp mismatch in p5.
     qc["n_uncorrectable_p7"] = 0  # Total number of read-pairs with >1bp mismatch in p7.
     qc["n_uncorrectable_ligation"] = 0  # Total number of read-pairs with >1bp mismatch in ligation.
     qc["n_uncorrectable_rt"] = 0  # Total number of read-pairs with >1bp mismatch in RT.
 
-    # Dictionary to store the number of (succesfull) read-pairs, no. and type of identified RT barcodes, total UMI and total unique UMI per sample.
-    samples_dict = {k: {"n_pairs_success": 0, "rt": {}} for k in samples.sample_name}
+    # Keep track of the sequence of p5, p7, ligation and RT barcodes that are not found in the respective lookup tables.
+    # Structure: qc["uncorrectable_p5"]["ATCG"] = 10
+    qc["uncorrectable_p5"] = {}
+    qc["uncorrectable_p7"] = {}
+    qc["uncorrectable_ligation"] = {}
+    qc["uncorrectable_rt"] = {}
+
+    # Sample-specific dictionary to store (key: sample_name):
+    # - No. of (succesfull) read-pairs (has p5+p7+ligation+RT)
+    # - No. of cells (unique p5+p7+ligation+RT) and their respective UMIs.
+    # Structure: samples_dict["sample_name"] = {"n_pairs_success": 0, cells["p5+p7+ligation+RT"] = {"total_UMIs": 0, "UMIs": set()}}
+    samples_dict = {k: {"n_pairs_success": 0, "cells": {}} for k in samples["sample_name"].unique()}
+
+    # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     # Iterate over the read-pairs and search for the indexes within R1.
     # If not any index is not found, try to correct that index with 1bp mismatch and search again in respective dictionary.
@@ -208,8 +273,11 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             name_p5 = find_closest_match(sequence_p5_raw, dict_p5)
             if name_p5 != None:
                 qc["n_corrected_p5"] += 1
+                qc["p5_index_counts"][name_p5] += 1
             else:
                 qc["n_uncorrectable_p5"] += 1
+                add_uncorrectable_sequence(sequence_p5_raw, qc["uncorrectable_p5"])
+
         try:
             name_p7 = dict_p7[sequence_p7_raw]
         except KeyError:
@@ -218,6 +286,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 qc["n_corrected_p7"] += 1
             else:
                 qc["n_uncorrectable_p7"] += 1
+                add_uncorrectable_sequence(sequence_p7_raw, qc["uncorrectable_p7"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -246,6 +315,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 else:
                     sequence_ligation = sequence_ligation_10nt
                     qc["n_uncorrectable_ligation"] += 1
+                    add_uncorrectable_sequence(sequence_ligation, qc["uncorrectable_ligation"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -277,6 +347,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 qc["n_corrected_rt"] += 1
             else:
                 qc["n_uncorrectable_rt"] += 1
+                add_uncorrectable_sequence(sequence_rt_raw, qc["uncorrectable_rt"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -294,12 +365,18 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                         str(name_rt or sequence_rt_raw),
                         sequence_umi,
                     )
-                ) + "\n"
+                )
+                + "\n"
             )
             fh_discarded_r1.write(str(read1) + "\n")
             fh_discarded_r2.write(str(read2) + "\n")
 
             qc["n_pairs_failure"] += 1
+
+            # Add the uncorrectable scheme to the uncorrectable dict.
+            sankey_index = [name_p5, name_p7, name_ligation, name_rt]
+            sankey_index = [True if x != None else False for x in sankey_index]
+            qc["uncorrectables_sankey"][tuple(sankey_index)] += 1
 
         else:
             # Retrieve the matching sample_name from dict_rt_barcodes.
@@ -320,11 +397,34 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             # Keep track of correct read-pairs per sample.
             samples_dict[sample]["n_pairs_success"] += 1
 
-            # Add the match_rt as key to the dictionary if it doesn't exist yet.
-            if name_rt not in samples_dict[sample]["rt"]:
-                samples_dict[sample]["rt"][name_rt] = 0
+            # Count the occurence of the barcodes.
+            qc["p5_index_counts"][name_p5] += 1
+            qc["p7_index_counts"][name_p7] += 1
+            qc["ligation_barcode_counts"][name_ligation] += 1
 
-            samples_dict[sample]["rt"][name_rt] += 1
+            # Split up RT based on plate and well.
+            name_rt_split = name_rt.split("-")
+
+            if name_rt_split[0] not in qc["rt_barcode_counts"]:
+                qc["rt_barcode_counts"][name_rt_split[0]] = {}
+                qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] = 1
+            else:
+                if name_rt_split[1] not in qc["rt_barcode_counts"][name_rt_split[0]]:
+                    qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] = 1
+                else:
+                    qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] += 1
+
+            # Keep track of cells and barcodes.
+            cell_barcode = "_".join((name_p5, name_p7, name_ligation, name_rt))
+
+            if cell_barcode in samples_dict[sample]["cells"]:
+                samples_dict[sample]["cells"][cell_barcode]["total_UMIs"] += 1
+                samples_dict[sample]["cells"][cell_barcode]["UMIs"].add(sequence_umi)
+            else:
+                samples_dict[sample]["cells"][cell_barcode] = {}
+                samples_dict[sample]["cells"][cell_barcode]["total_UMIs"] = 1
+                samples_dict[sample]["cells"][cell_barcode]["UMIs"] = set()
+                samples_dict[sample]["cells"][cell_barcode]["UMIs"].add(sequence_umi)
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -334,8 +434,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
-        # if qc["n_pairs"] == 100000:
-        #     break
+        if qc["n_pairs"] == 1000:
+            break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -357,36 +457,15 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         pickle.dump(qc, fh)
         pickle.dump(samples_dict, fh)
 
-
-def printLogging_reads(log, qc, samples_dict):
-    log.info("Processed %d read-pairs", qc["n_pairs"])
-    log.info("  - %d read-pairs with correct p5, p7, ligation and RT barcode", qc["n_pairs_success"])
-    log.info("     - %d read-pairs with corrected p5 barcode", qc["n_corrected_p5"])
-    log.info("     - %d read-pairs with corrected p7 barcode", qc["n_corrected_p7"])
-    log.info("     - %d read-pairs with corrected ligation barcode", qc["n_corrected_ligation"])
-    log.info("     - %d read-pairs with corrected RT barcode", qc["n_corrected_rt"])
-    log.info("Discarded read-pairs:")
-    log.info("  - %d read-pairs without correct p5, p7, ligation and RT barcode", qc["n_pairs_failure"])
-    log.info("     - %d read-pairs with uncorrectable p5 barcode", qc["n_uncorrectable_p5"])
-    log.info("     - %d read-pairs with uncorrectable p7 barcode", qc["n_uncorrectable_p7"])
-    log.info("     - %d read-pairs with uncorrectable ligation barcode", qc["n_uncorrectable_ligation"])
-    log.info("     - %d read-pairs with uncorrectable RT barcode", qc["n_uncorrectable_rt"])
-
-    log.info("Sample statistics:")
-    for sample in samples_dict:
-        log.info("  - %s: %d read-pairs", sample, samples_dict[sample]["n_pairs_success"])
-        log.info("     - %d RT barcodes", len(samples_dict[sample]["rt"]))
-        for rt in samples_dict[sample]["rt"]:
-            log.info("        - %s: %d", rt, samples_dict[sample]["rt"][rt])
+    log.info("Done: %d read-pairs processed (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
 
 def init_logger():
     # Logging parameters.
     log = logging.getLogger(__name__)
 
-    console = Console(force_terminal=True)
     ch = RichHandler(show_path=False, console=Console(width=255), show_time=True)
-    formatter = logging.Formatter("snakemake-sciseq: %(message)s")
+    formatter = logging.Formatter("sci-rocket: %(message)s")
     ch.setFormatter(formatter)
     log.addHandler(ch)
     log.propagate = False
@@ -427,6 +506,7 @@ def main(arguments):
     parser.add_argument("--out", required=True, type=str, help="(str) Path to output directory.")
 
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Display help and exit.")
+    parser.add_argument("-v", "--version", action="version", version=__version__, help="Display version and exit.")
 
     # Parse arguments.
     args = parser.parse_args()
@@ -453,22 +533,22 @@ if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
 
-
-# import cProfile
 # args = parser.parse_args(
 #     [
 #         "--sequencing_name",
-#         "230609",
+#         "sx11",
 #         "--samples",
-#         "~/jvanriet/git/snakemake-sciseq/workflow/examples/example_samplesheet.tsv",
+#         "/omics/groups/OE0538/internal/projects/sexomics/metadata_scirocket/sx11_samplesheet.tsv",
 #         "--barcodes",
 #         "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv",
 #         "--r1",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/fastq/230609/raw/R1_1-of-20.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R1_1-of-20.fastq.gz",
 #         "--r2",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/fastq/230609/raw/R2_1-of-20.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R2_1-of-20.fastq.gz",
 #         "--out",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/fastq/230609/demux_scatter/1-of-20",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads_scatter/1-of-20/",
 #     ]
 # )
+
+# import cProfile
 # cProfile.run('sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out)')
