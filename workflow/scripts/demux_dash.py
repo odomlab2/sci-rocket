@@ -94,12 +94,15 @@ def combine_scattered(path_scatter, path_out):
             # Calculate the number of unique cells.
             sample_dict[sample]["n_cells"] = len(sample_dict[sample]["cells"])
 
+            # Calculate the number of unique UMIs.
+            sample_dict[sample]["n_UMIs"] = len(set().union(*[sample_dict[sample]["cells"][cell]["UMIs"] for cell in sample_dict[sample]["cells"]]))
+
             # For each sample, calculate the number of cells with >=100 and >=1000 UMI.
             sample_dict[sample]["n_cells_umi_100"] = len([cell for cell in sample_dict[sample]["cells"] if sample_dict[sample]["cells"][cell]["total_UMIs"] >= 100])
             sample_dict[sample]["n_cells_umi_1000"] = len([cell for cell in sample_dict[sample]["cells"] if sample_dict[sample]["cells"][cell]["total_UMIs"] >= 1000])
 
             # Calculate the mean duplication rate (Total UMIs over UMIs) per cell.
-            dup_rate_cell = [sample_dict[sample]["cells"][cell]["total_UMIs"] / len(sample_dict[sample]["cells"][cell]["UMIs"]) for cell in sample_dict[sample]["cells"]]
+            dup_rate_cell = [len(sample_dict[sample]["cells"][cell]["UMIs"] / sample_dict[sample]["cells"][cell]["total_UMIs"]) for cell in sample_dict[sample]["cells"]]
             sample_dict[sample]["duplication_rate"] = sum(dup_rate_cell) / len(dup_rate_cell)
 
         # Calculate the n_cells_umi_100 and n_cells_umi_1000 over all samples.
@@ -108,7 +111,7 @@ def combine_scattered(path_scatter, path_out):
 
         # Determine the top recurrent uncorrectable barcodes.
         qc["top_uncorrectables"] = {}
-        top_n = 10
+        top_n = 15
         qc["top_uncorrectables"]["p5"] = sorted(qc["uncorrectable_p5"].items(), key=lambda x: x[1], reverse=True)[:top_n]
         qc["top_uncorrectables"]["p7"] = sorted(qc["uncorrectable_p7"].items(), key=lambda x: x[1], reverse=True)[:top_n]
         qc["top_uncorrectables"]["ligation"] = sorted(qc["uncorrectable_ligation"].items(), key=lambda x: x[1], reverse=True)[:top_n]
@@ -131,6 +134,7 @@ def combine_scattered(path_scatter, path_out):
         for key in qc["rt_barcode_counts"]:
             qc["rt_barcode_counts"][key] = transform_plate_counts(qc["rt_barcode_counts"][key])
 
+        qc["ligation_barcode_counts"] = [{"barcode": key, "frequency": qc["ligation_barcode_counts"][key]} for key in qc["ligation_barcode_counts"]]
 
         # Remove all unnecessary data. ------------------------------------------------------------------------------------
         qc.pop("uncorrectable_p5")
@@ -189,4 +193,4 @@ if __name__ == "__main__":
 
 # path_scatter = "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads_scatter"
 # path_out = "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads/sx11_demux_dash.json"
-#combine_scattered(path_scatter, path_out)
+# combine_scattered(path_scatter, path_out)
