@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Change size of labels.
     series.labels.template.setAll({
       fontSize: 10,
-      text: "{barcode}: {frequency}",
+      text: "{barcode}:\n{frequency}",
     });
 
     // Set up adapters for variable slice radius
@@ -468,96 +468,112 @@ var data_sankey_barcodes = [
   { from: "Good p5", to: "Good p7", value: value_TTTT, id: "BZ-2" },
   { from: "Good p7", to: "Good ligation", value: value_TTTT, id: "BZ-3" },
   { from: "Good ligation", to: "Good RT", value: value_TTTT, id: "BZ-4" },
+  { from: "Good RT", to: " ", value: value_TTTT, id: "BZ-5" },
 
   // Good p5 -> Good p7 -> Good ligation -> Bad RT
   { from: "Total Bad reads", to: "Good p5", value: value_TTTF, id: "B1-1" },
   { from: "Good p5", to: "Good p7", value: value_TTTF, id: "B1-2" },
   { from: "Good p7", to: "Good ligation", value: value_TTTF, id: "B1-3" },
   { from: "Good ligation", to: "Bad RT", value: value_TTTF, id: "B1-4" },
+  { from: "Bad RT", to: " ", value: value_TTTF, id: "B1-5" },
 
   // Good p5 -> Good p7 -> Bad ligation -> Good RT
   { from: "Total Bad reads", to: "Good p5", value: value_TTFT, id: "B3-1" },
   { from: "Good p5", to: "Good p7", value: value_TTFT, id: "B3-2" },
   { from: "Good p7", to: "Bad ligation", value: value_TTFT, id: "B3-3" },
   { from: "Bad ligation", to: "Good RT", value: value_TTFT, id: "B3-4" },
+  { from: "Good RT", to: " ", value: value_TTFT, id: "B3-5" },
 
   // Good p5 -> Good p7 -> Bad ligation -> Bad RT
   { from: "Total Bad reads", to: "Good p5", value: value_TTFF, id: "B4-1" },
   { from: "Good p5", to: "Good p7", value: value_TTFF, id: "B4-2" },
   { from: "Good p7", to: "Bad ligation", value: value_TTFF, id: "B4-3" },
   { from: "Bad ligation", to: "Bad RT", value: value_TTFF, id: "B4-4" },
+  { from: "Bad RT", to: " ", value: value_TTFF, id: "B4-5" },
 
   // Good p5 -> Bad p7 -> Good ligation -> Good RT
   { from: "Total Bad reads", to: "Good p5", value: value_TFTT, id: "B5-1" },
   { from: "Good p5", to: "Bad p7", value: value_TFTT, id: "B5-2" },
   { from: "Bad p7", to: "Good ligation", value: value_TFTT, id: "B5-3" },
   { from: "Good ligation", to: "Good RT", value: value_TFTT, id: "B5-4" },
+  { from: "Good RT", to: " ", value: value_TFTT, id: "B5-5" },
 
   // Good p5 -> Bad p7 -> Bad ligation -> Good RT
   { from: "Total Bad reads", to: "Good p5", value: value_TFTF, id: "B6-1" },
   { from: "Good p5", to: "Bad p7", value: value_TFTF, id: "B6-2" },
   { from: "Bad p7", to: "Bad ligation", value: value_TFTF, id: "B6-3" },
   { from: "Bad ligation", to: "Good RT", value: value_TFTF, id: "B6-4" },
+  { from: "Good RT", to: " ", value: value_TFTF, id: "B6-5" },
 
   // Good p5 -> Bad p7 -> Good ligation -> Bad RT
   { from: "Total Bad reads", to: "Good p5", value: value_TFFT, id: "B7-1" },
   { from: "Good p5", to: "Bad p7", value: value_TFFT, id: "B7-2" },
   { from: "Bad p7", to: "Good ligation", value: value_TFFT, id: "B7-3" },
   { from: "Good ligation", to: "Bad RT", value: value_TFFT, id: "B7-4" },
+  { from: "Bad RT", to: " ", value: value_TFFT, id: "B7-5" },
 
   // Bad p5 -> Good p7 -> Good ligation -> Good RT
   { from: "Total Bad reads", to: "Bad p5", value: value_TFFF, id: "A1-1" },
   { from: "Bad p5", to: "Good p7", value: value_TFFF, id: "A1-2" },
   { from: "Good p7", to: "Good ligation", value: value_TFFF, id: "A1-3" },
   { from: "Good ligation", to: "Good RT", value: value_TFFF, id: "A1-4" },
+  { from: "Good RT", to: " ", value: value_TFFF, id: "A1-5" },
 
   // Bad p5 -> Bad p7 -> Good ligation -> Good RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FFTT, id: "A2-1" },
   { from: "Bad p5", to: "Bad p7", value: value_FFTT, id: "A2-2" },
   { from: "Bad p7", to: "Good ligation", value: value_FFTT, id: "A2-3" },
   { from: "Good ligation", to: "Good RT", value: value_FFTT, id: "A2-4" },
+  { from: "Good RT", to: " ", value: value_FFTT, id: "A2-5" },
 
   // Bad p5 -> Bad p7 -> Bad ligation -> Good RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FFFT, id: "A3-1" },
   { from: "Bad p5", to: "Bad p7", value: value_FFFT, id: "A3-2" },
   { from: "Bad p7", to: "Bad ligation", value: value_FFFT, id: "A3-3" },
   { from: "Bad ligation", to: "Good RT", value: value_FFFT, id: "A3-4" },
+  { from: "Good RT", to: " ", value: value_FFFT, id: "A3-5" },
 
   // Bad p5 -> Bad p7 -> Bad ligation -> Bad RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FFFF, id: "A4-1" },
   { from: "Bad p5", to: "Bad p7", value: value_FFFF, id: "A4-2" },
   { from: "Bad p7", to: "Bad ligation", value: value_FFFF, id: "A4-3" },
   { from: "Bad ligation", to: "Bad RT", value: value_FFFF, id: "A4-4" },
+  { from: "Bad RT", to: " ", value: value_FFFF, id: "A4-5" },
 
   // Bad p5 -> Bad p7 -> Good ligation -> Bad RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FFTF, id: "A5-1" },
   { from: "Bad p5", to: "Bad p7", value: value_FFTF, id: "A5-2" },
   { from: "Bad p7", to: "Good ligation", value: value_FFTF, id: "A5-3" },
   { from: "Good ligation", to: "Bad RT", value: value_FFTF, id: "A5-4" },
+  { from: "Bad RT", to: " ", value: value_FFTF, id: "A5-5" },
 
   // Bad p5 -> Good p7 -> Bad ligation -> Good RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FTFT, id: "A6-1" },
   { from: "Bad p5", to: "Good p7", value: value_FTFT, id: "A6-2" },
   { from: "Good p7", to: "Bad ligation", value: value_FTFT, id: "A6-3" },
   { from: "Bad ligation", to: "Good RT", value: value_FTFT, id: "A6-4" },
+  { from: "Good RT", to: " ", value: value_FTFT, id: "A6-5" },
 
   // Bad p5 -> Good p7 -> Bad ligation -> Bad RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FTFF, id: "A7-1" },
   { from: "Bad p5", to: "Good p7", value: value_FTFF, id: "A7-2" },
   { from: "Good p7", to: "Bad ligation", value: value_FTFF, id: "A7-3" },
   { from: "Bad ligation", to: "Bad RT", value: value_FTFF, id: "A7-4" },
+  { from: "Bad RT", to: " ", value: value_FTFF, id: "A7-5" },
 
   // Bad p5 -> Good p7 -> Good ligation -> Bad RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FTTF, id: "A8-1" },
   { from: "Bad p5", to: "Good p7", value: value_FTTF, id: "A8-2" },
   { from: "Good p7", to: "Good ligation", value: value_FTTF, id: "A8-3" },
   { from: "Good ligation", to: "Bad RT", value: value_FTTF, id: "A8-4" },
+  { from: "Bad RT", to: " ", value: value_FTTF, id: "A8-5" },
 
   // Bad p5 -> Good p7 -> Good ligation -> Good RT
   { from: "Total Bad reads", to: "Bad p5", value: value_FTTT, id: "A9-1" },
   { from: "Bad p5", to: "Good p7", value: value_FTTT, id: "A9-2" },
   { from: "Good p7", to: "Good ligation", value: value_FTTT, id: "A9-3" },
   { from: "Good ligation", to: "Good RT", value: value_FTTT, id: "A9-4" },
+  { from: "Good RT", to: " ", value: value_FTTT, id: "A9-5" },
 ];
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1082,7 +1098,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Add labels
-  add_label(root, xAxis, yAxis, "Total UMI", "Duplication rate (%)");
+  add_label(root, xAxis, yAxis, "Total UMI (Reads)", "Duplication rate (%)");
 
   series.fills.template.setAll({
     fillOpacity: 0.2,
