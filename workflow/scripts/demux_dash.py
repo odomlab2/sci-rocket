@@ -101,9 +101,9 @@ def combine_scattered(path_scatter, path_out):
             sample_dict[sample]["n_cells_umi_100"] = len([cell for cell in sample_dict[sample]["cells"] if sample_dict[sample]["cells"][cell]["total_UMIs"] >= 100])
             sample_dict[sample]["n_cells_umi_1000"] = len([cell for cell in sample_dict[sample]["cells"] if sample_dict[sample]["cells"][cell]["total_UMIs"] >= 1000])
 
-            # Calculate the mean duplication rate (Total UMIs over UMIs) per cell.
-            dup_rate_cell = [len(sample_dict[sample]["cells"][cell]["UMIs"] / sample_dict[sample]["cells"][cell]["total_UMIs"]) for cell in sample_dict[sample]["cells"]]
-            sample_dict[sample]["duplication_rate"] = sum(dup_rate_cell) / len(dup_rate_cell)
+            # Calculate the duplication rate for each sample by dividing the number of unique UMIs by the total number of UMIs.
+            dup_rate_cell = [ 1 - len(sample_dict[sample]["cells"][cell]["UMIs"]) / sample_dict[sample]["cells"][cell]["total_UMIs"] for cell in sample_dict[sample]["cells"]]            
+            sample_dict[sample]["dup_rate"] = sum(dup_rate_cell) / len(dup_rate_cell)
 
         # Calculate the n_cells_umi_100 and n_cells_umi_1000 over all samples.
         qc["n_cells_umi_100"] = sum([sample_dict[sample]["n_cells_umi_100"] for sample in sample_dict])
@@ -134,23 +134,24 @@ def combine_scattered(path_scatter, path_out):
         for key in qc["rt_barcode_counts"]:
             qc["rt_barcode_counts"][key] = transform_plate_counts(qc["rt_barcode_counts"][key])
 
-        qc["ligation_barcode_counts"] = [{"barcode": key, "frequency": qc["ligation_barcode_counts"][key]} for key in qc["ligation_barcode_counts"]]
+        # Transform the ligation_barcode_counts dictionary to a list of dictionaries.
+        qc["ligation_barcode_counts"] = [{"barcode": barcode, "frequency": qc["ligation_barcode_counts"][barcode]} for barcode in qc["ligation_barcode_counts"]]
 
         # Remove all unnecessary data. ------------------------------------------------------------------------------------
-        qc.pop("uncorrectable_p5")
-        qc.pop("uncorrectable_p7")
-        qc.pop("uncorrectable_ligation")
-        qc.pop("uncorrectable_rt")
+        
+        del(qc["uncorrectable_p5"])
+        del(qc["uncorrectable_p7"])
+        del(qc["uncorrectable_ligation"])
+        del(qc["uncorrectable_rt"])
 
         # Remove the ligation_barcode_counts with zero counts.
-        qc["ligation_barcode_counts"] = {
-            ligation_barcode: qc["ligation_barcode_counts"][ligation_barcode] for ligation_barcode in qc["ligation_barcode_counts"] if qc["ligation_barcode_counts"][ligation_barcode] > 0
-        }
+        qc["ligation_barcode_counts"] = [barcode for barcode in qc["ligation_barcode_counts"] if barcode["frequency"] > 0]
 
         for sample in sample_dict:
-            sample_dict[sample].pop("cells")
+            del(sample_dict[sample]["cells"])
 
-        qc.pop("uncorrectables_sankey")
+        # Convert the uncorrectables_sankey.        
+        qc["uncorrectables_sankey"] = [{"source": str(key), "value": qc["uncorrectables_sankey"][key]} for key in qc["uncorrectables_sankey"]]
 
     # endregion ----------------------------------------------------------------------------------------------------------
 
