@@ -4,25 +4,28 @@
 // Helper functions
 //--------------------------------------------
 
-function add_label(root, xAxis, yAxis, x_text, y_text){
+function add_label(root, xAxis, yAxis, x_text, y_text) {
   // Add labels to the axes
-  yAxis.children.unshift(am5.Label.new(root, {
-    text: y_text,
-    fontSize: 10,
-    textAlign: 'center',
-    y: am5.p50,
-    rotation: -90,
-    fontWeight: 'bold'
-  }));
+  yAxis.children.unshift(
+    am5.Label.new(root, {
+      text: y_text,
+      fontSize: 10,
+      textAlign: "center",
+      y: am5.p50,
+      rotation: -90,
+      fontWeight: "bold",
+    })
+  );
 
-  xAxis.children.push(am5.Label.new(root, {
-    text: x_text,
-    fontSize: 10,
-    textAlign: 'center',
-    x: am5.p50,
-    fontWeight: 'bold'
-  }));
-  
+  xAxis.children.push(
+    am5.Label.new(root, {
+      text: x_text,
+      fontSize: 10,
+      textAlign: "center",
+      x: am5.p50,
+      fontWeight: "bold",
+    })
+  );
 }
 
 //--------------------------------------------
@@ -409,6 +412,154 @@ document.addEventListener("DOMContentLoaded", function () {
 //--------------------------------------------
 // Chart - Sankey diagram of barcodes.
 //--------------------------------------------
+
+value_TTTT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, True, True, True)";
+})[0].value;
+value_TTTF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, True, True, False)";
+})[0].value;
+value_TTFT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, True, False, True)";
+})[0].value;
+value_TTFF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, True, False, False)";
+})[0].value;
+value_TFTT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, False, True, True)";
+})[0].value;
+value_TFTF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, False, True, False)";
+})[0].value;
+value_TFFT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, False, False, True)";
+})[0].value;
+value_TFFF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(True, False, False, False)";
+})[0].value;
+value_FTTT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, True, True, True)";
+})[0].value;
+value_FTTF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, True, True, False)";
+})[0].value;
+value_FTFT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, True, False, True)";
+})[0].value;
+value_FTFF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, True, False, False)";
+})[0].value;
+value_FFTT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, False, True, True)";
+})[0].value;
+value_FFTF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, False, True, False)";
+})[0].value;
+value_FFFT = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, False, False, True)";
+})[0].value;
+value_FFFF = data.uncorrectables_sankey.filter(function (d) {
+  return d.source == "(False, False, False, False)";
+})[0].value;
+
+var data_sankey_barcodes = [
+  // Good p5 -> Good p7 -> Good ligation -> Good RT
+  { from: "Total Bad reads", to: "Good p5", value: value_TTTT, id: "BZ-1" },
+  { from: "Good p5", to: "Good p7", value: value_TTTT, id: "BZ-2" },
+  { from: "Good p7", to: "Good ligation", value: value_TTTT, id: "BZ-3" },
+  { from: "Good ligation", to: "Good RT", value: value_TTTT, id: "BZ-4" },
+
+  // Good p5 -> Good p7 -> Good ligation -> Bad RT
+  { from: "Total Bad reads", to: "Good p5", value: value_TTTF, id: "B1-1" },
+  { from: "Good p5", to: "Good p7", value: value_TTTF, id: "B1-2" },
+  { from: "Good p7", to: "Good ligation", value: value_TTTF, id: "B1-3" },
+  { from: "Good ligation", to: "Bad RT", value: value_TTTF, id: "B1-4" },
+
+  // Good p5 -> Good p7 -> Bad ligation -> Good RT
+  { from: "Total Bad reads", to: "Good p5", value: value_TTFT, id: "B3-1" },
+  { from: "Good p5", to: "Good p7", value: value_TTFT, id: "B3-2" },
+  { from: "Good p7", to: "Bad ligation", value: value_TTFT, id: "B3-3" },
+  { from: "Bad ligation", to: "Good RT", value: value_TTFT, id: "B3-4" },
+
+  // Good p5 -> Good p7 -> Bad ligation -> Bad RT
+  { from: "Total Bad reads", to: "Good p5", value: value_TTFF, id: "B4-1" },
+  { from: "Good p5", to: "Good p7", value: value_TTFF, id: "B4-2" },
+  { from: "Good p7", to: "Bad ligation", value: value_TTFF, id: "B4-3" },
+  { from: "Bad ligation", to: "Bad RT", value: value_TTFF, id: "B4-4" },
+
+  // Good p5 -> Bad p7 -> Good ligation -> Good RT
+  { from: "Total Bad reads", to: "Good p5", value: value_TFTT, id: "B5-1" },
+  { from: "Good p5", to: "Bad p7", value: value_TFTT, id: "B5-2" },
+  { from: "Bad p7", to: "Good ligation", value: value_TFTT, id: "B5-3" },
+  { from: "Good ligation", to: "Good RT", value: value_TFTT, id: "B5-4" },
+
+  // Good p5 -> Bad p7 -> Bad ligation -> Good RT
+  { from: "Total Bad reads", to: "Good p5", value: value_TFTF, id: "B6-1" },
+  { from: "Good p5", to: "Bad p7", value: value_TFTF, id: "B6-2" },
+  { from: "Bad p7", to: "Bad ligation", value: value_TFTF, id: "B6-3" },
+  { from: "Bad ligation", to: "Good RT", value: value_TFTF, id: "B6-4" },
+
+  // Good p5 -> Bad p7 -> Good ligation -> Bad RT
+  { from: "Total Bad reads", to: "Good p5", value: value_TFFT, id: "B7-1" },
+  { from: "Good p5", to: "Bad p7", value: value_TFFT, id: "B7-2" },
+  { from: "Bad p7", to: "Good ligation", value: value_TFFT, id: "B7-3" },
+  { from: "Good ligation", to: "Bad RT", value: value_TFFT, id: "B7-4" },
+
+  // Bad p5 -> Good p7 -> Good ligation -> Good RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_TFFF, id: "A1-1" },
+  { from: "Bad p5", to: "Good p7", value: value_TFFF, id: "A1-2" },
+  { from: "Good p7", to: "Good ligation", value: value_TFFF, id: "A1-3" },
+  { from: "Good ligation", to: "Good RT", value: value_TFFF, id: "A1-4" },
+
+  // Bad p5 -> Bad p7 -> Good ligation -> Good RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FFTT, id: "A2-1" },
+  { from: "Bad p5", to: "Bad p7", value: value_FFTT, id: "A2-2" },
+  { from: "Bad p7", to: "Good ligation", value: value_FFTT, id: "A2-3" },
+  { from: "Good ligation", to: "Good RT", value: value_FFTT, id: "A2-4" },
+
+  // Bad p5 -> Bad p7 -> Bad ligation -> Good RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FFFT, id: "A3-1" },
+  { from: "Bad p5", to: "Bad p7", value: value_FFFT, id: "A3-2" },
+  { from: "Bad p7", to: "Bad ligation", value: value_FFFT, id: "A3-3" },
+  { from: "Bad ligation", to: "Good RT", value: value_FFFT, id: "A3-4" },
+
+  // Bad p5 -> Bad p7 -> Bad ligation -> Bad RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FFFF, id: "A4-1" },
+  { from: "Bad p5", to: "Bad p7", value: value_FFFF, id: "A4-2" },
+  { from: "Bad p7", to: "Bad ligation", value: value_FFFF, id: "A4-3" },
+  { from: "Bad ligation", to: "Bad RT", value: value_FFFF, id: "A4-4" },
+
+  // Bad p5 -> Bad p7 -> Good ligation -> Bad RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FFTF, id: "A5-1" },
+  { from: "Bad p5", to: "Bad p7", value: value_FFTF, id: "A5-2" },
+  { from: "Bad p7", to: "Good ligation", value: value_FFTF, id: "A5-3" },
+  { from: "Good ligation", to: "Bad RT", value: value_FFTF, id: "A5-4" },
+
+  // Bad p5 -> Good p7 -> Bad ligation -> Good RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FTFT, id: "A6-1" },
+  { from: "Bad p5", to: "Good p7", value: value_FTFT, id: "A6-2" },
+  { from: "Good p7", to: "Bad ligation", value: value_FTFT, id: "A6-3" },
+  { from: "Bad ligation", to: "Good RT", value: value_FTFT, id: "A6-4" },
+
+  // Bad p5 -> Good p7 -> Bad ligation -> Bad RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FTFF, id: "A7-1" },
+  { from: "Bad p5", to: "Good p7", value: value_FTFF, id: "A7-2" },
+  { from: "Good p7", to: "Bad ligation", value: value_FTFF, id: "A7-3" },
+  { from: "Bad ligation", to: "Bad RT", value: value_FTFF, id: "A7-4" },
+
+  // Bad p5 -> Good p7 -> Good ligation -> Bad RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FTTF, id: "A8-1" },
+  { from: "Bad p5", to: "Good p7", value: value_FTTF, id: "A8-2" },
+  { from: "Good p7", to: "Good ligation", value: value_FTTF, id: "A8-3" },
+  { from: "Good ligation", to: "Bad RT", value: value_FTTF, id: "A8-4" },
+
+  // Bad p5 -> Good p7 -> Good ligation -> Good RT
+  { from: "Total Bad reads", to: "Bad p5", value: value_FTTT, id: "A9-1" },
+  { from: "Bad p5", to: "Good p7", value: value_FTTT, id: "A9-2" },
+  { from: "Good p7", to: "Good ligation", value: value_FTTT, id: "A9-3" },
+  { from: "Good ligation", to: "Good RT", value: value_FTTT, id: "A9-4" },
+];
+
 document.addEventListener("DOMContentLoaded", function () {
   am5.ready(function () {
     // Initialize root element.
@@ -697,8 +848,8 @@ function createChart_Uncorrectable(root, data, color) {
   yAxis.data.setAll(data.reverse());
   series.data.setAll(data);
 
-    // Add labels
-    add_label(root, xAxis, yAxis, "Frequency", "Barcode");
+  // Add labels
+  add_label(root, xAxis, yAxis, "Frequency", "Barcode");
 
   // Add export menu.
   var exporting = am5plugins_exporting.Exporting.new(root, {
@@ -896,8 +1047,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Create axes
   var xAxis = chart.xAxes.push(
     am5xy.ValueAxis.new(root, {
-      renderer: xRenderer
-    }));
+      renderer: xRenderer,
+    })
+  );
 
   var yAxis = chart.yAxes.push(
     am5xy.ValueAxis.new(root, {
@@ -920,18 +1072,18 @@ document.addEventListener("DOMContentLoaded", function () {
   );
 
   // Add points
-  series.bullets.push(function() {
+  series.bullets.push(function () {
     return am5.Bullet.new(root, {
       sprite: am5.Circle.new(root, {
         radius: 5,
         fill: am5.color(0x000000),
-      })
+      }),
     });
   });
 
   // Add labels
-  add_label(root, xAxis, yAxis, 'Total UMI', 'Duplication rate (%)');
-  
+  add_label(root, xAxis, yAxis, "Total UMI", "Duplication rate (%)");
+
   series.fills.template.setAll({
     fillOpacity: 0.2,
     visible: true,
