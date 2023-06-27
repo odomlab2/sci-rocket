@@ -77,6 +77,7 @@ data_correctable_barcodes = [
 ];
 
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-n_corrections").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-n_corrections");
@@ -157,6 +158,7 @@ sample_n_pairs_success.sort(function (a, b) {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-n_pairs_sample").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-n_pairs_sample");
@@ -260,6 +262,8 @@ document.addEventListener("DOMContentLoaded", function () {
 // 6. Number of cells with > 1000 UMI
 // 7. Duplication rate + progress bar
 function generate_sample_summary_table(data) {
+  document.getElementById("sample-summary-table").innerHTML = ' <table class="table" id="sample-summary-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th> <button class="table-sort" data-sort="sort-reads">Total Reads (UMIs)</button> </th> <th> <button class="table-sort" data-sort="sort-unique_umi">Total unique UMIs</button> </th> <th> <button class="table-sort" data-sort="sort-totalcells">No. cells</button> </th> <th> <button class="table-sort" data-sort="sort-totalcells_100">No. cells > 100 UMI</button> </th> <th> <button class="table-sort" data-sort="ssort-totalcells_1000">No. cells > 1000 UMI</button> </th> <th> <button class="table-sort" data-sort="sort-duplication">Duplication Rate</button> </th> </tr></thead> <tbody class="table-tbody"> <tr></tr></tbody> </table>'
+  
   var table = document.getElementById("sample-summary-table");
   for (var sample in data) {
     var row = table.insertRow(-1);
@@ -312,7 +316,15 @@ function generate_sample_summary_table(data) {
   }
 }
 document.addEventListener("DOMContentLoaded", function () {
+
   generate_sample_summary_table(data.samples_qc);
+
+  const list = new List("sample-summary-table", {
+    sortClass: "table-sort",
+    listClass: "table-tbody",
+    valueNames: ["sort-sample", "sort-reads", "sort-unique_umi", "sort-totalcells", "sort-totalcells_100", "sort-totalcells_1000", "sort-duplication"],
+  });
+
 });
 
 //--------------------------------------------
@@ -320,6 +332,7 @@ document.addEventListener("DOMContentLoaded", function () {
 //--------------------------------------------
 
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-ligation").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-ligation");
@@ -577,6 +590,7 @@ var data_sankey_barcodes = [
 ];
 
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-sankey_barcodes").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-sankey_barcodes");
@@ -655,6 +669,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // p5 plate
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-well-p5").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-well-p5");
@@ -667,6 +682,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // p7 plate
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-well-p7").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-well-p7");
@@ -679,6 +695,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // RT plate 01
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_01").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-rt_plate_01");
@@ -691,6 +708,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // RT plate 02
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_02").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-rt_plate_02");
@@ -703,6 +721,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // RT plate 03
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_03").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-rt_plate_03");
@@ -715,6 +734,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // RT plate 04
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_04").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-rt_plate_04");
@@ -729,6 +749,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // Chart - Top 10 uncorrectable barcodes (p5).
 //--------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-top_uncorrectables_p5").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-top_uncorrectables_p5");
@@ -743,6 +764,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // Chart - Top 10 uncorrectable barcodes (p7).
 //--------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-top_uncorrectables_p7").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-top_uncorrectables_p7");
@@ -757,6 +779,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // Chart - Top 10 uncorrectable barcodes (ligation).
 //--------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-top_uncorrectables_ligation").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-top_uncorrectables_ligation");
@@ -771,6 +794,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // Chart - Top 10 uncorrectable barcodes (RT).
 //--------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-top_uncorrectables_rt").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
     var root = am5.Root.new("chart-top_uncorrectables_rt");
@@ -1032,6 +1056,7 @@ for (var i = 0; i < sample_names.length; i++) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-umi-saturation").innerHTML = ''
   var root = am5.Root.new("chart-umi-saturation");
   root._logo.dispose();
   root.setThemes([am5themes_Animated.new(root)]);
