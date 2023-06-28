@@ -29,13 +29,13 @@ def combine_pickle(pickle_dict, combined_dict):
                         if isinstance(combined_dict[key][index], int):
                             combined_dict[key][index] += pickle_dict[key][index]
                         elif isinstance(pickle_dict[key], set):
-                            combined_dict[key] = combined_dict[key].union(pickle_dict[key])
+                            combined_dict[key].update(pickle_dict[key])
 
             elif isinstance(pickle_dict[key], int):
                 combined_dict[key] += pickle_dict[key]
 
             elif isinstance(pickle_dict[key], set):
-                combined_dict[key] = combined_dict[key].union(pickle_dict[key])
+                combined_dict[key].update(pickle_dict[key])
 
     return combined_dict
 
@@ -66,8 +66,11 @@ def combine_scattered(path_scatter, path_out):
     # Load the pickled dictionary
     for path_pickle in paths_pickle:
         with open(path_pickle, "rb") as handle:
+            print(f"Loading {path_pickle}")
+            
             # Combine the qc dictionaries.
             qc_pickle = pickle.load(handle)
+            
 
             # If the combined dictionary is empty, add the pickled dictionary
             if qc is None:
@@ -77,7 +80,7 @@ def combine_scattered(path_scatter, path_out):
 
             # Combine the sample_dict dictionaries.
             sample_dict_pickle = pickle.load(handle)
-
+            
             if sample_dict is None:
                 sample_dict = sample_dict_pickle
             else:
@@ -191,7 +194,3 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
-
-# path_scatter = "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads_scatter"
-# path_out = "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads/sx11_demux_dash.json"
-# combine_scattered(path_scatter, path_out)

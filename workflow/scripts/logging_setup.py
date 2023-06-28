@@ -2,6 +2,7 @@ import logging
 from rich.console import Console
 from rich.logging import RichHandler
 
+
 def init_logger(verbose: bool = False):
     """
     Initial a Logger with rich handler.

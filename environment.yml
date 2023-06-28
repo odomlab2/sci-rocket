@@ -1,4 +1,4 @@
-name: snakemake-sciseq
+name: sci-rocket
 channels:
   - conda-forge
   - bioconda

@@ -81,10 +81,9 @@ def retrieve_p7_barcodes(log, p7, barcodes_p7):
 
     # Per p7 index, check if the start index is smaller than the end index.
     for i in p7:
-        
         if i[0] > i[1]:
             log.error("Sanity check (Sample sheet) - P7 start index is larger than the end index: {} > {}".format(i[0], i[1]))
-            #return False
+            return False
         else:
             # Generate the p7 indexes in which the first letter is constant and the second number is variable.
             letter_start = i[0][0]
@@ -94,7 +93,7 @@ def retrieve_p7_barcodes(log, p7, barcodes_p7):
 
             if letter_start != letter_end:
                 log.error("Sanity check (Sample sheet) - P7 start and end index are not on the same row (should be {}: {} and {}".format(letter_start, i[0], i[1]))
-                #return False
+                return False
 
             # Generate the p7 indexes.
             p7_indexes += ["{}{}".format(letter_start, "0{}".format(number) if number < 10 else number) for number in range(number_start, number_end + 1)]

@@ -66,7 +66,7 @@ rule demultiplex_fastq_split:
     log:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
     resources:
-        mem_mb=1024,
+        mem_mb=2048,
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -84,6 +84,10 @@ rule gather_demultiplex_fastq_split:
         R2_discarded="{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz",
         dash_json="{sequencing_name}/demux_reads/{sequencing_name}_demux_dash.json",
         discarded_log="{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz",
+    log:
+        "logs/step2_demultiplexing_reads/gather_demultiplex_fastq_split_{sequencing_name}.log",
+    resources:
+        mem_mb=5120,
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
