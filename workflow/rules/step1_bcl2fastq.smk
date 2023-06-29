@@ -24,15 +24,15 @@ rule bcl2fastq:
         path_bcl=lambda w: get_bcl2fastq_input(w.sequencing_name),
         fake_sample_sheet="{sequencing_name}/raw_reads/fake.csv",
     output:
-        R1="{sequencing_name}/raw_reads/Undetermined_S0_L001_R1_001.fastq.gz",
-        R2="{sequencing_name}/raw_reads/Undetermined_S0_L001_R2_001.fastq.gz",
+        R1="{sequencing_name}/raw_reads/Undetermined_S0_R1_001.fastq.gz",
+        R2="{sequencing_name}/raw_reads/Undetermined_S0_R2_001.fastq.gz",
     log:
         "logs/step1_bcl2fastq/bcl2fastq_{sequencing_name}.log",
     resources:
-        mem_mb=10000,
+        mem_mb=1024*20,
     params:
         path_out="{sequencing_name}/raw_reads/",
-    threads: 20
+    threads: 50
     shell:
         """
         bcl2fastq \
@@ -47,6 +47,7 @@ rule bcl2fastq:
         --ignore-missing-controls \
         --ignore-missing-filter \
         --ignore-missing-bcls \
+        --no-lane-splitting \
         --minimum-trimmed-read-length 15 \
         --mask-short-adapter-reads 15 &> {log}
         """

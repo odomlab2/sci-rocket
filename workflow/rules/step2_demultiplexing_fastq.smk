@@ -4,7 +4,7 @@
 # ---- Split R1 and R2 files into smaller files which will be handled in parallel. ----
 rule split_R1:
     input:
-        "{sequencing_name}/raw_reads/Undetermined_S0_L001_R1_001.fastq.gz",
+        "{sequencing_name}/raw_reads/Undetermined_S0_R1_001.fastq.gz",
     output:
         temp(
             scatter.fastq_split(
@@ -31,7 +31,7 @@ rule split_R1:
 
 rule split_R2:
     input:
-        "{sequencing_name}/raw_reads/Undetermined_S0_L001_R2_001.fastq.gz",
+        "{sequencing_name}/raw_reads/Undetermined_S0_R2_001.fastq.gz",
     output:
         temp(
             scatter.fastq_split(

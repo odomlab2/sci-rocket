@@ -5,15 +5,15 @@
   },
   "bcl2fastq" :
   {
-    "queue": "medium"
+    "queue": "long"
   },
   "split_R1" :
   {
-    "queue": "medium"
+    "queue": "long"
   },
   "split_R2" :
   {
-    "queue": "medium"
+    "queue": "long"
   },
   "gather_demultiplex_fastq_split" :
   {
