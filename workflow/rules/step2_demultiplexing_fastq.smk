@@ -95,7 +95,7 @@ rule gather_demultiplex_fastq_split:
             sequencing_name=w.sequencing_name
         ),
     message:
-        "Combining the scattered demultiplexed results."
+        "Combining the scattered demultiplexed results and generating the sci-dash."
     shell:
         """
         # Generate the sci-dashboard report.
@@ -122,12 +122,14 @@ rule gather_combined_demultiplexed_samples:
         mem_mb=1024,
     threads: 1
     message:
-        "This should be a command for each sample, same discarded R1 and R2 files."
+        "Combine the sample-specific fastq.fz files."
     shell:
         """
+        # Combine.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R1.fastq.gz -print0 | xargs -0 cat > {output.R1}
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R2.fastq.gz -print0 | xargs -0 cat > {output.R2}
 
-        # Remove the sample-specific demultiplexed files.
-        #rm -rf ./{wildcards.sequencing_name}/demux_reads_scatter/
+        # Remove the scattered files.
+        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R1.fastq.gz -exec /bin/rm {} \;
+        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R2.fastq.gz -exec /bin/rm {} \;
         """

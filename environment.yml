@@ -8,7 +8,7 @@ dependencies:
   # Binaries used in workflow.
   - bih-cubi::bcl2fastq2
   - bioconda::fastqsplitter>=1.2.0
-  - bioconda::fastp>=0.23.2
+  - bioconda::fastp>=0.23.4
   - bioconda::star>=2.7.10b
   - bioconda::sambamba>=1.0
   - bioconda::tabix>=1.11
