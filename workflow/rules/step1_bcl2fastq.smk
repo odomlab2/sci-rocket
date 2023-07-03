@@ -26,13 +26,9 @@ rule bcl2fastq:
     output:
         R1="{sequencing_name}/raw_reads/Undetermined_S0_R1_001.fastq.gz",
         R2="{sequencing_name}/raw_reads/Undetermined_S0_R2_001.fastq.gz",
-    log:
-        "logs/step1_bcl2fastq/bcl2fastq_{sequencing_name}.log",
-    resources:
-        mem_mb=1024*20,
+    log: "logs/step1_bcl2fastq/bcl2fastq_{sequencing_name}.log",
     params:
         path_out="{sequencing_name}/raw_reads/",
-    threads: 50
     shell:
         """
         bcl2fastq \

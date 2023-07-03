@@ -11,9 +11,7 @@ rule split_R1:
                 "{{sequencing_name}}/raw_reads/R1_{scatteritem}.fastq.gz"
             )
         ),
-    resources:
-        mem_mb=1024,
-    threads: 10
+    threads: 1
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R1_{i}-of-"
@@ -38,9 +36,7 @@ rule split_R2:
                 "{{sequencing_name}}/raw_reads/R2_{scatteritem}.fastq.gz"
             )
         ),
-    resources:
-        mem_mb=1024,
-    threads: 10
+    threads: 1
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R2_{i}-of-"
@@ -65,9 +61,7 @@ rule demultiplex_fastq_split:
         directory("{sequencing_name}/demux_reads_scatter/{scatteritem}/"),
     log:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
-    resources:
-        mem_mb=1024 * 15,
-        threads=1,
+    threads: 1
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -88,8 +82,7 @@ rule gather_demultiplex_fastq_split:
         discarded_log="{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz",
     log:
         "logs/step2_demultiplexing_reads/gather_demultiplex_fastq_split_{sequencing_name}.log",
-    resources:
-        mem_mb=1024 * 50,
+    threads: 1
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
@@ -108,6 +101,11 @@ rule gather_demultiplex_fastq_split:
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R2_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R2_discarded.fastq.gz
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name log_{wildcards.sequencing_name}_discarded_reads.tsv.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/log_{wildcards.sequencing_name}_discarded_reads.tsv.gz
+
+        # Remove files.
+        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -exec /bin/rm {} \;
+        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R2_discarded.fastq.gz -exec /bin/rm {} \;
+        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name log_{wildcards.sequencing_name}_discarded_reads.tsv.gz  -exec /bin/rm {} \;
         """
 
 
@@ -118,8 +116,6 @@ rule gather_combined_demultiplexed_samples:
     output:
         R1=dynamic("{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz"),
         R2=dynamic("{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz"),
-    resources:
-        mem_mb=1024,
     threads: 1
     message:
         "Combine the sample-specific fastq.fz files."
