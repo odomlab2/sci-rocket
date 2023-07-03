@@ -12,7 +12,7 @@ rule split_R1:
             )
         ),
     resources:
-        mem_mb=256,
+        mem_mb=1024,
     threads: 10
     params:
         out=lambda w: [
@@ -39,7 +39,7 @@ rule split_R2:
             )
         ),
     resources:
-        mem_mb=256,
+        mem_mb=1024,
     threads: 10
     params:
         out=lambda w: [
@@ -66,7 +66,8 @@ rule demultiplex_fastq_split:
     log:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
     resources:
-        mem_mb=2048,
+        mem_mb=1024 * 15,
+        threads=1,
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -82,12 +83,13 @@ rule gather_demultiplex_fastq_split:
     output:
         R1_discarded="{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz",
         R2_discarded="{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz",
-        dash_json="{sequencing_name}/demux_reads/{sequencing_name}_demux_dash.json",
+        dash_folder=directory("{sequencing_name}/sci-dash/"),
+        dash_json="{sequencing_name}/sci-dash/js/qc_data.js",
         discarded_log="{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz",
     log:
         "logs/step2_demultiplexing_reads/gather_demultiplex_fastq_split_{sequencing_name}.log",
     resources:
-        mem_mb=5120,
+        mem_mb=1024 * 50,
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
@@ -96,8 +98,11 @@ rule gather_demultiplex_fastq_split:
         "Combining the scattered demultiplexed results."
     shell:
         """
+        # Generate the sci-dashboard report.
+        cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
+
         # Combine the sample-specific QC metrics.
-        python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_scatter {params.path_demux_scatter}
+        python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_scatter {params.path_demux_scatter}      
 
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz
@@ -113,6 +118,9 @@ rule gather_combined_demultiplexed_samples:
     output:
         R1=dynamic("{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz"),
         R2=dynamic("{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz"),
+    resources:
+        mem_mb=1024,
+    threads: 1
     message:
         "This should be a command for each sample, same discarded R1 and R2 files."
     shell:

@@ -10,20 +10,19 @@
   Input:  Paired-end sequencing data from sci-RNA-Seq3 protocol (BCL files)
 ```
 
-### **Demultiplexes and processes sci-RNA-Seq3 data from Illumina NovaSeq sequencer**
+### **Demultiplexes sci-RNA-Seq3 samples (Illumina NovaSeq)**
 
 ---
 
 - Check for sanity of provided barcodes and sample-sheet.
 - Converts BCL files to R1/R2.fastq.gz files with p5 and p7 indexes in header (**bcl2fastq**).
-- Splits R1/R2 fastq.gz files into smaller (evenly-sized) chunks for parallization (**fastqsplitter**).
+- Splits R1/R2 fastq.gz files into smaller (evenly-sized) chunks for parallelization (**fastqsplitter**).
 - Demultiplexes (paired-end) sequencing using the supplied sample-specific barcodes.
   - Finds exact or nearest match for p5, p7, ligation and/or RT barcode (<=1 hamming distance with only single match).
   - Generates sample-specific .fastq.gz file(s) with correct read-name for R2.
   - Read-pairs with no p5, p7, ligation and/or RT barcode match are discarded into separate .fastq.gz files.
     - Log file contains information on discarded read-pairs detailing which barcodes are matching.
-- Generates QC:
-  - Demultiplexing stats
+- Generate demultiplexing overview. (**sci-dash**)
 
 ### **Processing of sci-RNA-Seq3 data**
 
@@ -110,6 +109,8 @@ The major output files are the following:
   - `{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz`
   - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
   - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
+- **Demultiplexing overview**:
+  - `{sequencing_name}/sci-dash/`
 - **Sample-specific R2 file used for alignment (fastp-trimmed)**:
   - `{sequencing_name}/demux_reads/{sample_name}_fastp_R2.fastq.gz`
 

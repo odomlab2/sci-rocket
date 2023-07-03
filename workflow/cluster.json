@@ -17,10 +17,10 @@
   },
   "gather_demultiplex_fastq_split" :
   {
-    "queue": "medium"
+    "queue": "long"
   },
   "gather_combined_demultiplexed_samples" :
   {
-    "queue": "medium"
+    "queue": "long"
   }
 }

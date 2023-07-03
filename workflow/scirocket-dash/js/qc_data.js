@@ -1,6 +1,6 @@
 var data = {
     "version": "0.1",
-    "sequencing_name": "sx11",
+    "sequencing_name": "test_run",
     "n_pairs": 428466184,
     "n_pairs_success": 324087403,
     "n_pairs_failure": 104378781,
