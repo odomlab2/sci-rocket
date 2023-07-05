@@ -317,12 +317,14 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                     qc["n_uncorrectable_ligation"] += 1
                     add_uncorrectable_sequence(sequence_ligation, qc["uncorrectable_ligation"])
 
+        length_ligation = len(sequence_ligation)
+
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
         # region Retrieve the RT and UMI barcodes -----------------------------------------------------------------------------------------------
 
         # Check length of the ligation barcode to determine the location of the other barcodes.
-        if len(sequence_ligation) == 10:
+        if length_ligation == 10:
             # Retrieve the RT barcode from R1 (last 10 bp).
             sequence_rt_raw = read1.sequence[-10:]
 
@@ -384,7 +386,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             sample = dict_rt_barcodes[name_rt]
 
             # Set the sequence of R1 to the cellular barcode.
-            if len(sequence_ligation) == 10:
+            if length_ligation == 10:
                 cell_barcode = sequence_p7 + sequence_p5 + sequence_ligation + sequence_rt
                 read1.sequence = cell_barcode + sequence_umi
             else:
@@ -440,8 +442,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
-        if qc["n_pairs"] == 100000:
-            break
+        # if qc["n_pairs"] == 100000:
+        #     break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -551,11 +553,11 @@ if __name__ == "__main__":
 #         "--barcodes",
 #         "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv",
 #         "--r1",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R1_1-of-20.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R1_1-of-10.fastq.gz",
 #         "--r2",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R2_1-of-20.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R2_1-of-10.fastq.gz",
 #         "--out",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads_scatter/1-of-20/",
+#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads_scatter/1-of-10/",
 #     ]
 # )
 

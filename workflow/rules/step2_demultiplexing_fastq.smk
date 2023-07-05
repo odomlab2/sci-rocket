@@ -67,7 +67,7 @@ rule demultiplex_fastq_split:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
     threads: 1
     resources:
-        mem_mb=1024*20
+        mem_mb=1024*5
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],

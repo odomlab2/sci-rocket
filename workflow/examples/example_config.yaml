@@ -30,5 +30,3 @@ settings:
   scatter_fastq_split: 10
   fastp: "--qualified_quality_phred 15 --dont_eval_duplication --length_required 10"
   star: ""
-
-  #star: "--outSAMstrandField intronMotif --outFilterMultimapNmax 10 --outFilterMismatchNmax 3 --limitOutSJcollapsed 3000000 --chimSegmentMin 10 --chimOutType WithinBAM SoftClip --chimJunctionOverhangMin 10 --chimSegmentReadGapMax 3 --chimScoreMin 1 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outFilterMatchNmin 35 --alignSplicedMateMapLminOverLmate 0.33 --alignSplicedMateMapLmin 35 --alignSJstitchMismatchNmax 5 -1 5 5"
