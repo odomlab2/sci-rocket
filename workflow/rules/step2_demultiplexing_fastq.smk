@@ -12,6 +12,8 @@ rule split_R1:
             )
         ),
     threads: 1
+    resources:
+        mem_mb=1024*2
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R1_{i}-of-"
@@ -37,6 +39,8 @@ rule split_R2:
             )
         ),
     threads: 1
+    resources:
+        mem_mb=1024*2
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R2_{i}-of-"
@@ -62,6 +66,8 @@ rule demultiplex_fastq_split:
     log:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
     threads: 1
+    resources:
+        mem_mb=1024*20
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -77,12 +83,12 @@ rule gather_demultiplex_fastq_split:
     output:
         R1_discarded="{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz",
         R2_discarded="{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz",
-        dash_folder=directory("{sequencing_name}/sci-dash/"),
-        dash_json="{sequencing_name}/sci-dash/js/qc_data.js",
         discarded_log="{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz",
     log:
         "logs/step2_demultiplexing_reads/gather_demultiplex_fastq_split_{sequencing_name}.log",
     threads: 1
+    resources:
+        mem_mb=1024*10
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
@@ -91,21 +97,13 @@ rule gather_demultiplex_fastq_split:
         "Combining the scattered demultiplexed results and generating the sci-dash."
     shell:
         """
-        # Generate the sci-dashboard report.
-        cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
-
-        # Combine the sample-specific QC metrics.
-        python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_scatter {params.path_demux_scatter}      
-
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R2_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R2_discarded.fastq.gz
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name log_{wildcards.sequencing_name}_discarded_reads.tsv.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/log_{wildcards.sequencing_name}_discarded_reads.tsv.gz
 
         # Remove files.
-        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -exec /bin/rm {} \;
-        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R2_discarded.fastq.gz -exec /bin/rm {} \;
-        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name log_{wildcards.sequencing_name}_discarded_reads.tsv.gz  -exec /bin/rm {} \;
+        # find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_*discarded*.gz -exec /bin/rm {{}} \;
         """
 
 
@@ -116,7 +114,10 @@ rule gather_combined_demultiplexed_samples:
     output:
         R1=dynamic("{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz"),
         R2=dynamic("{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz"),
+        whitelist=dynamic("{sequencing_name}/demux_reads/{sample_name}_whitelist.txt"),
     threads: 1
+    resources:
+        mem_mb=1024*2
     message:
         "Combine the sample-specific fastq.fz files."
     shell:
@@ -124,8 +125,12 @@ rule gather_combined_demultiplexed_samples:
         # Combine.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R1.fastq.gz -print0 | xargs -0 cat > {output.R1}
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R2.fastq.gz -print0 | xargs -0 cat > {output.R2}
+        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_whitelist.txt -print0 | xargs -0 cat > {output.whitelist}_tmp
+
+        # Only keep the unique barcodes.
+        sort -u {output.whitelist}_tmp > {output.whitelist}
+        rm {output.whitelist}_tmp
 
         # Remove the scattered files.
-        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R1.fastq.gz -exec /bin/rm {} \;
-        find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R2.fastq.gz -exec /bin/rm {} \;
+        # find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_* -exec /bin/rm {{}} \;
         """

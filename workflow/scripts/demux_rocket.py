@@ -26,6 +26,7 @@ def find_closest_match(sequence, comparison):
         comparison (dict): Dictionary of sequences to compare to.
 
     Returns:
+        str: Sequence of the closest match.
         str: Name of the closest match.
     """
 
@@ -36,9 +37,9 @@ def find_closest_match(sequence, comparison):
     # If there is only one key with a distance of 1, return the name and sequence.
     if len(distances) == 1:
         sequence = next(iter(distances))
-        return comparison[sequence]
+        return sequence, comparison[sequence]
     else:
-        return None
+        return None, None
 
 
 def add_uncorrectable_sequence(sequence, dict_sequence):
@@ -61,9 +62,7 @@ def add_uncorrectable_sequence(sequence, dict_sequence):
 
 def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str):
     """
-    Performs demultiplexing of the raw fastq files based on the RT and ligation barcodes to produce sample-specific R1 and R2 files.
-    The RT barcode is used to identify the sample and generate the sample-specific R1 and R2 files.
-    The read names for R2 are modified to include the sample name, the RT and ligation barcodes.
+    Performs demultiplexing of the raw fastq files based on the PCR indexes (p5, p7) and RT barcode to produce sample-specific R1 and R2 files.
     The ligation barcode can be either 9nt or 10nt long and this can affect the location of the UMI and RT barcodes.
 
     Read-pairs are discarded if:
@@ -123,14 +122,16 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # Generate the output paths.
         path_r1_out = os.path.join(path_out, sample + "_R1.fastq.gz")
         path_r2_out = os.path.join(path_out, sample + "_R2.fastq.gz")
+        path_whitelist = os.path.join(path_out, sample + "_whitelist.txt")
 
         try:
             # Open file handlers for output R1 and R2 files.
             dict_fh_out[sample]["R1"] = gzip.open(path_r1_out, "wt")
             dict_fh_out[sample]["R2"] = gzip.open(path_r2_out, "wt")
+            dict_fh_out[sample]["whitelist"] = open(path_whitelist, "wt")
 
         except OSError:
-            log.error("Could not generate the sample-specific demultiplexed output files, please check the paths:\n(R1) %s\n(R2) %s", path_r1_out, path_r2_out)
+            log.error("Could not generate the sample-specific demultiplexed output files, please check the paths:\n(R1) %s\n(R2) %s\n(Whitelist) %s", path_r1_out, path_r2_out, path_whitelist)
             sys.exit(1)
 
     # Open a file handler for the discarded reads log (gzip).
@@ -220,9 +221,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # Sample-specific dictionary to store (key: sample_name):
     # - No. of (succesfull) read-pairs (has p5+p7+ligation+RT)
-    # - No. of cells (unique p5+p7+ligation+RT) and their respective UMIs.
-    # Structure: samples_dict["sample_name"] = {"n_pairs_success": 0, cells["p5+p7+ligation+RT"] = {"total_UMIs": 0, "UMIs": set()}}
-    samples_dict = {k: {"n_pairs_success": 0, "cells": {}} for k in samples["sample_name"].unique()}
+    # - Unique cellular barcodes (CBs).
+    samples_dict = {k: {"n_pairs_success": 0, "CB": set() } for k in samples["sample_name"].unique()}
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -269,8 +269,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         try:
             name_p5 = dict_p5[sequence_p5_raw]
+            sequence_p5 = sequence_p5_raw
         except KeyError:
-            name_p5 = find_closest_match(sequence_p5_raw, dict_p5)
+            sequence_p5, name_p5 = find_closest_match(sequence_p5_raw, dict_p5)
             if name_p5 != None:
                 qc["n_corrected_p5"] += 1
                 qc["p5_index_counts"][name_p5] += 1
@@ -280,8 +281,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         try:
             name_p7 = dict_p7[sequence_p7_raw]
+            sequence_p7 = sequence_p7_raw
         except KeyError:
-            name_p7 = find_closest_match(sequence_p7_raw, dict_p7)
+            sequence_p7, name_p7 = find_closest_match(sequence_p7_raw, dict_p7)
             if name_p7 != None:
                 qc["n_corrected_p7"] += 1
             else:
@@ -301,15 +303,13 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         try:
             name_ligation = dict_ligation[sequence_ligation_9nt]
             sequence_ligation = sequence_ligation_9nt
-            length_ligation = 9
         except KeyError:
-            length_ligation = 10
             try:
                 name_ligation = dict_ligation[sequence_ligation_10nt]
                 sequence_ligation = sequence_ligation_10nt
             except KeyError:
                 sequence_ligation = sequence_ligation_10nt
-                name_ligation = find_closest_match(sequence_ligation, dict_ligation)
+                sequence_ligation, name_ligation = find_closest_match(sequence_ligation, dict_ligation)
                 if name_ligation != None:
                     qc["n_corrected_ligation"] += 1
                 else:
@@ -322,7 +322,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # region Retrieve the RT and UMI barcodes -----------------------------------------------------------------------------------------------
 
         # Check length of the ligation barcode to determine the location of the other barcodes.
-        if length_ligation == 10:
+        if len(sequence_ligation) == 10:
             # Retrieve the RT barcode from R1 (last 10 bp).
             sequence_rt_raw = read1.sequence[-10:]
 
@@ -341,8 +341,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         try:
             name_rt = dict_rt[sequence_rt_raw]
+            sequence_rt = sequence_rt_raw
         except KeyError:
-            name_rt = find_closest_match(sequence_rt_raw, dict_rt)
+            sequence_rt, name_rt = find_closest_match(sequence_rt_raw, dict_rt)
             if name_rt != None:
                 qc["n_corrected_rt"] += 1
             else:
@@ -382,6 +383,18 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             # Retrieve the matching sample_name from dict_rt_barcodes.
             sample = dict_rt_barcodes[name_rt]
 
+            # Set the sequence of R1 to the cellular barcode.
+            if len(sequence_ligation) == 10:
+                cell_barcode = sequence_p7 + sequence_p5 + sequence_ligation + sequence_rt
+                read1.sequence = cell_barcode + sequence_umi
+            else:
+                cell_barcode = sequence_p7 + sequence_p5 + sequence_ligation + "G" + sequence_rt
+                read1.sequence = cell_barcode + sequence_umi
+                
+
+            # Set the quality of R1 to random good quality.
+            read1.quality = "F" * len(read1.sequence)
+
             # Set the read-name of R2 to include the various barcodes.
             # P5<i>-P7<i>|R2|LIG|RT_UMI
             # VH00211:236:AACK2KFM5:1:1101:28873:1000|P5A01-P7D10|LIGN|P01-D04_GCGAGCGT
@@ -393,6 +406,11 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
             # Count as a successful read-pair.
             qc["n_pairs_success"] += 1
+
+            # Write cellular barcode to whitelist file (if new).
+            if cell_barcode not in samples_dict[sample]["CB"]:
+                dict_fh_out[sample]["whitelist"].write(cell_barcode + "\n")
+                samples_dict[sample]["CB"].add(cell_barcode)
 
             # Keep track of correct read-pairs per sample.
             samples_dict[sample]["n_pairs_success"] += 1
@@ -414,18 +432,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 else:
                     qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] += 1
 
-            # Keep track of cells and barcodes.
-            cell_barcode = "_".join((name_p5, name_p7, name_ligation, name_rt))
-
-            if cell_barcode in samples_dict[sample]["cells"]:
-                samples_dict[sample]["cells"][cell_barcode]["total_UMIs"] += 1
-                samples_dict[sample]["cells"][cell_barcode]["UMIs"].add(sequence_umi)
-            else:
-                samples_dict[sample]["cells"][cell_barcode] = {}
-                samples_dict[sample]["cells"][cell_barcode]["total_UMIs"] = 1
-                samples_dict[sample]["cells"][cell_barcode]["UMIs"] = set()
-                samples_dict[sample]["cells"][cell_barcode]["UMIs"].add(sequence_umi)
-
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
         # region Logging -------------------------------------------------------------------------------------------------------------------------
@@ -434,8 +440,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
-        # if qc["n_pairs"] == 10000:
-        #     break
+        if qc["n_pairs"] == 100000:
+            break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -478,8 +484,11 @@ def init_logger():
 
 def main(arguments):
     description = """
-    Performs 2 levels of demultiplexing on R1/R2.fastq(.gz) files generated by sci-RNA-seq v3 protocol, based on:
-        1) p5/p7 PCR index, 2) RT-barcode (sample).
+    Performs demultiplexing on R1/R2.fastq(.gz) files generated by sci-RNA-seq v3 protocol, based on:
+        - RT-barcode (sample)
+    
+    The R1 sequence is modified to a fixed length sequence (48nt) which includes all (corrected) barcodes: p5(10nt), p7(10nt), ligation(10nt), RT(10nt) and UMI (8nt) for downstream processing.
+    The read names for R2 are modified to include the barcodes and UMI.
     
     It requires that the p5 and p7 barcodes are present in the read headers of the .fastq files (bcl2fastq):
     @<read name> 1:N:0:ACGGNNGGCC+NTCATGGNGC

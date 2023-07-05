@@ -94,11 +94,10 @@ The workflow requires a file (.tsv) containing the barcodes used in the experime
 
 To run this workflow on the DKFZ LSF cluster, first [set-up the proper LSF profile](https://github.com/Snakemake-Profiles/lsf) and run the following command for either the WGS or WTS workflow:
 
-`snakemake --profile lsf_dkfz -n --cluster-config cluster.json --configfile <config>`
+`snakemake --profile lsf_dkfz -n --configfile <config>`
 
 > **Note**  
 > Remove `-n` to disable dry-run.
-> `--cluster-config cluster.json` is optional, but recommended for better load-sharing on cluster systems.
 
 ## Output
 

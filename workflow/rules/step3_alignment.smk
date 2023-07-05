@@ -5,8 +5,10 @@
 
 rule trim_fastp:
     input:
+        R1="{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz",
         R2="{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz",
     output:
+        R1=temp("{sequencing_name}/fastp/{sample_name}_R1.fastq.gz"),
         R2=temp("{sequencing_name}/fastp/{sample_name}_R2.fastq.gz"),
         html="{sequencing_name}/fastp/{sample_name}.html",
         json="{sequencing_name}/fastp/{sample_name}.json",
@@ -15,10 +17,12 @@ rule trim_fastp:
     params:
         extra=config["settings"]["fastp"],
     threads: 10
+    resources:
+        mem_mb=1024 * 10,
     message:
         "Trimming adapters and low-quality reads with fastp."
     shell:
-        "fastp {params.extra} --html {output.html} --json {output.json} --thread {threads} --in1 {input.R2} --out1 {output.R2} >& {log}"
+        "fastp {params.extra} --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
 
 
 #############################################
@@ -31,7 +35,9 @@ rule generate_index_STAR:
         directory("resources/index_star/{species}/"),
     log:
         "logs/step3_alignment/generate_index_STAR_{species}.log",
-    threads: 8
+    threads: 20
+    resources:
+        mem_mb=1024 * 50,
     message:
         "Generating (or symlinking) STAR indexes."
     params:
@@ -47,36 +53,53 @@ rule generate_index_STAR:
             )
 
 
-rule star_align:
+rule starSolo_align:
     input:
+        R1="{sequencing_name}/fastp/{sample_name}_R1.fastq.gz",
         R2="{sequencing_name}/fastp/{sample_name}_R2.fastq.gz",
         index="resources/index_star/{species}/",
+        whitelist="{sequencing_name}/demux_reads/{sample_name}_whitelist.txt",
     output:
         BAM=temp(
             "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"
         ),
-        log1=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out"),
+        log1="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out",
         log2=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.out"),
-        log3=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.progress.out"),
-        SJ="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
-        dir1=temp(directory("{sequencing_name}/alignment/{sample_name}_{species}__STARgenome/")),
-        dir2=temp(directory("{sequencing_name}/alignment/{sample_name}_{species}__STARpass1/")),
-        dir3=temp(directory("{sequencing_name}/alignment/{sample_name}_{species}__STARtmp/")),
+        log3=temp(
+            "{sequencing_name}/alignment/{sample_name}_{species}_Log.progress.out"
+        ),
+        dir1=temp(
+            directory(
+                "{sequencing_name}/alignment/{sample_name}_{species}__STARgenome/"
+            )
+        ),
+        dir2=temp(
+            directory(
+                "{sequencing_name}/alignment/{sample_name}_{species}__STARpass1/"
+            )
+        ),
+        dir3=temp(
+            directory("{sequencing_name}/alignment/{sample_name}_{species}__STARtmp/")
+        ),
+        dir_solo=directory("{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/")
     log:
         "logs/step3_alignment/star_align_{sequencing_name}_{sample_name}_{species}.log",
     params:
-        rg="ID:{sequencing_name}_{sample_name} SM:{sample_name} PL:ILLUMINA",
-        sampleName="{sequencing_name}/alignment/{sample_name}_",
+        sampleName="{sequencing_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
     threads: 8
+    resources:
+        mem_mb=1024 * 50,
     message:
         "Aligning reads with STAR."
     shell:
         """
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
-        --readFilesIn {input.R2} --readFilesCommand zcat \
+        --readFilesIn {input.R2} {input.R1} --readFilesCommand zcat \
+        --soloType CB_UMI_Complex --soloCBmatchWLtype Exact --soloCBwhitelist {input.whitelist} --soloCBposition  0_0_0_39 --soloUMIposition 0_40_0_47 \
+        --soloCellFilter EmptyDrops_CR --soloFeatures GeneFull --soloMultiMappers Uniform \
         --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --outFileNamePrefix {params.sampleName} \
-        --outSAMattrRGline {params.rg} --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS \
+        --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM \
         --twopassMode Basic --twopass1readsN -1 \
         >& {log}
         """
@@ -95,6 +118,8 @@ rule sambamba_markdup:
     log:
         "logs/step3_alignment/sambamba_markdup_{sequencing_name}_{sample_name}_{species}.log",
     threads: 8
+    resources:
+        mem_mb=1024 * 20,
     message:
         "Marking duplicates."
     shell:
@@ -109,7 +134,17 @@ rule sambamba_index:
     log:
         "logs/step3_alignment/sambamba_index_{sequencing_name}_{sample_name}_{species}.log",
     threads: 8
+    resources:
+        mem_mb=1024 * 2,
     message:
         "Indexing BAM."
     shell:
         "sambamba index -t {threads} {input} {output} >& {log}"
+
+
+# Generate the sci-dashboard report.
+# cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
+# Combine the sample-specific QC metrics.
+# python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_scatter {params.path_demux_scatter}
+
+
