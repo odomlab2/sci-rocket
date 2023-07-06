@@ -22,7 +22,7 @@ rule trim_fastp:
     message:
         "Trimming adapters and low-quality reads with fastp."
     shell:
-        "fastp {params.extra} --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
+        "fastp {params.extra} --adapter_sequence_r2 AAAAAAAA --detect_adapter_for_pe --qualified_quality_phred 20 --dont_eval_duplication --length_required 10 --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
 
 
 #############################################
@@ -63,6 +63,7 @@ rule starSolo_align:
         BAM=temp(
             "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"
         ),
+        SJ="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
         log1="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out",
         log2=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.out"),
         log3=temp(
@@ -87,9 +88,9 @@ rule starSolo_align:
     params:
         sampleName="{sequencing_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
-    threads: 8
+    threads: 20
     resources:
-        mem_mb=1024 * 50,
+        mem_mb=1024 * 40,
     message:
         "Aligning reads with STAR."
     shell:
@@ -97,8 +98,9 @@ rule starSolo_align:
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
         --readFilesIn {input.R2} {input.R1} --readFilesCommand zcat \
         --soloType CB_UMI_Complex --soloCBmatchWLtype Exact --soloCBwhitelist {input.whitelist} --soloCBposition  0_0_0_39 --soloUMIposition 0_40_0_47 \
-        --soloCellFilter EmptyDrops_CR --soloFeatures GeneFull --soloMultiMappers Uniform \
+        --soloCellFilter CellRanger2.2 --soloFeatures GeneFull --soloMultiMappers Uniform \
         --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --outFileNamePrefix {params.sampleName} \
+        --outSAMmultNmax 1 --outSAMstrandField intronMotif \
         --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM \
         --twopassMode Basic --twopass1readsN -1 \
         >& {log}
@@ -119,7 +121,7 @@ rule sambamba_markdup:
         "logs/step3_alignment/sambamba_markdup_{sequencing_name}_{sample_name}_{species}.log",
     threads: 8
     resources:
-        mem_mb=1024 * 20,
+        mem_mb=1024 * 10,
     message:
         "Marking duplicates."
     shell:

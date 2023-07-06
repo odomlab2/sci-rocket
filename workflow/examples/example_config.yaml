@@ -28,5 +28,5 @@ species:
 settings:
   # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
   scatter_fastq_split: 10
-  fastp: "--qualified_quality_phred 15 --dont_eval_duplication --length_required 10"
+  fastp: ""
   star: ""
