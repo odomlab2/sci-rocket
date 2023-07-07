@@ -82,7 +82,7 @@ rule starSolo_align:
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
         --readFilesIn {input.R2} {input.R1} --readFilesCommand zcat \
         --soloType CB_UMI_Complex --soloCBmatchWLtype Exact --soloCBwhitelist {input.whitelist} --soloCBposition  0_0_0_39 --soloUMIposition 0_40_0_47 \
-        --soloCellFilter CellRanger2.2 --soloFeatures Gene GeneFull --soloMultiMappers Uniform --soloCellReadStats Standard \
+        --soloCellFilter CellRanger2.2 --soloFeatures GeneFull --soloMultiMappers Uniform --soloCellReadStats Standard \
         --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --outFileNamePrefix {params.sampleName} \
         --outSAMmultNmax 1 --outSAMstrandField intronMotif \
         --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM CB UB \
