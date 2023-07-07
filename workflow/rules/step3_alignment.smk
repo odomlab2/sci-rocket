@@ -126,9 +126,27 @@ rule sambamba_index:
         "sambamba index -t {threads} {input} {output} >& {log}"
 
 
+#############################################
 # Generate the sci-dashboard report.
-# cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
-# Combine the sample-specific QC metrics.
-# python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_scatter {params.path_demux_scatter}
+#############################################
 
+rule sci_dash:
+    input:
+        qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle",
+        log_star="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out"
+    output:
+        dash_folder=directory("{sequencing_name}/sci-dash/"),
+        dash_json="{sequencing_name}/sci-dash/js/qc_data.js",
+    threads: 1
+    resources:
+        mem_mb=1024 * 2,
+    message:
+        "Generating sci-dashboard report."
+    shell:
+        """
+        # Generate the sci-dashboard report.
+        cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
 
+        # Combine the sample-specific QC and STARSolo metrics.
+        # python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_qc {input.qc} --path_star {input.log_star}
+        """

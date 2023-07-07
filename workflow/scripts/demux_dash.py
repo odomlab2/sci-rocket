@@ -90,27 +90,6 @@ def combine_scattered(path_scatter, path_out):
 
     # region Calculate summary statistics. --------------------------------------------------------------------------------
     if qc != None and sample_dict != None:
-        # Calculate the total number of unique cells using all unique cell_barcodes.
-        qc["n_cells"] = len(set().union(*[sample_dict[sample]["cells"] for sample in sample_dict]))
-
-        for sample in sample_dict:
-            # Calculate the number of unique cells.
-            sample_dict[sample]["n_cells"] = len(sample_dict[sample]["cells"])
-
-            # Calculate the number of unique UMIs.
-            sample_dict[sample]["n_UMIs"] = len(set().union(*[sample_dict[sample]["cells"][cell]["UMIs"] for cell in sample_dict[sample]["cells"]]))
-
-            # For each sample, calculate the number of cells with >=100 and >=1000 UMI.
-            sample_dict[sample]["n_cells_umi_100"] = len([cell for cell in sample_dict[sample]["cells"] if sample_dict[sample]["cells"][cell]["total_UMIs"] >= 100])
-            sample_dict[sample]["n_cells_umi_1000"] = len([cell for cell in sample_dict[sample]["cells"] if sample_dict[sample]["cells"][cell]["total_UMIs"] >= 1000])
-
-            # Calculate the duplication rate for each sample by dividing the number of unique UMIs by the total number of UMIs.
-            dup_rate_cell = [ 1 - len(sample_dict[sample]["cells"][cell]["UMIs"]) / sample_dict[sample]["cells"][cell]["total_UMIs"] for cell in sample_dict[sample]["cells"]]            
-            sample_dict[sample]["dup_rate"] = sum(dup_rate_cell) / len(dup_rate_cell)
-
-        # Calculate the n_cells_umi_100 and n_cells_umi_1000 over all samples.
-        qc["n_cells_umi_100"] = sum([sample_dict[sample]["n_cells_umi_100"] for sample in sample_dict])
-        qc["n_cells_umi_1000"] = sum([sample_dict[sample]["n_cells_umi_1000"] for sample in sample_dict])
 
         # Determine the top recurrent uncorrectable barcodes.
         qc["top_uncorrectables"] = {}
@@ -150,8 +129,9 @@ def combine_scattered(path_scatter, path_out):
         # Remove the ligation_barcode_counts with zero counts.
         qc["ligation_barcode_counts"] = [barcode for barcode in qc["ligation_barcode_counts"] if barcode["frequency"] > 0]
 
+        # Remove the CB from the sample_dict.
         for sample in sample_dict:
-            del(sample_dict[sample]["cells"])
+            del(sample_dict[sample]["CB"])
 
         # Convert the uncorrectables_sankey.        
         qc["uncorrectables_sankey"] = [{"source": str(key), "value": qc["uncorrectables_sankey"][key]} for key in qc["uncorrectables_sankey"]]
