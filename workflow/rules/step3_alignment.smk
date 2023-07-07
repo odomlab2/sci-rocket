@@ -22,7 +22,7 @@ rule trim_fastp:
     message:
         "Trimming adapters and low-quality reads with fastp."
     shell:
-        "fastp {params.extra} --adapter_sequence_r2 AAAAAAAA --detect_adapter_for_pe --qualified_quality_phred 20 --dont_eval_duplication --length_required 10 --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
+        "fastp {params.extra} --detect_adapter_for_pe --qualified_quality_phred 15 --dont_eval_duplication --length_required 10 --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
 
 
 #############################################
@@ -60,35 +60,19 @@ rule starSolo_align:
         index="resources/index_star/{species}/",
         whitelist="{sequencing_name}/demux_reads/{sample_name}_whitelist.txt",
     output:
-        BAM=temp(
-            "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"
-        ),
+        BAM=temp("{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"),
         SJ="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
         log1="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out",
         log2=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.out"),
-        log3=temp(
-            "{sequencing_name}/alignment/{sample_name}_{species}_Log.progress.out"
-        ),
-        dir1=temp(
-            directory(
-                "{sequencing_name}/alignment/{sample_name}_{species}__STARgenome/"
-            )
-        ),
-        dir2=temp(
-            directory(
-                "{sequencing_name}/alignment/{sample_name}_{species}__STARpass1/"
-            )
-        ),
-        dir3=temp(
-            directory("{sequencing_name}/alignment/{sample_name}_{species}__STARtmp/")
-        ),
+        log3=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.progress.out"),
+        dir_tmp=temp(directory("{sequencing_name}/alignment/{sample_name}_{species}__STARtmp/")),
         dir_solo=directory("{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/")
     log:
         "logs/step3_alignment/star_align_{sequencing_name}_{sample_name}_{species}.log",
     params:
         sampleName="{sequencing_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
-    threads: 20
+    threads: 30
     resources:
         mem_mb=1024 * 40,
     message:
@@ -98,14 +82,12 @@ rule starSolo_align:
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
         --readFilesIn {input.R2} {input.R1} --readFilesCommand zcat \
         --soloType CB_UMI_Complex --soloCBmatchWLtype Exact --soloCBwhitelist {input.whitelist} --soloCBposition  0_0_0_39 --soloUMIposition 0_40_0_47 \
-        --soloCellFilter CellRanger2.2 --soloFeatures GeneFull --soloMultiMappers Uniform \
+        --soloCellFilter CellRanger2.2 --soloFeatures Gene GeneFull --soloMultiMappers Uniform --soloCellReadStats Standard \
         --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --outFileNamePrefix {params.sampleName} \
         --outSAMmultNmax 1 --outSAMstrandField intronMotif \
-        --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM \
-        --twopassMode Basic --twopass1readsN -1 \
+        --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM CB UB \
         >& {log}
         """
-
 
 #############################################
 #  Sambamba: Marking duplicates and indexing

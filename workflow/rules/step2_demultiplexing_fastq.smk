@@ -62,7 +62,7 @@ rule demultiplex_fastq_split:
         R1="{sequencing_name}/raw_reads/R1_{scatteritem}.fastq.gz",
         R2="{sequencing_name}/raw_reads/R2_{scatteritem}.fastq.gz",
     output:
-        directory("{sequencing_name}/demux_reads_scatter/{scatteritem}/"),
+        temp(directory("{sequencing_name}/demux_reads_scatter/{scatteritem}/")),
     log:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
     threads: 1
@@ -101,20 +101,16 @@ rule gather_demultiplex_fastq_split:
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R2_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R2_discarded.fastq.gz
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name log_{wildcards.sequencing_name}_discarded_reads.tsv.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/log_{wildcards.sequencing_name}_discarded_reads.tsv.gz
-
-        # Remove files.
-        # find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_*discarded*.gz -exec /bin/rm {{}} \;
         """
 
 
 rule gather_combined_demultiplexed_samples:
     input:
-        R1="{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz",
-        R2="{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz",
+        gather.fastq_split("{{sequencing_name}}/demux_reads_scatter/{scatteritem}/"),
     output:
-        R1=dynamic("{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz"),
-        R2=dynamic("{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz"),
-        whitelist=dynamic("{sequencing_name}/demux_reads/{sample_name}_whitelist.txt"),
+        R1="{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz",
+        R2="{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz",
+        whitelist="{sequencing_name}/demux_reads/{sample_name}_whitelist.txt",
     threads: 1
     resources:
         mem_mb=1024*2
@@ -130,7 +126,4 @@ rule gather_combined_demultiplexed_samples:
         # Only keep the unique barcodes.
         sort -u {output.whitelist}_tmp > {output.whitelist}
         rm {output.whitelist}_tmp
-
-        # Remove the scattered files.
-        # find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_* -exec /bin/rm {{}} \;
         """
