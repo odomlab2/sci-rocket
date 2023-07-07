@@ -79,7 +79,7 @@ rule DEMUX:
 rule DASH:
     input:
         lambda w: [
-            "{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle".format(
+            "{sequencing_name}/sci-dash/js/qc_data.js".format(
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
                 species=species,
