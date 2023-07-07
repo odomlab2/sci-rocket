@@ -18,7 +18,7 @@ rule trim_fastp:
         extra=config["settings"]["fastp"],
     threads: 10
     resources:
-        mem_mb=1024 * 10,
+        mem_mb=1024 * 4,
     message:
         "Trimming adapters and low-quality reads with fastp."
     shell:
@@ -133,7 +133,6 @@ rule sambamba_index:
 rule sci_dash:
     input:
         qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle",
-        log_star="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out"
     output:
         dash_folder=directory("{sequencing_name}/sci-dash/"),
         dash_json="{sequencing_name}/sci-dash/js/qc_data.js",

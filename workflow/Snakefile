@@ -76,6 +76,19 @@ rule DEMUX:
             )
         ]
 
+rule DASH:
+    input:
+        lambda w: [
+            "{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle".format(
+                sequencing_name=sequencing_name,
+                sample_name=sample_name,
+                species=species,
+            ) for sequencing_name, sample_name, species in zip(
+                samples_unique["sequencing_name"],
+                samples_unique["sample_name"],
+                samples_unique["species"],
+            )
+        ]
 
 # Load rules ----
 

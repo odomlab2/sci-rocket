@@ -87,7 +87,7 @@ def combine_scattered(path_demux_scatter, path_out):
     # endregion
 
     # Combined pickles.
-    with open(os.path.join(path_out, "qc.pickle"), "wb") as fh:
+    with open(path_out, "wb") as fh:
         pickle.dump(qc, fh)
         pickle.dump(sample_dict, fh)
 
