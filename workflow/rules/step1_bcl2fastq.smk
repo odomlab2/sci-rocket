@@ -33,9 +33,11 @@ rule bcl2fastq:
         mem_mb=1024 * 40,
     params:
         path_out="{sequencing_name}/raw_reads/",
+        extra=config["settings"]["bcl2fastq"],
     shell:
         """
         bcl2fastq \
+        {params.extra} \
         -R {input.path_bcl} \
         --sample-sheet {input.fake_sample_sheet} \
         --output-dir {params.path_out} \

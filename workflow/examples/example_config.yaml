@@ -25,8 +25,14 @@ species:
 
 #################################
 # --- Additional parameters ----#
+
+# Read length of R2 (i.e. the read containing the cDNA sequence) - 1.
+# This is used during genome generation to set the --sjdbOverhang parameter.
+length_R2: 83
+
 settings:
   # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
   scatter_fastq_split: 10
+  bcl2fastq: ""
   fastp: ""
   star: ""

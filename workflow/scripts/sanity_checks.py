@@ -120,7 +120,6 @@ def sanity_samples(log, samples, barcodes, config):
     Returns:
         bool: True if the sample sheet is valid, False otherwise.
     """
-    log.info("Checking sanity: Sample sheet.")
 
     # Check if the sample sheet is empty.
     if samples.empty:
@@ -189,8 +188,6 @@ def sanity_barcodes(log, barcodes):
     Returns:
         bool: True if the barcodes file is valid, False otherwise.
     """
-
-    log.info("Checking sanity: Barcode files.")
 
     # Check if the barcodes file is empty.
     if barcodes.empty:

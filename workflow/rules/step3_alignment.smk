@@ -44,12 +44,13 @@ rule generate_index_STAR:
         fasta=lambda w: config["species"][w.species]["genome"],
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
         star_index=lambda w: config["species"][w.species]["star_index"],
+        length_R2=lambda w: config["length_R2"],
     run:
         if params.star_index:
             shell("ln -s {input.star_index} {output}")
         else:
             shell(
-                "STAR --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang 83 >& {log}"
+                "STAR --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}"
             )
 
 
@@ -139,9 +140,26 @@ rule sambamba_index:
 # Generate the sci-dashboard report.
 #############################################
 
+# Get the samples for a given sequencing run (and sci-dash).
+def getsamples_sequencing(wildcards):
+    x = samples_unique[samples_unique["sequencing_name"] == wildcards.sequencing_name]
+    
+    files = ["{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam.bai".format(
+        sequencing_name=sequencing_name,
+        sample_name=sample_name,
+        species=species,
+    )
+    for sequencing_name, sample_name, species in zip(
+        x["sequencing_name"],
+        x["sample_name"],
+        x["species"],
+    )]
+
+    return files
 
 rule sci_dash:
     input:
+        lambda w: getsamples_sequencing(w),
         qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle",
     output:
         dash_folder=directory("{sequencing_name}/sci-dash/"),
