@@ -34,7 +34,6 @@
   - Alignment stats (**sambamba**)
   - Generate demultiplexing/alignment overview. (**sci-dash**)
 
-
 > **Note**  
 > See [Methodology](#methodology) for more information on various key aspects of the methodology.  
 > Where possible, parallization is performed per sequencing run and over samples.
