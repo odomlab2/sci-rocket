@@ -17,12 +17,11 @@
 - Check for sanity of provided barcodes and sample-sheet.
 - Converts BCL files to R1/R2.fastq.gz files with p5 and p7 indexes in header (**bcl2fastq**).
 - Splits R1/R2 fastq.gz files into smaller (evenly-sized) chunks for parallelization (**fastqsplitter**).
-- Demultiplexes (paired-end) sequencing using the supplied sample-specific barcodes.
+- Demultiplexes (paired-end) sequencing using the supplied sample-specific barcodes (**sci-rocket**).
   - Finds exact or nearest match for p5, p7, ligation and/or RT barcode (<=1 hamming distance with only single match).
   - Generates sample-specific .fastq.gz file(s) with correct read-name for R2.
   - Read-pairs with no p5, p7, ligation and/or RT barcode match are discarded into separate .fastq.gz files.
     - Log file contains information on discarded read-pairs detailing which barcodes are matching.
-- Generate demultiplexing overview. (**sci-dash**)
 
 ### **Processing of sci-RNA-Seq3 data**
 
@@ -33,11 +32,12 @@
 - Marks duplicates (**sambamba**).
 - Generates QC:
   - Alignment stats (**sambamba**)
-  - Sequencing coverage (**mosdepth**)
+  - Generate demultiplexing/alignment overview. (**sci-dash**)
+
 
 > **Note**  
 > See [Methodology](#methodology) for more information on various key aspects of the methodology.  
-> Where possible, parallization is performed per sequencing run.
+> Where possible, parallization is performed per sequencing run and over samples.
 
 ## Installation and pre-requirements
 
