@@ -60,13 +60,21 @@ rule starSolo_align:
         index="resources/index_star/{species}/",
         whitelist="{sequencing_name}/demux_reads/{sample_name}_whitelist.txt",
     output:
-        BAM=temp("{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"),
+        BAM=temp(
+            "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"
+        ),
         SJ="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
         log1="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out",
         log2=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.out"),
-        log3=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.progress.out"),
-        dir_tmp=temp(directory("{sequencing_name}/alignment/{sample_name}_{species}__STARtmp/")),
-        dir_solo=directory("{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/")
+        log3=temp(
+            "{sequencing_name}/alignment/{sample_name}_{species}_Log.progress.out"
+        ),
+        dir_tmp=temp(
+            directory("{sequencing_name}/alignment/{sample_name}_{species}__STARtmp/")
+        ),
+        dir_solo=directory(
+            "{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/"
+        ),
     log:
         "logs/step3_alignment/star_align_{sequencing_name}_{sample_name}_{species}.log",
     params:
@@ -88,6 +96,7 @@ rule starSolo_align:
         --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM CB UB \
         >& {log}
         """
+
 
 #############################################
 #  Sambamba: Marking duplicates and indexing
@@ -129,6 +138,7 @@ rule sambamba_index:
 #############################################
 # Generate the sci-dashboard report.
 #############################################
+
 
 rule sci_dash:
     input:

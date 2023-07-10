@@ -361,7 +361,6 @@ function generate_star_table(data) {
     var row = table.insertRow(-1);
     row.insertCell(0).innerHTML = sample;
     row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
-    row.insertCell(2).innerHTML = 0;
 
     // Add a progress bar for the uniq_reads
     var cell = row.insertCell(2);

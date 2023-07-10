@@ -13,7 +13,7 @@ rule split_R1:
         ),
     threads: 1
     resources:
-        mem_mb=1024*2
+        mem_mb=1024 * 2,
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R1_{i}-of-"
@@ -40,7 +40,7 @@ rule split_R2:
         ),
     threads: 1
     resources:
-        mem_mb=1024*2
+        mem_mb=1024 * 2,
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R2_{i}-of-"
@@ -67,7 +67,7 @@ rule demultiplex_fastq_split:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
     threads: 1
     resources:
-        mem_mb=1024*5
+        mem_mb=1024 * 5,
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -87,7 +87,7 @@ rule gather_demultiplexed_discarded:
         qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle",
     threads: 1
     resources:
-        mem_mb=1024*5
+        mem_mb=1024 * 5,
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
@@ -112,10 +112,10 @@ rule gather_demultiplexed_samples:
     output:
         R1="{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz",
         R2="{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz",
-        whitelist="{sequencing_name}/demux_reads/{sample_name}_whitelist.txt"
+        whitelist="{sequencing_name}/demux_reads/{sample_name}_whitelist.txt",
     threads: 1
     resources:
-        mem_mb=1024*2
+        mem_mb=1024 * 2,
     message:
         "Combining the sample-specific fastq.fz files."
     shell:

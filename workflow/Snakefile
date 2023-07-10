@@ -45,9 +45,13 @@ log.removeHandler(log.handlers[0])
 
 # Constrain wildcard values to resolve downstream mixtures. ----
 wildcard_constraints:
-    sequencing_name="|".join([re.escape(str(x)) for x in samples_unique["sequencing_name"]]),
+    sequencing_name="|".join(
+        [re.escape(str(x)) for x in samples_unique["sequencing_name"]]
+    ),
     sample_name="|".join([re.escape(str(x)) for x in samples_unique["sample_name"]]),
-    experiment_name="|".join([re.escape(str(x)) for x in samples_unique["experiment_name"]]),
+    experiment_name="|".join(
+        [re.escape(str(x)) for x in samples_unique["experiment_name"]]
+    ),
     species="|".join([re.escape(str(x)) for x in samples_unique["species"]]),
 
 
@@ -62,6 +66,7 @@ scattergather:
 # Set working directory to output directory.
 workdir: config["dir_output"]
 
+
 rule DEMUX:
     input:
         lambda w: [
@@ -69,28 +74,29 @@ rule DEMUX:
                 sequencing_name=sequencing_name,
                 sample_name=sample_name,
                 species=species,
-            ) for sequencing_name, sample_name, species in zip(
+            )
+            for sequencing_name, sample_name, species in zip(
                 samples_unique["sequencing_name"],
                 samples_unique["sample_name"],
                 samples_unique["species"],
             )
-        ]
+        ],
+
 
 rule DASH:
     input:
         lambda w: [
             "{sequencing_name}/sci-dash/js/qc_data.js".format(
-                sequencing_name=sequencing_name,
-                sample_name=sample_name,
-                species=species,
-            ) for sequencing_name, sample_name, species in zip(
-                samples_unique["sequencing_name"],
-                samples_unique["sample_name"],
-                samples_unique["species"],
+                sequencing_name=sequencing_name
             )
-        ]
+            for sequencing_name, sample_name, species in zip(
+                samples_unique["sequencing_name"]
+            )
+        ],
+
 
 # Load rules ----
+
 
 include: "rules/step1_bcl2fastq.smk"
 include: "rules/step2_demultiplexing_fastq.smk"
