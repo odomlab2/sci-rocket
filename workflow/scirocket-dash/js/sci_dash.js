@@ -38,6 +38,13 @@ function roundToOne(num) {
   return +(Math.round(num + "e+1") + "e-1");
 }
 
+// Count the total number of estimated cells over samples.
+var total_estimated_cells = 0;
+for (var i = 0; i < sample_names.length; i++) {
+  total_estimated_cells += data.samples_qc[sample_names[i]].solo_estimated_cells;
+}
+
+
 // Update numbers
 document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("version").innerHTML = data.version;
@@ -47,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("n_total_pairs_success_perc").innerHTML = roundToOne((data.n_pairs_success / data.n_pairs) * 100) + "%";
   document.getElementById("n_total_pairs_failure_perc").innerHTML = roundToOne((data.n_pairs_failure / data.n_pairs) * 100) + "%";
   document.getElementById("n_total_corrections").innerHTML = Intl.NumberFormat("en-US").format(data.n_corrected_p5 + data.n_corrected_p7 + data.n_corrected_ligation + data.n_corrected_rt);
-  document.getElementById("n_total_cells").innerHTML = Intl.NumberFormat("en-US").format(data.n_cells);
+  document.getElementById("n_total_cells").innerHTML = Intl.NumberFormat("en-US").format(total_estimated_cells);
 
   // Set the n_total_pairs_success_perc_bar width
   document.getElementById("n_total_pairs_success_perc_bar").style.width = (data.n_pairs_success / data.n_pairs) * 100 + "%";
@@ -249,54 +256,57 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 //--------------------------------------------
-// Table - Sample summary.
+// Table - STARSolo summary.
 //--------------------------------------------
 
 // For each sample, generate a row in the table.
 // The row will contain the following information:
 // 1. Sample name
-// 2. Number of reads
-// 3. Number of unique UMI
-// 4. Number of cells
-// 5. Number of cells with > 100 UMI
-// 6. Number of cells with > 1000 UMI
-// 7. Duplication rate + progress bar
-function generate_sample_summary_table(data) {
-  document.getElementById("sample-summary-table").innerHTML = ' <table class="table" id="sample-summary-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th> <button class="table-sort" data-sort="sort-reads">Total Reads (UMIs)</button> </th> <th> <button class="table-sort" data-sort="sort-unique_umi">Total unique UMIs</button> </th> <th> <button class="table-sort" data-sort="sort-totalcells">No. cells</button> </th> <th> <button class="table-sort" data-sort="sort-totalcells_100">No. cells > 100 UMI</button> </th> <th> <button class="table-sort" data-sort="ssort-totalcells_1000">No. cells > 1000 UMI</button> </th> <th> <button class="table-sort" data-sort="sort-duplication">Duplication Rate</button> </th> </tr></thead> <tbody class="table-tbody"> <tr></tr></tbody> </table>'
+// 2. Total input reads
+// 3. Total unique reads mapped to GeneFull
+// 4. Estimated number of cells
+// 5. Mean reads per cell
+// 6. Total unique reads mapped to GeneFull for all cells.
+// 7. Mean UMI per cell
+// 8. Mean gene per cell
+// 9. Sequencing saturation
+function generate_starsolo_table(data) {
+  document.getElementById("sample-starsolo-table").innerHTML = '<table class="table" id="sample-starsolo-table"> <thead> <tr> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreads"># Reads</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenes"># uniquely-mapped reads<br>(genes)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalcellsfiltered"># Cells<br>(filtered)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sortß="sort-meanreadscell">Mean reads<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenescells"># uniquely-mapped reads<br>(genes + cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanumicell">Mean UMI<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meangenescell">Mean genes<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sequencingsaturation">Sequencing<br>saturation</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
   
-  var table = document.getElementById("sample-summary-table");
+  var table = document.getElementById("sample-starsolo-table");
   for (var sample in data) {
     var row = table.insertRow(-1);
     row.insertCell(0).innerHTML = sample;
-    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_pairs_success);
-    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_UMIs);
-    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_cells);
-    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_cells_umi_100);
-    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_cells_umi_1000);
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
+    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_uniq_gene_reads);
+    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_estimated_cells);
+    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_mean_reads_per_cell);
+    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_uniq_gene_reads_in_cells);
+    row.insertCell(6).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_mean_umi_per_cell);
+    row.insertCell(7).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_mean_gene_per_cell);
 
-    // Add a progress bar for the duplication rate
-    var cell = row.insertCell(6);
+    // Add a progress bar for the solo_sequencing_saturation
+    var cell = row.insertCell(8);
     var progress = document.createElement("div");
     progress.className = "row align-items-center";
     var col1 = document.createElement("div");
     col1.className = "col-12 col-lg-auto";
-    col1.innerHTML = Math.round(data[sample].dup_rate * 100) + "%";
+    col1.innerHTML = Math.round(data[sample].solo_sequencing_saturation * 100) + "%";
     var col2 = document.createElement("div");
     col2.className = "col";
     var progress_bar = document.createElement("div");
     progress_bar.className = "progress";
-    progress_bar.style = "width: 5rem";
+    progress_bar.style = "width: 3rem";
     var progress_bar_inner = document.createElement("div");
     progress_bar_inner.className = "progress-bar";
-    progress_bar_inner.style = "width: " + data[sample].dup_rate * 100 + "%";
+    progress_bar_inner.style = "width: " + data[sample].solo_sequencing_saturation * 100 + "%";
     progress_bar_inner.setAttribute("role", "progressbar");
-    progress_bar_inner.setAttribute("aria-valuenow", data[sample].dup_rate);
+    progress_bar_inner.setAttribute("aria-valuenow", data[sample].solo_sequencing_saturation);
     progress_bar_inner.setAttribute("aria-valuemin", "0");
     progress_bar_inner.setAttribute("aria-valuemax", "100");
-    progress_bar_inner.setAttribute("aria-label", data[sample].dup_rate + "% Complete");
     var span = document.createElement("span");
     span.className = "visually-hidden";
-    span.innerHTML = data[sample].dup_rate + "% Complete";
+    span.innerHTML = data[sample].solo_sequencing_saturation + "%";
     progress_bar_inner.appendChild(span);
     progress_bar.appendChild(progress_bar_inner);
     col2.appendChild(progress_bar);
@@ -306,26 +316,109 @@ function generate_sample_summary_table(data) {
 
     // Set the sorting classes of td elements
     row.cells[0].className = "sort-sample";
-    row.cells[1].className = "sort-reads";
-    row.cells[2].className = "sort-unique_umi";
-    row.cells[3].className = "sort-totalcells";
-    row.cells[4].className = "sort-totalcells_100";
-    row.cells[5].className = "sort-totalcells_1000";
-    row.cells[6].className = "sort-duplication";
-    row.cells[6].setAttribute("data-progress", data[sample].dup_rate);
+    row.cells[1].className = "sort-totalreads";
+    row.cells[2].className = "sort-totalreadsuniquegenes";
+    row.cells[3].className = "sort-totalcellsfiltered";
+    row.cells[4].className = "sort-meanreadscell";
+    row.cells[5].className = "sort-totalreadsuniquegenescells";
+    row.cells[6].className = "sort-meanumicell";
+    row.cells[7].className = "sort-meangenescell";
+    row.cells[8].className = "sort-sequencingsaturation";
+
   }
 }
 document.addEventListener("DOMContentLoaded", function () {
 
-  generate_sample_summary_table(data.samples_qc);
+  generate_starsolo_table(data.samples_qc);
 
-  const list = new List("sample-summary-table", {
+  const list = new List("sample-starsolo-table", {
     sortClass: "table-sort",
     listClass: "table-tbody",
-    valueNames: ["sort-sample", "sort-reads", "sort-unique_umi", "sort-totalcells", "sort-totalcells_100", "sort-totalcells_1000", "sort-duplication"],
+    valueNames: ["sort-sample", "sort-totalreads", "sort-totalreadsuniquegenes", "sort-totalcellsfiltered", "sort-meanreadscell", "sort-totalreadsuniquegenescells", "sort-meanumicell", "sort-meangenescell", "sort-sequencingsaturation"],
   });
 
 });
+
+
+
+//--------------------------------------------
+// Table - STAR summary.
+//--------------------------------------------
+
+// For each sample, generate a row in the table.
+// The row will contain the following information:
+// 1. Sample name
+// 2. Total input reads
+// 3. Total unique reads
+// 4. Total multimapping reads
+// 5. Total reads filtered out.
+// 6. Total chimeric reads
+function generate_star_table(data) {
+  document.getElementById("sample-alignment-table").innerHTML = '<table class="table" id="sample-alignment-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th> <button class="table-sort" data-sort="sort-totalreads">Total reads</button> </th> <th> <button class="table-sort" data-sort="sort-uniquereads">Uniquely-mapped</button> </th> <th> <button class="table-sort" data-sort="sort-readmulti">Multimapping</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readfilter">Filtered</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readchimeric">Chimeric reads</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
+  
+  var table = document.getElementById("sample-alignment-table");
+  for (var sample in data) {
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = sample;
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
+    row.insertCell(2).innerHTML = 0;
+
+    // Add a progress bar for the uniq_reads
+    var cell = row.insertCell(2);
+    var progress = document.createElement("div");
+    progress.className = "row align-items-center";
+    var col1 = document.createElement("div");
+    col1.className = "col-12 col-lg-auto";
+    col1.innerHTML = Math.round((data[sample].uniq_reads / data[sample].total_reads) * 100) + "%";
+    var col2 = document.createElement("div");
+    col2.className = "col";
+    var progress_bar = document.createElement("div");
+    progress_bar.className = "progress";
+    progress_bar.style = "width: 3rem";
+    var progress_bar_inner = document.createElement("div");
+    progress_bar_inner.className = "progress-bar";
+    progress_bar_inner.style = "width: " + (data[sample].uniq_reads / data[sample].total_reads) * 100 + "%";
+    progress_bar_inner.setAttribute("role", "progressbar");
+    progress_bar_inner.setAttribute("aria-valuenow", data[sample].uniq_reads / data[sample].total_reads);
+    progress_bar_inner.setAttribute("aria-valuemin", "0");
+    progress_bar_inner.setAttribute("aria-valuemax", "100");
+    
+    var span = document.createElement("span");
+    span.className = "visually-hidden";
+    span.innerHTML = (data[sample].uniq_reads / data[sample].total_reads) * 100 + "%";
+    progress_bar_inner.appendChild(span);
+    progress_bar.appendChild(progress_bar_inner);
+    col2.appendChild(progress_bar);
+    progress.appendChild(col1);
+    progress.appendChild(col2);
+    cell.appendChild(progress);
+
+    // Add the other cells.
+    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].multimapped_reads);
+    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].filtered_reads);
+    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].chimeric_reads);
+
+    // Set the sorting classes of td elements
+    row.cells[0].className = "sort-sample";
+    row.cells[1].className = "sort-totalreads";
+    row.cells[2].className = "sort-uniquereads";
+    row.cells[3].className = "sort-readmulti";
+    row.cells[4].className = "sort-readfilter";
+    row.cells[5].className = "sort-readchimeric";
+  }
+}
+document.addEventListener("DOMContentLoaded", function () {
+
+  generate_star_table(data.samples_qc);
+
+  const list = new List("sample-alignment-table", {
+    sortClass: "table-sort",
+    listClass: "table-tbody",
+    valueNames: ["sort-sample", "sort-totalreads", "sort-uniquereads", "sort-readmulti", "sort-readfilter", "sort-readchimeric"],
+  });
+
+});
+
 
 //--------------------------------------------
 // Chart - Ligation usage.

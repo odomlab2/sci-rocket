@@ -190,7 +190,7 @@
                   <div class="card-header">
                     <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
                       <li class="nav-item">
-                        <a href="#tabs-starsolo" class="nav-link active" data-bs-toggle="tab">Counts (Cells)</a>
+                        <a href="#tabs-starsolo" class="nav-link active" data-bs-toggle="tab">Alignment (Cells)</a>
                       </li>
                       <li class="nav-item">
                         <a href="#tabs-alignment" class="nav-link" data-bs-toggle="tab">Alignment (Reads)</a>
@@ -216,44 +216,7 @@
                             <div class="card">
                               <div class="card-body">
                                 <div id="table-default" class="table-responsive">
-                                  <table class="table" id="sample-summdary-table">
-                                    <thead>
-                                      <tr>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-sample">Sample</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-totalreads"># Reads</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-totalreadsuniquegenes"># uniquely-mapped reads (genes)</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-totalcellsfiltered"># Cells (filtered)</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-totalreadsuniquegenescells"># uniquely-mapped reads (genes + cell)</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-meanumicell">Mean UMI (per cell)</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-meangenescell">Mean genes (per cell)</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-sequencingsaturation">Sequencing Saturation</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-filteredcells_100"># cells >100 UMI</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-filteredcells_1000"># cells >1000 UMI</button>
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody class="table-tbody">
-                                      <tr></tr>
-                                    </tbody>
+                                  <table class="table" id="sample-starsolo-table">
                                   </table>
                                 </div>
                               </div>
@@ -270,40 +233,6 @@
                               <div class="card-body">
                                 <div id="table-default" class="table-responsive">
                                   <table class="table" id="sample-alignment-table">
-                                    <thead>
-                                      <tr>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-sample">Sample</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-totalreads">Total reads</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-mappedreads">Mapped reads</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-uniquereads">Uniquely-mapped</button>
-                                        </th>
-                                        <th>
-                                          <button class="table-sort" data-sort="sort-readmulti">Multimapping</button>
-                                        </th>
-                                        <th style="color: #d63939">
-                                          <button class="table-sort" data-sort="sort-readmultifilter">Too many multimapping</button>
-                                        </th>
-                                        <th style="color: #d63939">
-                                          <button class="table-sort" data-sort="sort-readshortfilter">Too short alignment</button>
-                                        </th>
-                                        <th style="color: #d63939">
-                                          <button class="table-sort" data-sort="sort-readotherfilter">Other unmapped</button>
-                                        </th>
-                                        <th style="color: #d63939">
-                                          <button class="table-sort" data-sort="sort-readchimeric">Chimeric reads</button>
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody class="table-tbody">
-                                      <tr></tr>
-                                    </tbody>
                                   </table>
                                 </div>
                               </div>
