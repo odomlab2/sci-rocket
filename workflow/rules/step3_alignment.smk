@@ -59,7 +59,10 @@ rule starSolo_align:
         R1="{sequencing_name}/fastp/{sample_name}_R1.fastq.gz",
         R2="{sequencing_name}/fastp/{sample_name}_R2.fastq.gz",
         index="resources/index_star/{species}/",
-        whitelist="{sequencing_name}/demux_reads/{sample_name}_whitelist.txt",
+        whitelist_p7="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p7.txt",
+        whitelist_p5="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p5.txt",
+        whitelist_ligation="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_ligation.txt",
+        whitelist_rt="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_rt.txt",
     output:
         BAM=temp(
             "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"
@@ -90,14 +93,15 @@ rule starSolo_align:
         """
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
         --readFilesIn {input.R2} {input.R1} --readFilesCommand zcat \
-        --soloType CB_UMI_Complex --soloCBmatchWLtype Exact --soloCBwhitelist {input.whitelist} --soloCBposition  0_0_0_39 --soloUMIposition 0_40_0_47 \
+        --soloType CB_UMI_Complex --soloCBmatchWLtype Exact \
+        --soloCBposition 0_0_0_9 0_10_0_19 0_20_0_29 0_30_0_39 --soloUMIposition 0_40_0_47 \
+        --soloCBwhitelist {input.whitelist_p7} {input.whitelist_p5} {input.whitelist_ligation} {input.whitelist_rt} \
         --soloCellFilter CellRanger2.2 --soloFeatures GeneFull --soloMultiMappers Uniform --soloCellReadStats Standard \
         --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --outFileNamePrefix {params.sampleName} \
         --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 \
         --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM CB UB \
         >& {log}
         """
-
 
 #############################################
 #  Sambamba: Marking duplicates and indexing

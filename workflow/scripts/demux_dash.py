@@ -71,10 +71,6 @@ def combine_logs(path_pickle, path_star):
         # Remove the ligation_barcode_counts with zero counts.
         data_demux["ligation_barcode_counts"] = [barcode for barcode in data_demux["ligation_barcode_counts"] if barcode["frequency"] > 0]
 
-        # Remove the CB from the data_samples.
-        for sample in data_samples:
-            del(data_samples[sample]["CB"])
-
         # Convert the uncorrectables_sankey.        
         data_demux["uncorrectables_sankey"] = [{"source": str(key), "value": data_demux["uncorrectables_sankey"][key]} for key in data_demux["uncorrectables_sankey"]]
 

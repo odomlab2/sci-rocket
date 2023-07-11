@@ -122,16 +122,14 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         # Generate the output paths.
         path_r1_out = os.path.join(path_out, sample + "_R1.fastq.gz")
         path_r2_out = os.path.join(path_out, sample + "_R2.fastq.gz")
-        path_whitelist = os.path.join(path_out, sample + "_whitelist.txt")
 
         try:
             # Open file handlers for output R1 and R2 files.
             dict_fh_out[sample]["R1"] = gzip.open(path_r1_out, "wt")
             dict_fh_out[sample]["R2"] = gzip.open(path_r2_out, "wt")
-            dict_fh_out[sample]["whitelist"] = open(path_whitelist, "wt")
 
         except OSError:
-            log.error("Could not generate the sample-specific demultiplexed output files, please check the paths:\n(R1) %s\n(R2) %s\n(Whitelist) %s", path_r1_out, path_r2_out, path_whitelist)
+            log.error("Could not generate the sample-specific demultiplexed output files, please check the paths:\n(R1) %s\n(R2) %s", path_r1_out, path_r2_out)
             sys.exit(1)
 
     # Open a file handler for the discarded reads log (gzip).
@@ -221,8 +219,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # Sample-specific dictionary to store (key: sample_name):
     # - No. of (succesfull) read-pairs (has p5+p7+ligation+RT)
-    # - Unique cellular barcodes (CBs).
-    samples_dict = {k: {"n_pairs_success": 0, "CB": set() } for k in samples["sample_name"].unique()}
+    samples_dict = {k: {"n_pairs_success": 0} for k in samples["sample_name"].unique()}
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -409,11 +406,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             # Count as a successful read-pair.
             qc["n_pairs_success"] += 1
 
-            # Write cellular barcode to whitelist file (if new).
-            if cell_barcode not in samples_dict[sample]["CB"]:
-                dict_fh_out[sample]["whitelist"].write(cell_barcode + "\n")
-                samples_dict[sample]["CB"].add(cell_barcode)
-
             # Keep track of correct read-pairs per sample.
             samples_dict[sample]["n_pairs_success"] += 1
 
@@ -446,6 +438,26 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         #     break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
+
+    # Write the barcodes to whitelist files.
+    with open(os.path.join(path_out, sequencing_name + "_whitelist_p5.txt"), "w") as fh:
+        for sequence, barcode in dict_p5.items():
+            fh.write(sequence + "\n")
+
+    with open(os.path.join(path_out, sequencing_name + "_whitelist_p7.txt"), "w") as fh:
+        for sequence, barcode in dict_p7.items():
+            fh.write(sequence + "\n")
+    
+    with open(os.path.join(path_out, sequencing_name + "_whitelist_ligation.txt"), "w") as fh:
+        for sequence, barcode in dict_ligation.items():
+            if len(sequence) == 10:
+                fh.write(sequence + "\n")
+            else:
+                fh.write(sequence + "G" + "\n")
+
+    with open(os.path.join(path_out, sequencing_name + "_whitelist_rt.txt"), "w") as fh:
+        for sequence, barcode in dict_rt.items():
+            fh.write(sequence + "\n")
 
     # Close the input file handlers.
     fh_r1.close()
