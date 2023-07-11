@@ -434,9 +434,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
-        # if qc["n_pairs"] == 100000:
-        #     break
-
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     # Write the barcodes to whitelist files.
@@ -555,23 +552,3 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
-
-# args = parser.parse_args(
-#     [
-#         "--sequencing_name",
-#         "sx11",
-#         "--samples",
-#         "/omics/groups/OE0538/internal/projects/sexomics/metadata_scirocket/sx11_samplesheet.tsv",
-#         "--barcodes",
-#         "~/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv",
-#         "--r1",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R1_1-of-10.fastq.gz",
-#         "--r2",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/raw_reads/R2_1-of-10.fastq.gz",
-#         "--out",
-#         "/omics/groups/OE0538/internal/projects/sexomics/runJob/sx11/demux_reads_scatter/1-of-10/",
-#     ]
-# )
-
-# import cProfile
-# cProfile.run('sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out)')

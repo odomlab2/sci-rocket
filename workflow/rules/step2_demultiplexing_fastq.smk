@@ -67,7 +67,7 @@ rule demultiplex_fastq_split:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{sequencing_name}_{scatteritem}.log",
     threads: 1
     resources:
-        mem_mb=1024 * 5,
+        mem_mb=1024 * 2,
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -91,7 +91,7 @@ rule gather_demultiplexed_sequencing:
         whitelist_rt="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_rt.txt",
     threads: 1
     resources:
-        mem_mb=1024 * 5,
+        mem_mb=1024 * 2,
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
