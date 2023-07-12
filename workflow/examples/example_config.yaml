@@ -33,6 +33,7 @@ length_R2: 83
 settings:
   # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
   scatter_fastq_split: 10
+  # Custom settings / parameters.
   bcl2fastq: ""
   fastp: ""
   star: ""
