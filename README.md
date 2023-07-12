@@ -104,9 +104,9 @@ The major output files are the following:
 
 - **Sequence and sample-specific fastq file(s)**:
   - `{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz`
-  - `{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz`
+  - `{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz`
   - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
-  - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
+  - `{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz`
   - `{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz`
 - **Alignment files**:
   - `{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam/bai`
