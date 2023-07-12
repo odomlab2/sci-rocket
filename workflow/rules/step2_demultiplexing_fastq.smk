@@ -11,7 +11,7 @@ rule split_R1:
                 "{{sequencing_name}}/raw_reads/R1_{scatteritem}.fastq.gz"
             )
         ),
-    threads: 1
+    threads: 5
     resources:
         mem_mb=1024 * 2,
     params:
@@ -38,7 +38,7 @@ rule split_R2:
                 "{{sequencing_name}}/raw_reads/R2_{scatteritem}.fastq.gz"
             )
         ),
-    threads: 1
+    threads: 5
     resources:
         mem_mb=1024 * 2,
     params:
@@ -52,7 +52,7 @@ rule split_R2:
         "Generating multiple evenly-sized R2 chunks."
     shell:
         """
-        fastqsplitter -i {input} {params.out} -t 1
+        fastqsplitter -i {input} {params.out} -t 1 -c 1
         """
 
 

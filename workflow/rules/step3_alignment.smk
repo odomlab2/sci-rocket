@@ -79,11 +79,16 @@ rule starSolo_align:
         dir_solo=directory(
             "{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/"
         ),
+        barcodes_raw="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/raw/barcodes.tsv",
+        barcodes_raw_converted="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/raw/barcodes_converted.tsv",
+        barcodes_filtered="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/filtered/barcodes.tsv",
+        barcodes_filtered_converted="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/filtered/barcodes_converted.tsv",
     log:
         "logs/step3_alignment/star_align_{sequencing_name}_{sample_name}_{species}.log",
     params:
         sampleName="{sequencing_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
+        path_barcodes=config["path_barcodes"],
     threads: 30
     resources:
         mem_mb=1024 * 40,
@@ -101,6 +106,10 @@ rule starSolo_align:
         --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 \
         --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM CB UB \
         >& {log}
+
+        # Convert the barcodes to the barcode naming scheme.
+        python3.10 {workflow.basedir}/scripts/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
+        python3.10 {workflow.basedir}/scripts/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
         """
 
 #############################################

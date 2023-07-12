@@ -107,10 +107,12 @@ The major output files are the following:
   - `{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz`
   - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
   - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
-- **Demultiplexing overview**:
+  - `{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz`
+- **Alignment files**:
+  - `{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam/bai`
+  - `{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/`
+- **Demultiplexing/alignment overview**:
   - `{sequencing_name}/sci-dash/`
-- **Sample-specific R2 file used for alignment (fastp-trimmed)**:
-  - `{sequencing_name}/demux_reads/{sample_name}_fastp_R2.fastq.gz`
 
 ## Methodology
 
