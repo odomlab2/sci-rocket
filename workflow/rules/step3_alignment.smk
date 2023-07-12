@@ -32,9 +32,9 @@ rule trim_fastp:
 
 rule generate_index_STAR:
     output:
-        directory("resources/index_star/{species}/"),
+        directory("{sequencing_name}/resources/index_star/{species}/"),
     log:
-        "logs/step3_alignment/generate_index_STAR_{species}.log",
+        "logs/step3_alignment/generate_index_STAR_{sequencing_name}_{species}.log",
     threads: 20
     resources:
         mem_mb=1024 * 50,
@@ -44,7 +44,7 @@ rule generate_index_STAR:
         fasta=lambda w: config["species"][w.species]["genome"],
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
         star_index=lambda w: config["species"][w.species]["star_index"],
-        length_R2=lambda w: config["length_R2"],
+        length_R2=config["length_R2"],
     run:
         if params.star_index:
             shell("ln -s {input.star_index} {output}")
@@ -58,7 +58,7 @@ rule starSolo_align:
     input:
         R1="{sequencing_name}/fastp/{sample_name}_R1.fastq.gz",
         R2="{sequencing_name}/fastp/{sample_name}_R2.fastq.gz",
-        index="resources/index_star/{species}/",
+        index="{sequencing_name}/resources/index_star/{species}/",
         whitelist_p7="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p7.txt",
         whitelist_p5="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p5.txt",
         whitelist_ligation="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_ligation.txt",
