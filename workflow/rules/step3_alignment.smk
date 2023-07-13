@@ -91,7 +91,7 @@ rule starSolo_align:
         path_barcodes=config["path_barcodes"],
     threads: 30
     resources:
-        mem_mb=1024 * 40,
+        mem_mb=1024 * 60,
     message:
         "Aligning reads with STAR."
     shell:
