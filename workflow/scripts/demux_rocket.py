@@ -298,15 +298,16 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         sequence_ligation_10nt = read1.sequence[0:10]
 
         try:
-            name_ligation = dict_ligation[sequence_ligation_9nt]
-            sequence_ligation = sequence_ligation_9nt
+            name_ligation = dict_ligation[sequence_ligation_10nt]
+            sequence_ligation = sequence_ligation_10nt
         except KeyError:
             try:
-                name_ligation = dict_ligation[sequence_ligation_10nt]
-                sequence_ligation = sequence_ligation_10nt
-            except KeyError:
                 sequence_ligation = sequence_ligation_10nt
                 sequence_ligation, name_ligation = find_closest_match(sequence_ligation, dict_ligation)
+            except KeyError:
+                name_ligation = dict_ligation[sequence_ligation_9nt]
+                sequence_ligation = sequence_ligation_9nt
+
                 if name_ligation != None:
                     qc["n_corrected_ligation"] += 1
                 else:
