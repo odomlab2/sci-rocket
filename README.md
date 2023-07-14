@@ -63,8 +63,8 @@ The workflow requires a sample sheet (.tsv) with at least the following required
 - **path_bcl**: Path to BCL files.
 - **sequencing_name**: Sequencing name (e.g., run123), used to store sequencing-specific files.
 - **experiment_name**: Experiment name (e.g, experiment_x).
-- **P5**: PCR (p5) index (e.g. A01:H01) used to identify the sample during demultiplexing.
-- **P7**: PCR (p7) index (e.g. G01:G12) used to identify the sample during demultiplexing.
+- **p5**: PCR (p5) index (e.g. A01:H01) used to identify the sample during demultiplexing.
+- **p7**: PCR (p7) index (e.g. G01:G12) used to identify the sample during demultiplexing.
 - **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
 - **sample_name**: Name of the demultiplexed sample.
 - **species**: Reference species (e.g. mouse or human).
