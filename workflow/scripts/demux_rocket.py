@@ -301,19 +301,25 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             name_ligation = dict_ligation[sequence_ligation_10nt]
             sequence_ligation = sequence_ligation_10nt
         except KeyError:
-            try:
-                sequence_ligation = sequence_ligation_10nt
-                sequence_ligation, name_ligation = find_closest_match(sequence_ligation, dict_ligation)
-            except KeyError:
-                name_ligation = dict_ligation[sequence_ligation_9nt]
-                sequence_ligation = sequence_ligation_9nt
+            sequence_ligation = sequence_ligation_10nt
+            sequence_ligation, name_ligation = find_closest_match(sequence_ligation, dict_ligation)
+            
+            if name_ligation != None:
+                qc["n_corrected_ligation"] += 1
+            else:
+                try:
+                    name_ligation = dict_ligation[sequence_ligation_9nt]
+                    sequence_ligation = sequence_ligation_9nt
+                except KeyError:
+                    sequence_ligation = sequence_ligation_9nt
+                    sequence_ligation, name_ligation = find_closest_match(sequence_ligation, dict_ligation)
 
-                if name_ligation != None:
-                    qc["n_corrected_ligation"] += 1
-                else:
-                    sequence_ligation = sequence_ligation_10nt
-                    qc["n_uncorrectable_ligation"] += 1
-                    add_uncorrectable_sequence(sequence_ligation, qc["uncorrectable_ligation"])
+                    if name_ligation != None:
+                        qc["n_corrected_ligation"] += 1
+                    else:
+                        sequence_ligation = sequence_ligation_10nt
+                        qc["n_uncorrectable_ligation"] += 1
+                        add_uncorrectable_sequence(sequence_ligation, qc["uncorrectable_ligation"])
 
         length_ligation = len(sequence_ligation)
 
@@ -552,3 +558,22 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+
+
+# args = parser.parse_args(
+#     [
+#         "--sequencing_name",
+#         "run1",
+#         "--samples",
+#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/SampleSheet_scirocket_bm-spleen_expt2.tsv",
+#         "--barcodes",
+#         "/home/j103t/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv",
+#         "--r1",
+#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/run1/raw_reads/R1_20-of-25.fastq.gz",
+#         "--r2",
+#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/run1/raw_reads/R2_20-of-25.fastq.gz",
+#         "--out",
+#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/run1/demux_reads_scatter/20-of-25",
+#     ]
+# )
