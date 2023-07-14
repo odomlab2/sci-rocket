@@ -71,7 +71,7 @@ The workflow requires a sample sheet (.tsv) with at least the following required
 
 > **Note**
 >
-> - **P5** and **P7** are used to denote the PCR indexes belonging to a particular sample. The indexes are translated to all relevant combinations.
+> - **p5** and **p7** are used to denote the PCR indexes belonging to a particular sample. The indexes are translated to all relevant combinations.
 >   - To specify one or multiple p5/p7 strips, use the following format:
 >     - p5 (1 strips): `A01:H01`
 >     - p5 (1.5 strips): `A01:H01,A02:D02`
@@ -150,3 +150,35 @@ For sample-demultiplexing, the following steps are performed:
 > **Note**  
 > Read-pairs with unmatched p5, p7, ligation or RT barcodes are discarded into separate R1/R2 fastq.gz files.
 > Log files are generated which denote the mismatching barcodes per read (R1).
+
+#### **LSF profile**
+
+These commands were used to set up the LSF profile on the DKFZ LSF cluster:
+
+```bash
+# Set up snakemake profile
+micromamba activate sci-rocket
+module rm python
+pip install --user cookiecutter
+
+# create configuration directory that snakemake searches for profiles
+profile_dir="/home/<username>/.config/snakemake"
+mkdir -p "$profile_dir"
+# use cookiecutter to create the profile in the config directory
+template="gh:Snakemake-Profiles/lsf"
+cookiecutter --output-dir "$profile_dir" "$template"
+
+# parameters to set
+LSF_UNIT_FOR_LIMITS=MB
+UNKWN_behaviour=wait
+ZOMBI_behaviour=ignore
+use_conda=False
+use-singularity=False
+latency-wait=30
+printshellcmds=True
+restart-times=2
+jobs=50
+max-jobs-per-second=10
+max-status-checks-per-second=10
+profile=lsf_dkfz
+```
