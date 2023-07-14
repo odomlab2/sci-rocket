@@ -390,7 +390,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             else:
                 cell_barcode = sequence_p7 + sequence_p5 + sequence_ligation + "G" + sequence_rt
                 read1.sequence = cell_barcode + sequence_umi
-                
 
             # Set the quality of R1 to random good quality.
             read1.quality = "F" * len(read1.sequence)
@@ -445,7 +444,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     with open(os.path.join(path_out, sequencing_name + "_whitelist_p7.txt"), "w") as fh:
         for sequence, barcode in dict_p7.items():
             fh.write(sequence + "\n")
-    
+
     with open(os.path.join(path_out, sequencing_name + "_whitelist_ligation.txt"), "w") as fh:
         for sequence, barcode in dict_ligation.items():
             if len(sequence) == 10:

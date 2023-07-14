@@ -27,12 +27,11 @@ def combine_logs(path_pickle, path_star):
     with open(path_pickle, "rb") as handle:
         data_demux = pickle.load(handle)
         data_samples = pickle.load(handle)
-    
+
     # endregion
 
     # region Calculate summary statistics. --------------------------------------------------------------------------------
     if data_demux != None and data_samples != None:
-
         # Determine the top recurrent uncorrectable barcodes.
         data_demux["top_uncorrectables"] = {}
         top_n = 15
@@ -62,26 +61,24 @@ def combine_logs(path_pickle, path_star):
         data_demux["ligation_barcode_counts"] = [{"barcode": barcode, "frequency": data_demux["ligation_barcode_counts"][barcode]} for barcode in data_demux["ligation_barcode_counts"]]
 
         # Remove all unnecessary data. ------------------------------------------------------------------------------------
-        
-        del(data_demux["uncorrectable_p5"])
-        del(data_demux["uncorrectable_p7"])
-        del(data_demux["uncorrectable_ligation"])
-        del(data_demux["uncorrectable_rt"])
+
+        del data_demux["uncorrectable_p5"]
+        del data_demux["uncorrectable_p7"]
+        del data_demux["uncorrectable_ligation"]
+        del data_demux["uncorrectable_rt"]
 
         # Remove the ligation_barcode_counts with zero counts.
         data_demux["ligation_barcode_counts"] = [barcode for barcode in data_demux["ligation_barcode_counts"] if barcode["frequency"] > 0]
 
-        # Convert the uncorrectables_sankey.        
+        # Convert the uncorrectables_sankey.
         data_demux["uncorrectables_sankey"] = [{"source": str(key), "value": data_demux["uncorrectables_sankey"][key]} for key in data_demux["uncorrectables_sankey"]]
 
     # endregion ----------------------------------------------------------------------------------------------------------
-
 
     # region Import STAR statistics. -------------------------------------------------------------------------------------
 
     # Per sample, load the STAR Log.final.out and STARSolo GeneFull summaries.
     for sample in data_samples:
-
         # Find the STAR log that matches the sample name.
         path_log = glob.glob(path_star + sample + "_*Log.final.out")[0]
 
@@ -124,7 +121,7 @@ def combine_logs(path_pickle, path_star):
                     data_samples[sample]["solo_mean_umi_per_cell"] = int(line[1].strip())
                 elif line[0] == "Mean GeneFull per Cell":
                     data_samples[sample]["solo_mean_gene_per_cell"] = int(line[1].strip())
-    
+
     # endregion ----------------------------------------------------------------------------------------------------------
 
     # Convert to JSON structure and write to file.
@@ -134,7 +131,6 @@ def combine_logs(path_pickle, path_star):
     return data_demux
 
 
-    
 def main(arguments):
     # Setup argument parser.
     parser = argparse.ArgumentParser(description="Combine the scattered demultiplexing files into a JSON structure for the sci-dash.", add_help=False)
@@ -160,6 +156,7 @@ def main(arguments):
 
     # Close the file
     handle.close()
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
