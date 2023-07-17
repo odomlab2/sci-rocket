@@ -48,9 +48,6 @@ def combine_logs(path_pickle, path_star):
         def transform_plate_counts(dict):
             return [{"row": key[0], "col": key[1:].lstrip("0"), "frequency": dict[key]} for key in dict]
 
-        def transform_plate_counts_rt(dict):
-            return [{"row": key[0], "col": key[1:].lstrip("0"), "frequency": dict[key]} for key in dict]
-
         data_demux["p5_index_counts"] = transform_plate_counts(data_demux["p5_index_counts"])
         data_demux["p7_index_counts"] = transform_plate_counts(data_demux["p7_index_counts"])
 

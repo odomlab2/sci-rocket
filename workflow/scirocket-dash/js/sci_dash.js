@@ -435,7 +435,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: true,
-        panY: true,
+        panY: false,
         wheelX: "panX",
         wheelY: "zoomX",
         pinchZoomX: true,
@@ -452,25 +452,35 @@ document.addEventListener("DOMContentLoaded", function () {
       rotation: -90,
       centerY: am5.p50,
       centerX: am5.p100,
-      paddingRight: 15,
-      fontSize: 8,
+      paddingRight: 1,
+      fontSize: 4,
     });
 
+    // Remove grid.
+    xRenderer.grid.template.setAll({ strokeOpacity: 0 });
+    
     var xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
-        maxDeviation: 0.3,
+        maxDeviation: 0.2,
         categoryField: "barcode",
         renderer: xRenderer,
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
 
+    var yRenderer = am5xy.AxisRendererY.new(root, { minGridDistance: 30 });
+    yRenderer.labels.template.setAll({
+      fontSize: 6,
+      textAlign: "center",
+      fontWeight: "bold",
+      stroke: "white",
+      strokeWidth: 0.5,
+    });
+
     var yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
         maxDeviation: 0.3,
-        renderer: am5xy.AxisRendererY.new(root, {
-          strokeOpacity: 0.1,
-        }),
+        renderer: yRenderer,
       })
     );
 
@@ -483,6 +493,7 @@ document.addEventListener("DOMContentLoaded", function () {
         valueYField: "frequency",
         sequencedInterpolation: true,
         categoryXField: "barcode",
+        sort: false,
         tooltip: am5.Tooltip.new(root, {
           labelText: "{valueY}",
         }),
@@ -490,10 +501,7 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     // Colors.
-    series.columns.template.setAll({ cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0.5, stroke: "black", strokeWidth: 0.8 });
-    series.columns.template.adapters.add("fill", function (fill, target) {
-      return chart.get("colors").getIndex(series.columns.indexOf(target));
-    });
+    series.columns.template.setAll({ cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0.1, stroke: "black", strokeWidth: 0.1 });
 
     // Set data.
     xAxis.data.setAll(data.ligation_barcode_counts);
@@ -502,9 +510,20 @@ document.addEventListener("DOMContentLoaded", function () {
     // Add labels.
     add_label(root, xAxis, yAxis, "Ligation barcode", "Frequency");
 
-    // Sort the data by x-axis labels
-    series.data.sort(function (a, b) {
-      return a.barcode.localeCompare(b.barcode);
+    // Color the first 96 bars in red
+    series.columns.template.adapters.add("fill", function (fill, target) {
+      if (series.columns.indexOf(target) <= 96) {
+        return am5.color("#d63939");
+      } 
+      if (series.columns.indexOf(target) > 96 & series.columns.indexOf(target) <= 192) {
+        return am5.color("#1f77b4");
+      }
+      if (series.columns.indexOf(target) > 192 & series.columns.indexOf(target) <= 288) {
+        return am5.color("#ff7f0e");
+      }
+      if (series.columns.indexOf(target) > 288 & series.columns.indexOf(target) <= 384) {
+        return am5.color("#2ca02c");
+      }
     });
 
     // Add export menu.
@@ -1055,7 +1074,7 @@ function createChart_Heatmap(root, data, max_color) {
     })
   );
 
-  // Create series.
+  // Create series with zero being the base value.
   var series = chart.series.push(
     am5xy.ColumnSeries.new(root, {
       calculateAggregates: true,
@@ -1118,15 +1137,19 @@ function createChart_Heatmap(root, data, max_color) {
       endColor: max_color,
       startText: "No successful reads",
       endText: "Max. no. of successful reads",
+      valueAxis: series.yAxis,
     })
   );
 
   // Set data
   series.data.setAll(data);
 
+  // Add extra hidden zero to the end of the data.
+  series.data.push({ row: "I", col: "12", frequency: 0 });
+
   // Specify rows and columns.
   yAxis.data.setAll([{ row: "A" }, { row: "B" }, { row: "C" }, { row: "D" }, { row: "E" }, { row: "F" }, { row: "G" }, { row: "H" }]);
-  xAxis.data.setAll([{ col: "1" }, { col: "2" }, { col: "3" }, { col: "4" }, { col: "5" }, { col: "6" }, { col: "7" }, { col: "8" }, { col: "9" }, { col: "10" }, { col: "11" }, { col: "12" }]);
+  xAxis.data.setAll([{ col: "1" }, { col: "2" }, { col: "3" }, { col: "4" }, { col: "5" }, { col: "6" }, { col: "7" }, { col: "8" }, { col: "9" }, { col: "10" }, { col: "11" }, { col: "12" }]); 
 
   // Add export menu
   var exporting = am5plugins_exporting.Exporting.new(root, {
