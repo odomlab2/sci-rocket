@@ -271,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // 8. Mean gene per cell
 // 9. Sequencing saturation
 function generate_starsolo_table(data) {
-  document.getElementById("sample-starsolo-table").innerHTML = '<table class="table" id="sample-starsolo-table"> <thead> <tr> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreads"># Reads</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenes"># uniquely-mapped reads<br>(genes)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalcellsfiltered"># Cells<br>(filtered)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sortß="sort-meanreadscell">Mean reads<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenescells"># uniquely-mapped reads<br>(genes + cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanumicell">Mean UMI<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meangenescell">Mean genes<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sequencingsaturation">Sequencing<br>saturation</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
+  document.getElementById("sample-starsolo-table").innerHTML = '<table class="table" id="sample-starsolo-table"> <thead> <tr> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreads"># Reads</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenes"># uniquely-mapped reads<br>(genes)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalcellsfiltered"># Cells<br>(filtered)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanreadscell">Mean reads<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenescells"># uniquely-mapped reads<br>(genes + cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanumicell">Mean UMI<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meangenescell">Mean genes<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sequencingsaturation">Sequencing<br>saturation</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
   
   var table = document.getElementById("sample-starsolo-table");
   for (var sample in data) {
@@ -501,6 +501,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Add labels.
     add_label(root, xAxis, yAxis, "Ligation barcode", "Frequency");
+
+    // Sort the data by x-axis labels
+    series.data.sort(function (a, b) {
+      return a.barcode.localeCompare(b.barcode);
+    });
 
     // Add export menu.
     var exporting = am5plugins_exporting.Exporting.new(root, {
