@@ -33,8 +33,11 @@ length_R2: 83
 settings:
   # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
   scatter_fastq_split: 10
-  # Custom settings / parameters.
+  # Custom settings for bcl2fastq.
   bcl2fastq: ""
+  # Custom settings for fastp.
   fastp: ""
+  # Custom settings for STAR genome preparation.
   star_index: ""
+  # Custom settings for STARSolo alignment.
   star: ""
