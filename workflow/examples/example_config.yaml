@@ -36,5 +36,5 @@ settings:
   # Custom settings / parameters.
   bcl2fastq: ""
   fastp: ""
-  generate_index_STAR: ""
+  star_index: ""
   star: ""

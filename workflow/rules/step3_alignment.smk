@@ -45,7 +45,7 @@ rule generate_index_STAR:
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
         star_index=lambda w: config["species"][w.species]["star_index"],
         length_R2=config["length_R2"],
-        extra=config["settings"]["generate_index_STAR"],
+        extra=config["settings"]["star_index"],
     run:
         if params.star_index:
             shell("ln -s {input.star_index} {output}")
