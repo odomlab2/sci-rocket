@@ -149,7 +149,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     # region Generate barcode lookup tables --------------------------------------------------------------------------------------------------------------------------------
 
     # Retrieve the ligation barcodes.
-    barcodes_ligation = barcodes.query("type == 'ligation'")
+    barcodes_ligation_10nt = barcodes.query("type == 'ligation' & length == 10")
+    barcodes_ligation_9nt = barcodes.query("type == 'ligation' & length == 9")
 
     # Get the possible list of unique RT barcodes contained in the sequencing run.
     rt_barcodes_sequencing = samples.query("sequencing_name == @sequencing_name")["barcode_rt"].unique()
@@ -166,7 +167,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     dict_rt = dict(zip(barcodes_rt["sequence"], barcodes_rt["barcode"]))
     dict_p5 = dict(zip(barcodes_p5["sequence"], barcodes_p5["barcode"]))
     dict_p7 = dict(zip(barcodes_p7["sequence"], barcodes_p7["barcode"]))
-    dict_ligation = dict(zip(barcodes_ligation["sequence"], barcodes_ligation["barcode"]))
+    dict_ligation_10nt = dict(zip(barcodes_ligation_10nt["sequence"], barcodes_ligation_10nt["barcode"]))
+    dict_ligation_9nt = dict(zip(barcodes_ligation_9nt["sequence"], barcodes_ligation_9nt["barcode"]))
+    dict_ligation = {**dict_ligation_10nt, **dict_ligation_9nt}
 
     # The p5 index needs to be reverse complemented.
     dict_p5 = {k[::-1].translate(str.maketrans("ATCG", "TAGC")): v for k, v in dict_p5.items()}
@@ -297,23 +300,23 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         sequence_ligation_9nt = read1.sequence[0:9]
         sequence_ligation_10nt = read1.sequence[0:10]
 
+        # First try exact match 10nt.
         try:
-            name_ligation = dict_ligation[sequence_ligation_10nt]
+            name_ligation = dict_ligation_10nt[sequence_ligation_10nt]
             sequence_ligation = sequence_ligation_10nt
         except KeyError:
-            sequence_ligation = sequence_ligation_10nt
-            sequence_ligation, name_ligation = find_closest_match(sequence_ligation, dict_ligation)
-            
-            if name_ligation != None:
-                qc["n_corrected_ligation"] += 1
-            else:
-                try:
-                    name_ligation = dict_ligation[sequence_ligation_9nt]
-                    sequence_ligation = sequence_ligation_9nt
-                except KeyError:
-                    sequence_ligation = sequence_ligation_9nt
-                    sequence_ligation, name_ligation = find_closest_match(sequence_ligation, dict_ligation)
-
+            try:
+                # Next, try exact match 9nt.
+                name_ligation = dict_ligation_9nt[sequence_ligation_9nt]
+                sequence_ligation = sequence_ligation_9nt
+            except KeyError:
+                # Next, try closest 10nt.
+                sequence_ligation, name_ligation = find_closest_match(sequence_ligation_10nt, dict_ligation_10nt)
+                if name_ligation != None:
+                    qc["n_corrected_ligation"] += 1
+                # Next, try closest 9nt.
+                else:
+                    sequence_ligation, name_ligation = find_closest_match(sequence_ligation_9nt, dict_ligation_9nt)
                     if name_ligation != None:
                         qc["n_corrected_ligation"] += 1
                     else:
