@@ -45,12 +45,13 @@ rule generate_index_STAR:
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
         star_index=lambda w: config["species"][w.species]["star_index"],
         length_R2=config["length_R2"],
+        extra=config["settings"]["generate_index_STAR"],
     run:
         if params.star_index:
             shell("ln -s {input.star_index} {output}")
         else:
             shell(
-                "STAR --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}"
+                "STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}"
             )
 
 
