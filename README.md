@@ -21,14 +21,14 @@
   - Finds exact or nearest match for p5, p7, ligation and/or RT barcode (<=1 hamming distance with only single match).
   - Generates sample-specific .fastq.gz file(s) with correct read-name for R2.
   - Read-pairs with no p5, p7, ligation and/or RT barcode match are discarded into separate .fastq.gz files.
-    - Log file contains information on discarded read-pairs detailing which barcodes are matching.
+    - Log file contains information on discarded read-pairs detailing which barcodes are (non-)matching.
 
 ### **Processing of sci-RNA-Seq3 data**
 
 ---
 
 - Performs adapter and low-quality base-trimming (**fastp**).
-- Aligns reads to the supplied reference genome (**STAR**).
+- Aligns reads to the supplied reference genome and perform cell-barcode/UMI counting (**STARSolo**).
 - Marks duplicates (**sambamba**).
 - Generates QC:
   - Alignment stats (**sambamba**)
@@ -93,10 +93,17 @@ The workflow requires a file (.tsv) containing the barcodes used in the experime
 
 To run this workflow on the DKFZ LSF cluster, first [set-up the proper LSF profile](https://github.com/Snakemake-Profiles/lsf) and run the following command for either the WGS or WTS workflow:
 
-`snakemake --profile lsf_dkfz -n --configfile <config>`
+```shell
+cd workflow/
+snakemake --profile <profile_name> --configfile <path_config>
+```
 
-> **Note**  
-> Remove `-n` to disable dry-run.
+> **Useful parameters**
+>
+> - `-n`: Perform dry-run (generate commands without executing).
+> - `-p`: Print shell commands.
+> - `--notemp`: Do not remove files flagged as temporary.
+> - `--rerun-incomplete`: Rerun all jobs with missing output files.
 
 ## Output
 
