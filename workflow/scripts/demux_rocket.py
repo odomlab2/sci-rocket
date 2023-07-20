@@ -149,6 +149,9 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     # region Generate barcode lookup tables --------------------------------------------------------------------------------------------------------------------------------
 
     # Retrieve the ligation barcodes.
+    
+    # Determine length of sequences in the ligation barcodes.
+    barcodes.loc[:, "length"] = barcodes["sequence"].str.len()
     barcodes_ligation_10nt = barcodes.query("type == 'ligation' & length == 10")
     barcodes_ligation_9nt = barcodes.query("type == 'ligation' & length == 9")
 

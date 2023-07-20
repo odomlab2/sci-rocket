@@ -154,7 +154,7 @@ def sanity_samples(log, samples, barcodes, config):
 
     # Check if the sample sheet contains RT barcodes which are not defined in the config.
     if not set(samples["barcode_rt"].unique()).issubset(barcodes_rt):
-        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined barcodes file: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
+        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the barcodes file: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
         return False
 
     # region Sanity of p5/p7 indexes ---------------------------------------------------------------
