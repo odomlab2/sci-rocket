@@ -98,9 +98,10 @@ cd workflow/
 snakemake --profile <profile_name> --configfile <path_config>
 ```
 
-> **Useful parameters**
+> **Note**
 >
-> - `-n`: Perform dry-run (generate commands without executing).
+> **Useful parameters**:
+> - `-n`: Perform dry-run (generate DAG without executing).
 > - `-p`: Print shell commands.
 > - `--notemp`: Do not remove files flagged as temporary.
 > - `--rerun-incomplete`: Rerun all jobs with missing output files.
