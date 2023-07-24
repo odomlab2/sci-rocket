@@ -190,4 +190,7 @@ rule sci_dash:
 
         # Combine the sample-specific QC and STARSolo metrics.
         python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_pickle {input.qc} --path_star {wildcards.sequencing_name}/alignment/
+
+        # Remove all empty (leftover) folders.
+        find . -empty -type d -delete
         """
