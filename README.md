@@ -101,6 +101,7 @@ snakemake --profile <profile_name> --configfile <path_config>
 > **Note**
 >
 > **Useful parameters**:
+>
 > - `-n`: Perform dry-run (generate DAG without executing).
 > - `-p`: Print shell commands.
 > - `--notemp`: Do not remove files flagged as temporary.
