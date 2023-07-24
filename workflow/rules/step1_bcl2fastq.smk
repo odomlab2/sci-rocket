@@ -24,8 +24,10 @@ rule bcl2fastq:
         path_bcl=lambda w: get_bcl2fastq_input(w.sequencing_name),
         fake_sample_sheet="{sequencing_name}/raw_reads/fake.csv",
     output:
-        R1="{sequencing_name}/raw_reads/Undetermined_S0_R1_001.fastq.gz",
-        R2="{sequencing_name}/raw_reads/Undetermined_S0_R2_001.fastq.gz",
+        R1=temp("{sequencing_name}/raw_reads/Undetermined_S0_R1_001.fastq.gz"),
+        R2=temp("{sequencing_name}/raw_reads/Undetermined_S0_R2_001.fastq.gz"),
+        dReports=temp(directory("{sequencing_name}/raw_reads/Reports")),
+        dStats=temp(directory("{sequencing_name}/raw_reads/Stats")),
     log:
         "logs/step1_bcl2fastq/bcl2fastq_{sequencing_name}.log",
     threads: 25
