@@ -119,8 +119,8 @@ rule gather_demultiplexed_samples:
     input:
         gather.fastq_split("{{sequencing_name}}/demux_reads_scatter/{scatteritem}/"),
     output:
-        R1=temp("{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz"),
-        R2=temp("{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz"),
+        R1="{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz",
+        R2="{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz",
     threads: 1
     resources:
         mem_mb=1024 * 2,
