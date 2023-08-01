@@ -65,9 +65,7 @@ rule starSolo_align:
         whitelist_ligation="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_ligation.txt",
         whitelist_rt="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_rt.txt",
     output:
-        BAM=temp(
-            "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam"
-        ),
+        BAM="{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
         SJ="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
         log1="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out",
         log2=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.out"),
@@ -103,6 +101,7 @@ rule starSolo_align:
         --soloCBposition 0_0_0_9 0_10_0_19 0_20_0_29 0_30_0_39 --soloUMIposition 0_40_0_47 \
         --soloCBwhitelist {input.whitelist_p7} {input.whitelist_p5} {input.whitelist_ligation} {input.whitelist_rt} \
         --soloCellFilter CellRanger2.2 --soloFeatures GeneFull --soloMultiMappers Uniform --soloCellReadStats Standard \
+        --soloMultiMappers EM \
         --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --outFileNamePrefix {params.sampleName} \
         --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 \
         --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM CB UB \
@@ -114,31 +113,14 @@ rule starSolo_align:
         """
 
 #############################################
-#  Sambamba: Marking duplicates and indexing
+#  Sambamba: Indexing
 #############################################
-
-
-rule sambamba_markdup:
-    input:
-        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
-    output:
-        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam",
-    log:
-        "logs/step3_alignment/sambamba_markdup_{sequencing_name}_{sample_name}_{species}.log",
-    threads: 8
-    resources:
-        mem_mb=1024 * 10,
-    message:
-        "Marking duplicates."
-    shell:
-        "sambamba markdup -t {threads} {input} {output} >& {log}"
-
 
 rule sambamba_index:
     input:
-        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam",
+        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
     output:
-        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam.bai",
+        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam.bai",
     log:
         "logs/step3_alignment/sambamba_index_{sequencing_name}_{sample_name}_{species}.log",
     threads: 8
@@ -158,7 +140,7 @@ rule sambamba_index:
 def getsamples_sequencing(wildcards):
     x = samples_unique[samples_unique["sequencing_name"] == wildcards.sequencing_name]
     
-    files = ["{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam.bai".format(
+    files = ["{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam.bai".format(
         sequencing_name=sequencing_name,
         sample_name=sample_name,
         species=species,
