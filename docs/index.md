@@ -36,6 +36,6 @@ snakemake --profile <profile_name> --configfile <path_config> --use-conda
 
 ## Configuration
 
-The workflow requires a configuration file (`config.yaml`) which can be copied from the [example configuration file](https://github.com/odomlab2/snakemake-sciseq/blob/main/workflow/examples/example_config.yaml) and adjusted to your needs. 
+The workflow requires a configuration file (`config.yaml`) which can be copied from the [example configuration file](https://github.com/odomlab2/snakemake-sciseq/blob/main/workflow/examples/example_config.yaml) and adjusted to your needs.
 
 Within the configuration file, the [sample-sheet](overview_files.md) (`path_samples`) needs to be specified. This file contains the sample names and paths to the raw sequencing data.
