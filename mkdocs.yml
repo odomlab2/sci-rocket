@@ -1,5 +1,5 @@
 site_name: sci-rocket
-repo_url: https://github.com/odomlab2/snakemake-sciseq
+repo_url: https://github.com/odomlab2/sci-rocket
 repo_name: odomlab2/sci-rocket
 theme:
   name: material

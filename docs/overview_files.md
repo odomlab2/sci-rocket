@@ -10,7 +10,7 @@
 * **sample_name**: Name of the demultiplexed sample, used to generate sample-specific files.
 * **species**: Reference species (e.g. mouse or human).
 
-See [example sample-sheet](https://github.com/odomlab2/snakemake-sciseq/blob/main/workflow/examples/example_samplesheet.tsv).
+See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/workflow/examples/example_samplesheet.tsv).
 
 > * **p5** and **p7** are used to denote the PCR indexes belonging to a particular sample. The indexes are translated to all relevant combinations within the sequencing-run.
 >   * To specify one or multiple p5/p7 strips, use the following format:
