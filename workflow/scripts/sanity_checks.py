@@ -127,7 +127,7 @@ def sanity_samples(log, samples, barcodes, config):
         return False
 
     # Check if the sample sheet contains the required columns.
-    required_columns = set(["path_bcl", "sequencing_name", "experiment_name", "p5", "p7", "barcode_rt", "sample_name", "species"])
+    required_columns = set(["path_bcl", "sequencing_name", "p5", "p7", "barcode_rt", "sample_name", "species"])
     if not required_columns.issubset(samples.columns):
         log.error("Sanity check (Sample sheet) - Missing required column(s): {}".format(", ".join(required_columns.difference(samples.columns))))
         return False
