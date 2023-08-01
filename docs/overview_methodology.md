@@ -38,9 +38,9 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
   |ACTTGATTGT| |GAGAGCTC| |CGTGAA| |AGGTTAGCAT|
   |-LIGATION-| |---UMI--| |Primer| |----RT----|
 
-  Corrected R1 sequence:
-  |CCGTATGATT| |CCGTATGATT| |ACTTGATTGT| |GAGAGCTC|
-  |----p7----| |----p5----| |-LIGATION-| |---UMI--|
+  Corrected R1 sequence (48nt):
+  |CCGTATGATT| |CCGTATGATT| |ACTTGATTGT| |AGGTTAGCAT| |GAGAGCTC|
+  |----p7----| |----p5----| |-LIGATION-| |----RT----| |---UMI--|
 ```
 
 For sample-demultiplexing, the following steps are performed:
