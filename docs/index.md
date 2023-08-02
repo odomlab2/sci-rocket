@@ -20,7 +20,7 @@ We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environme
       git clone https://github.com/odomlab2/sci-rocket
       ```
 
-2. Create the conda environment (default name: `sci-rocket`)):
+2. Create the conda environment (default name: `sci-rocket`):
 
       ```bash
       cd sci-rocket
@@ -30,7 +30,7 @@ We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environme
 3. Activate the conda environment:
 
       ```bash
-      conda activate sci-rocket
+      micromamba activate sci-rocket
       ```
 
 4. Run the workflow:
