@@ -44,22 +44,14 @@ rule generate_index_STAR:
         star_index=lambda w: config["species"][w.species]["star_index"],
         length_R2=config["length_R2"],
         extra=config["settings"]["star_index"],
-    message:
-        "Generating (or symlinking) STAR indexes."
-    shell:
-        """
-        # Symlink the index if already exists.
-        if [ {params.star_index} == False ]; then
-            echo "STAR index already exists. Skipping generation."
-            ln -s {params.star_index} {output}
-        fi
-        
-        # Generate the index if it does not exist.
-        if [ ! {params.star_index} == False ]; then
-            echo "STAR index does not exist. Generating it."
-            STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}
-        fi
-        """
+    message: "Generating (or symlinking) STAR indexes."
+    run:
+        if params.star_index:
+            shell("ln -s {input.star_index} {output}")
+        else:
+            shell(
+                "STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}"
+            )
 
 rule starSolo_align:
     input:
