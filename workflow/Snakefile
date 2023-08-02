@@ -35,7 +35,7 @@ if not sanity_checks.sanity_samples(log, samples, barcodes, config):
 
 # Select unique samples for which to generate sample-specific files.
 samples_unique = samples.drop_duplicates(
-    subset=["path_bcl", "sequencing_name", "sample_name", "experiment_name", "species"]
+    subset=["path_bcl", "sequencing_name", "sample_name", "species"]
 )
 
 # Close log file.

@@ -14,11 +14,11 @@ rule trim_fastp:
         json="{sequencing_name}/fastp/{sample_name}.json",
     log:
         "logs/step3_alignment/fastp_{sequencing_name}_{sample_name}.log",
-    params:
-        extra=config["settings"]["fastp"],
     threads: 10
     resources:
         mem_mb=1024 * 4,
+    params:
+        extra=config["settings"]["fastp"],
     message:
         "Trimming adapters and low-quality reads with fastp."
     shell:
@@ -38,22 +38,28 @@ rule generate_index_STAR:
     threads: 20
     resources:
         mem_mb=1024 * 50,
-    message:
-        "Generating (or symlinking) STAR indexes."
     params:
         fasta=lambda w: config["species"][w.species]["genome"],
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
         star_index=lambda w: config["species"][w.species]["star_index"],
         length_R2=config["length_R2"],
         extra=config["settings"]["star_index"],
-    run:
-        if params.star_index:
-            shell("ln -s {input.star_index} {output}")
-        else:
-            shell(
-                "STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}"
-            )
-
+    message:
+        "Generating (or symlinking) STAR indexes."
+    shell:
+        """
+        # Symlink the index if already exists.
+        if [ {params.star_index} == False ]; then
+            echo "STAR index already exists. Skipping generation."
+            ln -s {params.star_index} {output}
+        fi
+        
+        # Generate the index if it does not exist.
+        if [ ! {params.star_index} == False ]; then
+            echo "STAR index does not exist. Generating it."
+            STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}
+        fi
+        """
 
 rule starSolo_align:
     input:
@@ -84,13 +90,13 @@ rule starSolo_align:
         barcodes_filtered_converted="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/filtered/barcodes_converted.tsv",
     log:
         "logs/step3_alignment/star_align_{sequencing_name}_{sample_name}_{species}.log",
+    threads: 30
+    resources:
+        mem_mb=1024 * 60,
     params:
         sampleName="{sequencing_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
         path_barcodes=config["path_barcodes"],
-    threads: 30
-    resources:
-        mem_mb=1024 * 60,
     message:
         "Aligning reads with STAR."
     shell:

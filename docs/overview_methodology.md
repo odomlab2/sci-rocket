@@ -17,7 +17,7 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
       * STAR index can be generated based on supplied genome sequences and annotations.
       * Per gene and cellular barcode, intronic, exonics and UTR-overlapping reads (UMI) are counted and multi-mapping reads are distributed using the `EM` method.
 7. Generate demultiplexing/alignment overview. (**sci-dash**)
-        * Generates a HTML report with demultiplexing and alignment statistics.
+      * Generates a HTML report with demultiplexing and alignment statistics.
 
 > Parallization is performed per sequencing run and split chunk.
 
@@ -63,7 +63,7 @@ The major output files are the following:
       * `{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz`
       * `{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz`
 2. **Alignment files**:
-      * `{sequencing_name}/alignment/{sample_name}_{species}_Aligned_sortedByCoord_markDup.bam/bai`
+      * `{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam/bai`
       * `{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/`
 3. **Demultiplexing/alignment overview**:
       * `{sequencing_name}/sci-dash/`

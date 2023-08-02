@@ -6,26 +6,39 @@ Please see the set-up instructions below for more information on how to install 
 
 ## Pre-requirements
 
-1. [Snakemake](https://snakemake.readthedocs.io/en/stable/) (≥7.25.0)
+1. A conda system, e.g., [conda](https://docs.conda.io/en/latest/), [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [micromamba](https://micromamba.readthedocs.io/en/latest/)
 2. Cluster-specific Snakemake configuration for batch-job submission
       * E.g., [LSF](https://github.com/Snakemake-Profiles/lsf) or [SLURM](https://github.com/Snakemake-Profiles/slurm)
 
-[Conda](https://docs.conda.io/en/latest/) is used to manage internal software dependencies. These environments will be initialized the first time the workflow is run.
+We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environment in which all software dependencies are installed (`environment.yaml`). This environment can be created using the following command:
 
 ## Set-up
 
-First, clone the repository:
+1. Clone the repository:
 
-```bash
-git clone https://github.com/odomlab2/sci-rocket
-```
+      ```bash
+      git clone https://github.com/odomlab2/sci-rocket
+      ```
 
-The workflow can then be run using the following command:
+2. Create the conda environment (default name: `sci-rocket`)):
 
-```bash
-cd workflow/
-snakemake --profile <profile_name> --configfile <path_config> --use-conda
-```
+      ```bash
+      cd sci-rocket
+      micromamba env create -f workflow/envs/env.yaml
+      ```
+
+3. Activate the conda environment:
+
+      ```bash
+      conda activate sci-rocket
+      ```
+
+4. Run the workflow:
+
+      ```bash
+      cd workflow/
+      snakemake --profile <profile_name> --configfile <path_config>
+      ```
 
 **Useful Snakemake parameters**:
 
