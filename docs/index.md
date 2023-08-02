@@ -10,7 +10,7 @@ Please see the set-up instructions below for more information on how to install 
 2. Cluster-specific Snakemake configuration for batch-job submission
       * E.g., [LSF](https://github.com/Snakemake-Profiles/lsf) or [SLURM](https://github.com/Snakemake-Profiles/slurm)
 
-We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environment in which all software dependencies are installed (`environment.yaml`). This environment can be created using the following command:
+We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environment in which all software dependencies are installed (`workflow/envs/env.yaml`). This environment can be created using the following command:
 
 ## Set-up
 
