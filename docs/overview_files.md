@@ -9,7 +9,7 @@
 * **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
 * **sample_name**: Name of the demultiplexed sample, used to generate sample-specific files.
 * **species**: Reference species (e.g. mouse or human).
-* **n_expected_cells**: Number of expected cells in the sample (used during UMI filtering).
+* **n_expected_cells**: Number of expected cells in the (demultiplexed) sample (used during UMI filtering).
 
 See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/workflow/examples/example_samplesheet.tsv).
 

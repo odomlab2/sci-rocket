@@ -29,7 +29,7 @@ rule trim_fastp:
 #  STAR: Alignment
 #############################################
 
-# Get the samples for a given sequencing run (and sci-dash).
+# Retrieve the expected no. of cells for a given (demultiplexed) sample.
 def get_expected_cells(wildcards):
     x = samples_unique[samples_unique["sample_name"] == wildcards.sample_name]
     return x["n_expected_cells"].values[0]
