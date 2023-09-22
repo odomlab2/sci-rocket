@@ -22,7 +22,7 @@ rule split_R1:
             for i in range(1, workflow._scatter["fastq_split"] + 1)
         ],
     message:
-        "Generating multiple evenly-sized R1 chunks."
+        "Generating multiple evenly-sized R1 chunks ({wildcards.sequencing_name})."
     shell:
         """
         fastqsplitter -i {input} {params.out} -t 1
@@ -49,7 +49,7 @@ rule split_R2:
             for i in range(1, workflow._scatter["fastq_split"] + 1)
         ],
     message:
-        "Generating multiple evenly-sized R2 chunks."
+        "Generating multiple evenly-sized R2 chunks ({wildcards.sequencing_name})."
     shell:
         """
         fastqsplitter -i {input} {params.out} -t 1 -c 1
@@ -72,7 +72,7 @@ rule demultiplex_fastq_split:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
     message:
-        "Demultiplexing the scattered .fastq.gz files."
+        "Demultiplexing the scattered .fastq.gz files ({wildcards.sequencing_name})."
     shell:
         "python3.10 {workflow.basedir}/scripts/demux_rocket.py --sequencing_name {wildcards.sequencing_name} --samples {params.path_samples} --barcodes {params.path_barcodes} --r1 {input[0]} --r2 {input[1]} --out {output} &> {log}"
 
@@ -97,7 +97,7 @@ rule gather_demultiplexed_sequencing:
             sequencing_name=w.sequencing_name
         ),
     message:
-        "Combining the scattered discarded reads and log and combined the qc pickles."
+        "Combining the discarded and whitelist files ({wildcards.sequencing_name})."
     shell:
         """
         # Combine pickles.
@@ -125,7 +125,7 @@ rule gather_demultiplexed_samples:
     resources:
         mem_mb=1024 * 2,
     message:
-        "Combining the sample-specific fastq.fz files."
+        "Combining the sample-specific fastq.fz files ({wildcards.sequencing_name})."
     shell:
         """
         # Combine files.

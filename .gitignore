@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 
 .DS_Store
-examples/test_output/
+workflow/examples/test_output/

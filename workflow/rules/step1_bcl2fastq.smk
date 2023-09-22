@@ -11,6 +11,7 @@ rule make_fake_samplesheet:
         sample_sheet=temp("{sequencing_name}/raw_reads/fake.csv"),
     params:
         path_out="{sequencing_name}/raw_reads/",
+    message: "Generate fake sample-sheet to allow indexes to be added to R1/R2."
     shell:
         """
         # Generate fake sample-sheet to allow indexes to be added to R1/R2.
@@ -36,6 +37,7 @@ rule bcl2fastq:
     params:
         path_out="{sequencing_name}/raw_reads/",
         extra=config["settings"]["bcl2fastq"],
+    message: "Converting bcl to fastq with p5 and p7 indexes within the read name ({wildcards.sequencing_name})."
     shell:
         """
         bcl2fastq \
@@ -45,13 +47,5 @@ rule bcl2fastq:
         --output-dir {params.path_out} \
         --loading-threads {threads} \
         --processing-threads {threads}   \
-        --writing-threads {threads}  \
-        --barcode-mismatches 1 \
-        --ignore-missing-positions \
-        --ignore-missing-controls \
-        --ignore-missing-filter \
-        --ignore-missing-bcls \
-        --no-lane-splitting \
-        --minimum-trimmed-read-length 15 \
-        --mask-short-adapter-reads 15 &> {log}
+        --writing-threads {threads} &> {log}
         """

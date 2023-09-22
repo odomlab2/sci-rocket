@@ -1,7 +1,8 @@
 # Set min. snakemake version for compatability.
-snakemake.utils.min_version("7.28.0")
+snakemake.utils.min_version("7.31.0")
 
 
+# Skeleton config, parameters will be overwritten by user-defined config file.
 configfile: "examples/example_config.yaml"
 
 

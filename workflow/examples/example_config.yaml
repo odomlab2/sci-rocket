@@ -26,18 +26,17 @@ species:
 #################################
 # --- Additional parameters ----#
 
-# Read length of R2 (i.e. the read containing the cDNA sequence) - 1.
-# This is used during genome generation to set the --sjdbOverhang parameter.
-length_R2: 83
-
+# Custom settings for various major steps of the workflow.
+# Important: (star_index): Change the --sjdbOverhang parameter to the read length of R2 (i.e. the read containing the cDNA sequence) - 1.
+# Important: (star_index): For example, if R2 is 84bp long, then --sjdbOverhang should be set to 83.
 settings:
   # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
   scatter_fastq_split: 10
   # Custom settings for bcl2fastq.
-  bcl2fastq: ""
+  bcl2fastq: "--barcode-mismatches 1 --ignore-missing-positions --ignore-missing-controls --ignore-missing-filter --ignore-missing-bcls --no-lane-splitting --minimum-trimmed-read-length 15 --mask-short-adapter-reads 15"
   # Custom settings for fastp.
-  fastp: ""
+  fastp: "--detect_adapter_for_pe --qualified_quality_phred 15 --dont_eval_duplication --length_required 10"
   # Custom settings for STAR genome preparation.
-  star_index: ""
+  star_index: "--sjdbOverhang 83"
   # Custom settings for STARSolo alignment.
-  star: ""
+  star: "--soloFeatures GeneFull --soloCellReadStats Standard --soloMultiMappers EM --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outSAMunmapped Within --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR GX GN sM CB"

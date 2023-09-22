@@ -20,15 +20,19 @@ rule trim_fastp:
     params:
         extra=config["settings"]["fastp"],
     message:
-        "Trimming adapters and low-quality reads with fastp."
+        "Trimming adapters and low-quality reads with fastp ({wildcards.sample_name})."
     shell:
-        "fastp {params.extra} --detect_adapter_for_pe --qualified_quality_phred 15 --dont_eval_duplication --length_required 10 --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
+        "fastp {params.extra} --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
 
 
 #############################################
 #  STAR: Alignment
 #############################################
 
+# Get the samples for a given sequencing run (and sci-dash).
+def get_expected_cells(wildcards):
+    x = samples_unique[samples_unique["sample_name"] == wildcards.sample_name]
+    return x["n_expected_cells"].values[0]
 
 rule generate_index_STAR:
     output:
@@ -42,7 +46,6 @@ rule generate_index_STAR:
         fasta=lambda w: config["species"][w.species]["genome"],
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
         star_index=lambda w: config["species"][w.species]["star_index"],
-        length_R2=config["length_R2"],
         extra=config["settings"]["star_index"],
     message: "Generating (or symlinking) STAR indexes."
     run:
@@ -50,8 +53,9 @@ rule generate_index_STAR:
             shell("ln -s {input.star_index} {output}")
         else:
             shell(
-                "STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.length_R2} >& {log}"
+                "STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} >& {log}"
             )
+
 
 rule starSolo_align:
     input:
@@ -89,8 +93,9 @@ rule starSolo_align:
         sampleName="{sequencing_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
         path_barcodes=config["path_barcodes"],
+        n_expected_cells=lambda w: get_expected_cells(w),
     message:
-        "Aligning reads with STAR."
+        "Aligning reads with STAR ({wildcards.sample_name})."
     shell:
         """
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
@@ -98,12 +103,8 @@ rule starSolo_align:
         --soloType CB_UMI_Complex --soloCBmatchWLtype Exact \
         --soloCBposition 0_0_0_9 0_10_0_19 0_20_0_29 0_30_0_39 --soloUMIposition 0_40_0_47 \
         --soloCBwhitelist {input.whitelist_p7} {input.whitelist_p5} {input.whitelist_ligation} {input.whitelist_rt} \
-        --soloCellFilter CellRanger2.2 --soloFeatures GeneFull --soloCellReadStats Standard \
-        --soloMultiMappers EM \
-        --outSAMtype BAM SortedByCoordinate --outSAMunmapped Within --outFileNamePrefix {params.sampleName} \
-        --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 \
-        --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM CB UB \
-        >& {log}
+        --soloCellFilter CellRanger2.2 {params.n_expected_cells} 0.99 10 \
+        --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.sampleName} >& {log}
 
         # Convert the barcodes to the barcode naming scheme.
         python3.10 {workflow.basedir}/scripts/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
@@ -125,7 +126,7 @@ rule sambamba_index:
     resources:
         mem_mb=1024 * 2,
     message:
-        "Indexing BAM."
+        "Indexing BAM ({wildcards.sample_name})."
     shell:
         "sambamba index -t {threads} {input} {output} >& {log}"
 
@@ -162,7 +163,7 @@ rule sci_dash:
     resources:
         mem_mb=1024 * 2,
     message:
-        "Generating sci-dashboard report."
+        "Generating sci-dashboard report ({wildcards.sequencing_name})."
     shell:
         """
         # Generate the sci-dashboard report.
