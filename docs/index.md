@@ -24,7 +24,7 @@ We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environme
 
       ```bash
       cd sci-rocket
-      micromamba create -f workflow/envs/env.yaml
+      micromamba create -f workflow/envs/sci-rocket.yaml
       ```
 
 3. Activate the conda environment:
