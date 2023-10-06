@@ -39,4 +39,4 @@ settings:
   # Custom settings for STAR genome preparation.
   star_index: "--sjdbOverhang 83"
   # Custom settings for STARSolo alignment.
-  star: "--soloFeatures GeneFull --soloCellReadStats Standard --soloMultiMappers EM --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outSAMunmapped Within --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR GX GN sM CB"
+  star: "--soloFeatures GeneFull --soloCellReadStats Standard --soloMultiMappers EM --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outSAMunmapped Within --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM"
