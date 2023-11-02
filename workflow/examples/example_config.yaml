@@ -19,8 +19,8 @@ species:
     genome_gtf: "xxx.gtf"
     star_index: False
   zebrafish:
-    genome: "/omics/groups/OE0538/internal/users/l375s/GRCz11/Danio_rerio.GRCz11.dna.toplevel.fa"
-    genome_gtf: "/omics/groups/OE0538/internal/users/l375s/GRCz11/Danio_rerio.GRCz11.110.gtf"
+    genome: "xxx.fa"
+    genome_gtf: "xxx.gtf"
     star_index: False
 
 #################################
