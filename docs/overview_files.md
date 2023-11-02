@@ -42,4 +42,4 @@ The hashing workflow requires a file (.tsv) containing the hashing schematics us
 * hash_name: Name of the hashing experiment (e.g. hash_exp1).
 * hash_barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).
 
-It is assumed that the hashing barcodes are 10nt and are located in the 5' start of the read1 (R1) read and are subsequently followed by the remaining sci-barcode design patterns.
+It is assumed that the hashing barcodes are 10nt and are located in the 5' start of read2 (R2) and are subsequently followed by the cDNA sequence.
