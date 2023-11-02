@@ -4,8 +4,8 @@
 
 * **path_bcl**: Path to folder containing the BCL files.
 * **sequencing_name**: Sequencing name (e.g., run123), used to store sequencing-specific files.
-* **p5**: PCR (p5) index (e.g. A01:H01) used to identify the sample during demultiplexing.
-* **p7**: PCR (p7) index (e.g. G01:G12) used to identify the sample during demultiplexing.
+* **p5**: PCR (p5) index (e.g. A01:H01, or **column(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
+* **p7**: PCR (p7) index (e.g. G01:G12, or **rows(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
 * **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
 * **sample_name**: Name of the demultiplexed sample, used to generate sample-specific files.
 * **species**: Reference species (e.g. mouse or human).
