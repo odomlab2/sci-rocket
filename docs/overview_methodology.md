@@ -11,6 +11,7 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
       * Finds exact or nearest match for PCR Index #1 (p5), PCR Index #1 (p7), ligation and/or RT barcode (single match with ≤1 hamming distance).
       * Generates sample-specific .fastq.gz files with corrected R1 sequence (48nt) and added read-names in R2.
       * Read-pairs without all four matching barcodes are discarded into separate .fastq.gz files with logs detailing which barcode(s) are (non-)matching.
+      * For samples with a specified hashing sheet, additional hashing procedures are performed.
 5. Performs adapter and low-quality base-trimming (**fastp**).
       * Read-pairs with a mate ≤10nt after trimming are discarded.
 6. Aligns reads to the supplied reference genome and perform cell-barcode/UMI counting (**STARSolo**).
@@ -21,7 +22,7 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
 
 > Parallization is performed per sequencing run and split chunk.
 
-## Sample demultiplexing
+## Sample demultiplexing (without hashing)
 
 **Example of R1 sequence:**
 
@@ -51,6 +52,10 @@ For sample-demultiplexing, the following steps are performed:
 3. Add the barcodes to the read-name of read 2 (R2):  
     `@READNAME|P5-<p5>-P7-<p7>|<ligation>|<rt>_<UMI>`
 4. Generate sample-specific paired-end fq.gz files with corrected R1 sequence (48nt) and R2 sequence.
+
+## Sample demultiplexing (with hashing)
+
+asd
 
 ## Output
 

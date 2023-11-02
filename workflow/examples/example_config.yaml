@@ -5,22 +5,22 @@
 path_samples: "examples/example_samplesheet.tsv"
 
 # Path to barcode files for demultiplexing. See examples/barcodes.tsv for an example and README for details.
-path_barcodes: "examples/barcodes.tsv"
+path_barcodes: "examples/example_barcodes.tsv"
 
 # Path to the output folder.
 dir_output: "examples/test_output/"
 
 # Path to fasta and GTF file containing the main reference genome and annotations.
-# The identifier (e.g. Mouse) is used to identify the species as specified in the sample sheet.
+# The identifier (e.g. mouse) is used to identify the species as specified in the sample sheet.
 # star_index (path) is optional and can be set to False if no STAR index is already available (this will be generated as part of the workflow).
 species:
   mouse:
     genome: "xxx.fa"
     genome_gtf: "xxx.gtf"
     star_index: False
-  human:
-    genome: "xxx.fa"
-    genome_gtf: "xxx.gtf"
+  zebrafish:
+    genome: "/omics/groups/OE0538/internal/users/l375s/GRCz11/Danio_rerio.GRCz11.dna.toplevel.fa"
+    genome_gtf: "/omics/groups/OE0538/internal/users/l375s/GRCz11/Danio_rerio.GRCz11.110.gtf"
     star_index: False
 
 #################################
