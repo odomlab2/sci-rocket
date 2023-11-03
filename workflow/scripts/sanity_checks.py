@@ -200,18 +200,26 @@ def sanity_samples(log, samples, barcodes, config):
 
     # region Sanity of hash heets -------------------------------------------------------------------
 
-    # For samples which have a designated hash sheet (and need to be hashed), check sanity of hashing sheet.
-    if samples["hashing_sheet"].notnull().any():
-        hashing_sheets = samples.query("hashing_sheet.notnull()")["hashing_sheet"].unique()
+    # For experiments which have a designated hash sheet, check sanity of hashing sheet.
+    if config["hashing"]:
 
         # Open the hashing sheets (.tsv) and check if hash_name and barcode columns are present.
-        for hashing_sheet in hashing_sheets:
-            x = pd.read_csv(hashing_sheet, sep="\t", header=0)
+        for experiment in config["hashing"]:
+            x = pd.read_csv(config["hashing"][experiment], sep="\t", header=0)
             required_columns = set(["hash_name", "barcode"])
 
             if not required_columns.issubset(x.columns):
                 log.error("Sanity check (Sample sheet) - Hashing sheet {} is missing required column(s): {}".format(hashing_sheet, ", ".join(required_columns.difference(x.columns))))
                 return False
+            
+            # Check if the hashing sheet contains duplicate barcodes for different samples.
+            if x.groupby("barcode")["hash_name"].apply(lambda x: len(x.unique()) > 1).any():
+                # Check which barcodes are duplicated.
+                duplicated_barcodes = x.groupby("barcode")["hash_name"].apply(lambda x: ", ".join(x.unique())).reset_index()
+
+                log.error("Sanity check (Sample sheet) - Hashing sheet {} contains duplicate barcodes for different samples:\n{}".format(hashing_sheet, duplicated_barcodes))
+                return False
+
 
     # endregion ---------------------------------------------------------------------------------------
 

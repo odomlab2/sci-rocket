@@ -1,4 +1,4 @@
-__version__ = "0.1"
+__version__ = "0.2"
 
 # Import modules.
 import argparse
@@ -9,6 +9,7 @@ import pandas as pd
 import pickle
 import pysam
 import sys
+import re
 
 from Levenshtein import distance as hamming
 from rich.console import Console
@@ -60,7 +61,7 @@ def add_uncorrectable_sequence(sequence, dict_sequence):
         dict_sequence[sequence] += 1
 
 
-def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str):
+def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, hashing: dict, path_r1: str, path_r2: str, path_out: str):
     """
     Performs demultiplexing of the raw fastq files based on the PCR indexes (p5, p7) and RT barcode to produce sample-specific R1 and R2 files.
     The ligation barcode can be either 9nt or 10nt long and this can affect the location of the UMI and RT barcodes.
@@ -70,12 +71,16 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         - The R1 read is shorter than 34nt.
         - The R1 read is longer than 34nt.
         - One of the barcodes (p5, p7, ligation and/or RT) is not found within R1.
+    
+    When a experiment/sample has a hashing sheet attached, the hashing barcode is retrieved from the R2 sequence and added to the read-name of R2.
+    Additional metrics are generated for hashing experiments to keep track of the hashing barcodes per cellular barcode.
 
     Parameters:
         log (logging.Logger): Logger.
         sequencing_name (str): Sequencing sample.
         samples (pd.DataFrame): Sample sheet of the samples in the sequencing run.
         barcodes (pd.DataFrame): Barcode sheet.
+        hashing (dict): Dictionary of hashing barcodes.
         path_r1 (str): Path to R1 fastq file.
         path_r2 (str): Path to R2 fastq file.
         path_out (str): Path to output directory.
@@ -85,6 +90,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     """
 
     log.info("Starting sample-based demultiplexing of %s:\n(R1) %s\n(R2) %s", sequencing_name, path_r1, path_r2)
+    if(hashing):
+        log.info("Hashing sheet detected for this experiment, hashing subroutines are enabled. After counting, hash-reads are discarded.")
 
     # region Open file handlers --------------------------------------------------------------------------------------------------------------------------------
 
@@ -113,7 +120,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # Get the unique RT barcode and samples contained in the sequencing run.
     # Generate a dictionary with the RT barcodes as keys and the sample names as values.
-    dict_rt_barcodes = dict(zip(samples["barcode_rt"], samples["sample_name"]))
+    dict_rt_barcodes = dict(zip(samples["rt"], samples["sample_name"]))
 
     # Open file handlers for all sample-specific output files.
     dict_fh_out = {k: {} for k in set(samples.sample_name)}
@@ -156,7 +163,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     barcodes_ligation_9nt = barcodes.query("type == 'ligation' & length == 9")
 
     # Get the possible list of unique RT barcodes contained in the sequencing run.
-    rt_barcodes_sequencing = samples.query("sequencing_name == @sequencing_name")["barcode_rt"].unique()
+    rt_barcodes_sequencing = samples.query("sequencing_name == @sequencing_name")["rt"].unique()
     barcodes_rt = barcodes.query("type == 'rt' & barcode in @rt_barcodes_sequencing")
 
     # Retrieve the p5 and p7 barcodes used in this sequencing run.
@@ -226,6 +233,15 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     # Sample-specific dictionary to store (key: sample_name):
     # - No. of (succesfull) read-pairs (has p5+p7+ligation+RT)
     samples_dict = {k: {"n_pairs_success": 0} for k in samples["sample_name"].unique()}
+
+    # Hash-specific qc metrics and regex.
+    if hashing:
+        # Total number of read-pairs with correct(ed) hashing barcode.
+        # For all (succesfull) reads, keep track of the number of times each hashing/UMI combination is seen per cellular barcode.
+        qc["hashing"] = {k: {"n_correct" : 0, "n_corrected" : 0, "counts" : {}} for k in hashing.values()}
+
+        hash_match = "|".join(hashing.keys())
+        hash_regex = re.compile(hash_match)
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -363,6 +379,37 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 add_uncorrectable_sequence(sequence_rt_raw, qc["uncorrectable_rt"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
+        
+        # region Hashing ------------------------------------------------------------------------------------------------------------------------
+
+        # Check for the presence of a polyA and hash-barcode in R2.
+        # First, check if a hash is in the first 10nt of R2 first + rescue.
+        # If not, check for the perfect match of any hash-barcode in R2 (pre-compiled regex).
+        # After counting, these hash read-pairs are discarded.
+        name_hash = None
+        if hashing and "AAAAAAAA" in read2.sequence:
+            sequence_hash_raw = read2.sequence[0:10]
+
+            try:
+                name_hash = hashing[sequence_hash_raw]
+                sequence_hash = sequence_hash_raw
+                qc["hashing"][name_hash]["n_correct"] += 1
+            except KeyError:
+                # Rescue the hash within the first 10nt of R2.
+                sequence_hash, name_hash = find_closest_match(sequence_hash_raw, hashing)
+
+                if name_hash != None:
+                    qc["hashing"][name_hash]["n_corrected"] += 1
+                else:
+                    # Check for the presence of a hash in the entire R2 sequence.
+                    result = hash_regex.findall(read2.sequence)
+                    
+                    if len(result) == 1:
+                        sequence_hash = result[0]
+                        name_hash = hashing[sequence_hash]
+                        qc["hashing"][name_hash]["n_correct"] += 1
+                        
+        # endregion --------------------------------------------------------------------------------------------------------------------------------
 
         # region Writing output files -----------------------------------------------------------------------------------------------------------
 
@@ -411,10 +458,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             # VH00211:236:AACK2KFM5:1:1101:28873:1000|P5A01-P7D10|LIGN|P01-D04_GCGAGCGT
             read2.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read2.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
 
-            # Write the read-pair to the correct sample file.
-            dict_fh_out[sample]["R1"].write(str(read1) + "\n")
-            dict_fh_out[sample]["R2"].write(str(read2) + "\n")
-
             # Count as a successful read-pair.
             qc["n_pairs_success"] += 1
 
@@ -437,6 +480,25 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                     qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] = 1
                 else:
                     qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] += 1
+
+            # Hashing metrics (if applicable and if found).
+            if hashing and name_hash:
+
+                # Add the UMI/hash combination to the hash_name-specific dictionary.
+                cell_barcode2 = "_".join([name_p5, name_p7, name_ligation, name_rt])
+                if cell_barcode2 not in qc["hashing"][name_hash]["counts"]:
+                    qc["hashing"][name_hash]["counts"][cell_barcode2] = {}
+                    qc["hashing"][name_hash]["counts"][cell_barcode2]["umi"] = set([sequence_umi])
+                    qc["hashing"][name_hash]["counts"][cell_barcode2]["count"] = 1
+                else:
+                    qc["hashing"][name_hash]["counts"][cell_barcode2]["umi"].add(sequence_umi)
+                    qc["hashing"][name_hash]["counts"][cell_barcode2]["count"] += 1
+            
+            else:
+                # Write the read-pair to the correct sample file.
+                # Hashing read-pairs are discarded.
+                dict_fh_out[sample]["R1"].write(str(read1) + "\n")
+                dict_fh_out[sample]["R2"].write(str(read2) + "\n")
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -535,6 +597,7 @@ def main(arguments):
     parser.add_argument("--sequencing_name", required=True, type=str, help="(str) Sequencing sample name.")
     parser.add_argument("--samples", required=True, type=str, help="(str) Path to sample-sheet.")
     parser.add_argument("--barcodes", required=True, type=str, help="(str) Path to barcodes file.")
+    parser.add_argument("--hashing", required=False, type=str, help="(str) Path to hashing sheet.")
     parser.add_argument("--out", required=True, type=str, help="(str) Path to output directory.")
 
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Display help and exit.")
@@ -553,33 +616,39 @@ def main(arguments):
     # Open barcode-sheet.
     barcodes = pd.read_csv(args.barcodes, sep="\t", dtype=str)
 
+    # Import hashing sheet (if any).
+    hashing = {}
+    if args.hashing:
+        x = pd.read_csv(args.hashing, sep="\t", header=0)
+        hashing = {**hashing, **dict(zip(x["barcode"], x["hash_name"]))}
+
     # Generate output directory if not exists.
     if not os.path.exists(args.out):
         os.makedirs(args.out)
 
     # Run the program.
-    sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out)
+    sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, hashing=hashing, path_r1=args.r1, path_r2=args.r2, path_out=args.out)
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
 
-
-
 # args = parser.parse_args(
 #     [
 #         "--sequencing_name",
-#         "run1",
+#         "e3_zhash",
 #         "--samples",
-#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/SampleSheet_scirocket_bm-spleen_expt2.tsv",
+#         "/home/j103t/jvanriet/git/sci-rocket/workflow/examples/example_samplesheet.tsv",
 #         "--barcodes",
-#         "/home/j103t/jvanriet/git/snakemake-sciseq/workflow/examples/barcodes.tsv",
+#         "/home/j103t/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv",
 #         "--r1",
-#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/run1/raw_reads/R1_20-of-25.fastq.gz",
+#         "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/raw_reads/R1_5-of-10.fastq.gz",
 #         "--r2",
-#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/run1/raw_reads/R2_20-of-25.fastq.gz",
+#         "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/raw_reads/R2_5-of-10.fastq.gz",
 #         "--out",
-#         "/omics/groups/OE0538/internal/projects/sexomics/bm_sci/scirocket_july23_expt2/run1/demux_reads_scatter/20-of-25",
+#         "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/demux_reads_scatter/5-of-10",
+#         "--hashing",
+#         "/home/j103t/jvanriet/git/sci-rocket/workflow/examples/example_hashing.tsv",
 #     ]
 # )

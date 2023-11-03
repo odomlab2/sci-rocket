@@ -1,21 +1,21 @@
-path_bcl	sequencing_name	p5	p7	rt	sample_name	species	n_expected_cells	hashing_sheet
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A01	cc_p388di	mouse	10000	
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A02	sx2_liver_meoh	mouse	10000	
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A03	sx9_liver_pfa	mouse	10000	
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A04	sx9_liver_pfa	mouse	10000	
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A05	sx9_liver_pfa	mouse	10000	
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A06	sx10_liver_80p	mouse	10000	
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A07	sx10_liver_80p	mouse	10000	
-#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A08	sx10_liver_100p	mouse	10000	
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-A01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-A02	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-B01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-B02	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-C01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-C02	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-D01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-D02	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-E01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-F01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-G01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
-/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-H01	zfish_hash	zebrafish	10000	examples/example_hash.tsv
+path_bcl	sequencing_name	p5	p7	rt	sample_name	species	n_expected_cells
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A01	cc_p388di	mouse	10000
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A02	sx2_liver_meoh	mouse	10000
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A03	sx9_liver_pfa	mouse	10000
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A04	sx9_liver_pfa	mouse	10000
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A05	sx9_liver_pfa	mouse	10000
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A06	sx10_liver_80p	mouse	10000
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A07	sx10_liver_80p	mouse	10000
+#/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A08	sx10_liver_100p	mouse	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-A01	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-A02	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-B01	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-B02	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-C01	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-C02	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-D01	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-D02	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-E01	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-F01	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-G01	zfish_hash	zebrafish	10000
+/omics/groups/OE0538/internal/users/l375s/hash_testing/220620_VH00821_76_AAC35WMM5/	e3_zhash	A01:H01	A01:A06,C02:C03	P01-H01	zfish_hash	zebrafish	10000
