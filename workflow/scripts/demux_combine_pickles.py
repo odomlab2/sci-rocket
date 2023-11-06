@@ -69,7 +69,6 @@ def combine_scattered(path_demux_scatter, path_out):
             # Combine the qc dictionaries.
             qc_pickle = pickle.load(handle)
             
-
             # If the combined dictionary is empty, add the pickled dictionary
             if qc is None:
                 qc = qc_pickle
@@ -83,6 +82,26 @@ def combine_scattered(path_demux_scatter, path_out):
                 sample_dict = sample_dict_pickle
             else:
                 sample_dict = combine_pickle(sample_dict_pickle, sample_dict)
+
+    # endregion
+
+
+    # region Calculate additional hashing metrics (if used). --------------------------------------------------------------
+    
+    if('hashing' in qc):
+        # We calculate the following metrics:
+        # - Total no. of hash reads per cell.
+        # - Total no. of unique hash/UMI combinations per cell.
+        # - Total no. of hash/UMI combinations per cell per hash barcode.
+        for hash_barcode in qc['hashing']:
+            for cell_barcode in qc['hashing'][hash_barcode]['counts']:
+                qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi'] = len(qc['hashing'][hash_barcode]['counts'][cell_barcode]['umi'])
+                del qc['hashing'][hash_barcode]['counts'][cell_barcode]['umi']
+
+        # Calculate the total number of hashing reads per cell (all barcodes).
+        for hash_barcode in qc['hashing']:    
+                # Output number of count per cell.
+                print(f"Hash barcode: {hash_barcode}, Cell barcode: {cell_barcode}, Count: {qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}, UMI: {qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}")
 
     # endregion
 
@@ -110,3 +129,8 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+# Read pickle
+with open("e3_zhash_qc.pickle", "rb") as handle:
+    qc = pickle.load(handle)
+    sample_dict = pickle.load(handle)
