@@ -53,9 +53,18 @@ For sample-demultiplexing, the following steps are performed:
     `@READNAME|P5-<p5>-P7-<p7>|<ligation>|<rt>_<UMI>`
 4. Generate sample-specific paired-end fq.gz files with corrected R1 sequence (48nt) and R2 sequence.
 
-## Sample demultiplexing (with hashing)
+## Hashing
 
-asd
+Reads (R2) containing both a polyA signal (AAAAAAAA) and a hashing barcode are used to flag reads as hashing-reads. These reads are used for collecting hashing metrics (with their respective R1) and subsequently removed from the analysis.
+
+To flag reads as hashing-reads, we first check for the presence of the polyA signal (AAAAAAAA) in R2. If the polyA signal is present, we check for the presence of the hashing barcode in R2.
+It is assumed that the hashing barcodes are 10nt and are ideally located in the 5' start of read2 (R2), if no match is found using the first 10nt; we try to match against the closest match (hamming distance=1). If no rescue match is found, we search for the presence of any hashing barcode in the entire R2 sequence.
+
+The following metrics are collected from hashing reads:
+      - Number of hashing reads per hashing barcode.
+      - Combinations of hashing barcode + UMI.
+
+This metrics are used to calculate an optimal background distribution and can be added to the final single-cell dataset object.
 
 ## Output
 

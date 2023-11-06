@@ -37,9 +37,7 @@ The workflow requires a file (.tsv) containing the barcodes used in the experime
 
 ## Hashing sheet
 
-The hashing workflow requires a file (.tsv) containing the hashing schematics used in the experiment with at least the following required columns:
+The hashing workflow requires a separate file (.tsv) containing the hashing schematics used in the experiment with at least the following required columns:
 
 * hash_name: Name of the hashing experiment (e.g. hash_exp1).
-* hash_barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).
-
-It is assumed that the hashing barcodes are 10nt and are located in the 5' start of read2 (R2) and are subsequently followed by the cDNA sequence.
+* barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).

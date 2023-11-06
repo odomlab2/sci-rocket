@@ -51,4 +51,4 @@ We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environme
 
 The workflow requires a configuration file (`config.yaml`) which can be copied from the [example configuration file](https://github.com/odomlab2/sci-rocket/blob/main/workflow/examples/example_config.yaml) and adjusted to your needs.
 
-Within the configuration file, the [sample-sheet](overview_files.md) (`path_samples`) needs to be specified. This file contains the sample names and paths to the raw sequencing data.
+Within the configuration file, the [sample-sheet](overview_files.md) (`path_samples`) needs to be specified. This file contains the sample names and paths to the raw sequencing data (BCL).
