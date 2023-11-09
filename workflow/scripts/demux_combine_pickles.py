@@ -18,8 +18,22 @@ def combine_pickle(pickle_dict, combined_dict):
     for key in pickle_dict:
         if key in ["sequencing_name", "version"]:
             continue
+        
+        if key == "hashing":
+            # Merge the hashing metrics.
+            for hash_barcode in pickle_dict[key]:
+                if hash_barcode not in combined_dict[key]:
+                    combined_dict[key][hash_barcode] = pickle_dict[key][hash_barcode]
+                else:
+                    for cell_barcode in pickle_dict[key][hash_barcode]["counts"]:
+                        if cell_barcode not in combined_dict[key][hash_barcode]["counts"]:
+                            combined_dict[key][hash_barcode]["counts"][cell_barcode] = pickle_dict[key][hash_barcode]["counts"][cell_barcode]
+                        else:
+                            combined_dict[key][hash_barcode]["counts"][cell_barcode]["count"] += pickle_dict[key][hash_barcode]["counts"][cell_barcode]["count"]
+                            combined_dict[key][hash_barcode]["counts"][cell_barcode]["umi"].update(pickle_dict[key][hash_barcode]["counts"][cell_barcode]["umi"])
+
+        # Merge everything else.
         else:
-            # Check if value is a dictionary
             if isinstance(pickle_dict[key], dict):
                 for index in pickle_dict[key]:
                     if index not in combined_dict[key]:
@@ -30,6 +44,7 @@ def combine_pickle(pickle_dict, combined_dict):
                         elif isinstance(pickle_dict[key], set):
                             combined_dict[key].update(pickle_dict[key])
 
+
             elif isinstance(pickle_dict[key], int):
                 combined_dict[key] += pickle_dict[key]
 
@@ -37,6 +52,7 @@ def combine_pickle(pickle_dict, combined_dict):
                 combined_dict[key].update(pickle_dict[key])
 
     return combined_dict
+
 
 def combine_scattered(path_demux_scatter, path_out):
     """
@@ -65,43 +81,52 @@ def combine_scattered(path_demux_scatter, path_out):
     for path_pickle in paths_pickle:
         with open(path_pickle, "rb") as handle:
             print(f"Loading {path_pickle}")
-            
+
             # Combine the qc dictionaries.
             qc_pickle = pickle.load(handle)
-            
+
             # If the combined dictionary is empty, add the pickled dictionary
             if qc is None:
                 qc = qc_pickle
             else:
                 qc = combine_pickle(qc_pickle, qc)
-
+            
             # Combine the sample_dict dictionaries.
             sample_dict_pickle = pickle.load(handle)
-            
+
             if sample_dict is None:
                 sample_dict = sample_dict_pickle
             else:
                 sample_dict = combine_pickle(sample_dict_pickle, sample_dict)
-
+    
     # endregion
 
-
     # region Calculate additional hashing metrics (if used). --------------------------------------------------------------
-    
-    if('hashing' in qc):
+
+    if "hashing" in qc:
         # We calculate the following metrics:
         # - Total no. of hash reads per cell.
         # - Total no. of unique hash/UMI combinations per cell.
         # - Total no. of hash/UMI combinations per cell per hash barcode.
-        for hash_barcode in qc['hashing']:
-            for cell_barcode in qc['hashing'][hash_barcode]['counts']:
-                qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi'] = len(qc['hashing'][hash_barcode]['counts'][cell_barcode]['umi'])
-                del qc['hashing'][hash_barcode]['counts'][cell_barcode]['umi']
 
-        # Calculate the total number of hashing reads per cell (all barcodes).
-        for hash_barcode in qc['hashing']:    
-                # Output number of count per cell.
-                print(f"Hash barcode: {hash_barcode}, Cell barcode: {cell_barcode}, Count: {qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}, UMI: {qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}")
+        # Open file-handlers to store hashing metrics.
+        path_hashing = os.path.join(path_out, qc["sequencing_name"] + "_hashing_metrics.txt")
+        fh_hashing = open(path_hashing, "w")
+
+        # Write header.
+        fh_hashing.write("sequencing_name\thash_barcode\tcell_barcode\tn_hash\tn_hash_umi\n")
+        sequencing_name = qc["sequencing_name"]
+
+        for hash_barcode in qc["hashing"]:
+            for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
+                qc["hashing"][hash_barcode]["counts"][cell_barcode]["n_umi"] = len(qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
+                del qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"]
+
+                # Write metrics to file.
+                fh_hashing.write(f"{sequencing_name}\t{hash_barcode}\t{cell_barcode}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}\n")
+
+    # Close file-handlers.
+    fh_hashing.close()
 
     # endregion
 
