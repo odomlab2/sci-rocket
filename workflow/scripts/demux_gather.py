@@ -101,35 +101,6 @@ def combine_scattered(path_demux_scatter, path_out):
     
     # endregion
 
-    # region Calculate additional hashing metrics (if used). --------------------------------------------------------------
-
-    if "hashing" in qc:
-        # We calculate the following metrics:
-        # - Total no. of hash reads per cell.
-        # - Total no. of unique hash/UMI combinations per cell.
-        # - Total no. of hash/UMI combinations per cell per hash barcode.
-
-        # Open file-handlers to store hashing metrics.
-        path_hashing = os.path.join(path_out, qc["sequencing_name"] + "_hashing_metrics.txt")
-        fh_hashing = open(path_hashing, "w")
-
-        # Write header.
-        fh_hashing.write("sequencing_name\thash_barcode\tcell_barcode\tn_hash\tn_hash_umi\n")
-        sequencing_name = qc["sequencing_name"]
-
-        for hash_barcode in qc["hashing"]:
-            for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
-                qc["hashing"][hash_barcode]["counts"][cell_barcode]["n_umi"] = len(qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
-                del qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"]
-
-                # Write metrics to file.
-                fh_hashing.write(f"{sequencing_name}\t{hash_barcode}\t{cell_barcode}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}\n")
-
-    # Close file-handlers.
-    fh_hashing.close()
-
-    # endregion
-
     # Combined pickles.
     with open(path_out, "wb") as fh:
         pickle.dump(qc, fh)

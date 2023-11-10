@@ -156,6 +156,7 @@ rule sci_dash:
     input:
         lambda w: getsamples_sequencing(w),
         qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle",
+        hashing="{sequencing_name}/demux_reads/{sequencing_name}_hashing_metrics.tsv"
     output:
         dash_folder=directory("{sequencing_name}/sci-dash/"),
         dash_json="{sequencing_name}/sci-dash/js/qc_data.js",

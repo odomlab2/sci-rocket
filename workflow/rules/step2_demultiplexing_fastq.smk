@@ -107,7 +107,7 @@ rule gather_demultiplexed_sequencing:
         whitelist_rt="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_rt.txt",
     threads: 1
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 4,
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
@@ -117,7 +117,7 @@ rule gather_demultiplexed_sequencing:
     shell:
         """
         # Combine pickles.
-        python3.10 {workflow.basedir}/scripts/demux_combine_pickles.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
+        python3.10 {workflow.basedir}/scripts/demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
 
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz
@@ -147,4 +147,25 @@ rule gather_demultiplexed_samples:
         # Combine files.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R1.fastq.gz -print0 | xargs -0 cat > {output.R1}
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R2.fastq.gz -print0 | xargs -0 cat > {output.R2}
+        """
+
+rule collect_hashing_metrics:
+    input:
+        qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle"
+    output:
+        hashing="{sequencing_name}/demux_reads/{sequencing_name}_hashing_metrics.tsv"
+    threads: 1
+    resources:
+        mem_mb=1024 * 2,
+    params:
+        path_hashing=lambda w: get_hashing(w),
+    message:
+        "Collecting hashing metrics ({wildcards.sequencing_name})."
+    shell:
+        """
+        if [ -z "{params.path_hashing}" ]; then
+            echo "No hashing metrics to collect."
+        else
+            python3.10 {workflow.basedir}/scripts/demux_hashing.py --qc {input.qc} --out {output}
+        fi
         """
