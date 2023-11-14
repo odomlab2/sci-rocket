@@ -18,7 +18,7 @@ def combine_pickle(pickle_dict, combined_dict):
     for key in pickle_dict:
         if key in ["sequencing_name", "version"]:
             continue
-        
+
         if key == "hashing":
             # Merge the hashing metrics.
             for hash_barcode in pickle_dict[key]:
@@ -43,7 +43,6 @@ def combine_pickle(pickle_dict, combined_dict):
                             combined_dict[key][index] += pickle_dict[key][index]
                         elif isinstance(pickle_dict[key], set):
                             combined_dict[key].update(pickle_dict[key])
-
 
             elif isinstance(pickle_dict[key], int):
                 combined_dict[key] += pickle_dict[key]
@@ -90,7 +89,7 @@ def combine_scattered(path_demux_scatter, path_out):
                 qc = qc_pickle
             else:
                 qc = combine_pickle(qc_pickle, qc)
-            
+
             # Combine the sample_dict dictionaries.
             sample_dict_pickle = pickle.load(handle)
 
@@ -98,7 +97,7 @@ def combine_scattered(path_demux_scatter, path_out):
                 sample_dict = sample_dict_pickle
             else:
                 sample_dict = combine_pickle(sample_dict_pickle, sample_dict)
-    
+
     # endregion
 
     # Combined pickles.
@@ -125,8 +124,3 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
-
-# Read pickle
-with open("e3_zhash_qc.pickle", "rb") as handle:
-    qc = pickle.load(handle)
-    sample_dict = pickle.load(handle)

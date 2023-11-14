@@ -154,6 +154,7 @@ rule collect_hashing_metrics:
         qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle"
     output:
         hashing="{sequencing_name}/demux_reads/{sequencing_name}_hashing_metrics.tsv"
+        hashing_plot="{sequencing_name}/demux_reads/{sequencing_name}_hashing_distribution.png"
     threads: 1
     resources:
         mem_mb=1024 * 2,
@@ -165,6 +166,7 @@ rule collect_hashing_metrics:
         """
         if [ -z "{params.path_hashing}" ]; then
             echo "No hashing metrics to collect."
+            touch {output}
         else
             python3.10 {workflow.basedir}/scripts/demux_hashing.py --qc {input.qc} --out {output}
         fi

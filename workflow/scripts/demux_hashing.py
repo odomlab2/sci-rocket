@@ -1,97 +1,169 @@
-# region Calculate additional hashing metrics (if used). --------------------------------------------------------------
+import os
+import sys
+import argparse
+import logging
+from rich.console import Console
+from rich.logging import RichHandler
+import pickle
+import pandas as pd
+import numpy as np
+import seaborn as sns
 
-    if "hashing" in qc:
-        # We calculate the following metrics:
-        # - Total no. of hash reads per cell.
-        # - Total no. of unique hash/UMI combinations per cell.
-        
-        # Open file-handlers to store hashing metrics.
-        path_hashing = os.path.join(path_out, qc["sequencing_name"] + "_hashing_metrics.txt")
-        fh_hashing = open(path_hashing, "w")
 
-        # Write header.
-        fh_hashing.write("sequencing_name\thash_barcode\tcell_barcode\tn_hash\tn_hash_umi\n")
-        sequencing_name = qc["sequencing_name"]
+def write_cell_hashing_table(qc, out):
+    """
+    Write the following cell-based metrics:
+        - Total no. of hash reads.
+        - Total no. of distinct UMI  per hashing barcode.
 
-        for hash_barcode in qc["hashing"]:
-            for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
-                qc["hashing"][hash_barcode]["counts"][cell_barcode]["n_umi"] = len(qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
-                del qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"]
+    Parameters:
+        qc (dict): Dictionary containing the QC, incl. hashing metrics.
+        out (str): Path to output directory.
+    
+    Returns:
+        None
+    """
 
-                # Write metrics to file.
-                fh_hashing.write(f"{sequencing_name}\t{hash_barcode}\t{cell_barcode}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}\n")
+    # Generate output directory if not exists.
+    if not os.path.exists(out):
+        os.makedirs(out)
+    
+    # Open file-handlers to no. of total hashing reads and no. distinct UMI for the hashes, per cell.
+    path_cell_hash_table = os.path.join(out, qc["sequencing_name"] + "_hashing_metrics.tsv")
+    fh_hashing = open(path_cell_hash_table, "w")
+
+    # Write header.
+    fh_hashing.write("sequencing_name\thash_barcode\tcell_barcode\tn_hash\tn_hash_umi\n")
+    sequencing_name = qc["sequencing_name"]
+
+    for hash_barcode in qc["hashing"]:
+        for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
+            qc["hashing"][hash_barcode]["counts"][cell_barcode]["n_umi"] = len(qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
+
+            # Write metrics to file.
+            fh_hashing.write(f"{sequencing_name}\t{hash_barcode}\t{cell_barcode}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}\n")
 
     # Close file-handlers.
     fh_hashing.close()
 
-    # endregion
+def determine_background_distribution(qc, out):
+    """
+    Per cell, we determine the cell-based threshold for the background distribution of hashing barcodes vs. true hashing barcodes.
+
+    Parameters:
+        qc (dict): Dictionary containing the QC, incl. hashing metrics.
+        out (str): Path to output directory.
+
+    Returns:
+        None
+    """
+
+    # Get all cellular barcodes.
+    cell_set = set()
+    
+    for hash_barcode in qc["hashing"]:
+        for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
+            cell_set.add(cell_barcode)
+
+    # Initialize dict storing hash counts per cell.
+    cell_hash_distribution = dict.fromkeys(cell_set, 0)
+
+    # For each cell, count the number of hashing barcodes.
+    for hash_barcode in qc["hashing"]:
+        for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
+            cell_hash_distribution[cell_barcode] += qc["hashing"][hash_barcode]["counts"][cell_barcode]["count"]      
+    
+    # Plot distribution.
+    plt = sns.displot(cell_hash_distribution.values(), kde=True, log_scale=True, bins=100)
+    plt.set(xlabel="Density (cells)", ylabel=r"$\mathregular{log_{10}(No. hashing reads)}$")
+
+    # Add log ticks to x-axis.
+    plt.set(xscale="log")
+    plt.set(xticks=[1, 10, 100, 1000, 10000, 100000, 1000000])
+
+    # Add ticks to y-axis (log10).
+    plt.set(yscale="log")
+    plt.set(yticks=[1, 10, 100, 1000, 10000, 100000, 1000000])
+
+    # Add light-grey grid.
+    plt.set(style="whitegrid")
+    
+    # Change font size of axis titles + bold.
+    plt.set_axis_labels(fontsize=12, fontweight="bold")
+
+    # Save plot.
+    plt.savefig(os.path.join(out, qc["sequencing_name"] + "_hashing_distribution.png"), dpi=300)
+   
+
+def init_logger():
+    """
+    Initializes the logger.
+
+    Parameters:
+        None
+
+    Returns:
+        log (logging.Logger): Logger object.
+    """
+
+    log = logging.getLogger(__name__)
+
+    ch = RichHandler(show_path=False, console=Console(width=255), show_time=True)
+    formatter = logging.Formatter("sci-hashing: %(message)s")
+    ch.setFormatter(formatter)
+    log.addHandler(ch)
+    log.propagate = False
+
+    # Set the verbosity level.
+    log.setLevel(logging.INFO)
+
+    return log
 
 
 def main(arguments):
     description = """
-    Performs demultiplexing on R1/R2.fastq(.gz) files generated by sci-RNA-seq v3 protocol, based on:
-        - p7, p5, RT and ligation barcodes.
-        - Collects hashing metrics (if applicable).
-            - Reads used for hashing are removed.
-    
-    The R1 sequence is modified to a fixed length sequence (48nt) which includes all (corrected) barcodes: p5(10nt), p7(10nt), ligation(10nt), RT(10nt) and UMI (8nt) for downstream processing.
-    The read names for R2 are modified to include the barcodes and UMI.
-    
-    It requires that the p5 and p7 barcodes are present in the read headers of the .fastq files (bcl2fastq):
-    @<read name> 1:N:0:ACGGNNGGCC+NTCATGGNGC
-                      |----p7---|+|----p5----|: p5 is reverse-complemented.
-
-    The R1 sequence should adhere to the following scheme:
-    First 9 or 10nt:  Ligation barcode
-    Next 8nt:    UMI
-    Next 6nt:    Primer
-    Last 10nt:   RT Barcode (sample-specific)
-
-    Anatomy of R1:
-    |ACTTGATTGT| |GAGAGCTC| |CGTGAA| |AGGTTAGCAT|
-    |-LIGATION-| |---UMI--| |Primer| |----RT----|
+    Calculates hashing metrics and background signal distributions.
     """
 
     # Setup argument parser.
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter, add_help=False)
-    parser.add_argument("--r1", required=True, type=str, help="(.fq) Input fastq (R1).")
-    parser.add_argument("--r2", required=True, type=str, help="(.fq) Input fastq (R2).")
-    parser.add_argument("--sequencing_name", required=True, type=str, help="(str) Sequencing sample name.")
-    parser.add_argument("--samples", required=True, type=str, help="(str) Path to sample-sheet.")
-    parser.add_argument("--barcodes", required=True, type=str, help="(str) Path to barcodes file.")
-    parser.add_argument("--hashing", required=False, type=str, help="(str) Path to hashing sheet.")
+    parser.add_argument("--pickle", required=True, type=str, help="(.pickle) Pickled dictionary containing the qc metrics of sci-rocket.")
     parser.add_argument("--out", required=True, type=str, help="(str) Path to output directory.")
 
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Display help and exit.")
-    parser.add_argument("-v", "--version", action="version", version=__version__, help="Display version and exit.")
 
     # Parse arguments.
     args = parser.parse_args()
 
-    # Initialize logging.
-    log = init_logger()
+    # Check if hashing was performed (skip script if not).
+    if "hashing" in qc:
 
-    # Open sample-sheet.
-    samples = pd.read_csv(args.samples, sep="\t", dtype=str)
-    samples = samples.query("sequencing_name == @args.sequencing_name")
+        # Initialize logging.
+        log = init_logger()
 
-    # Open barcode-sheet.
-    barcodes = pd.read_csv(args.barcodes, sep="\t", dtype=str)
-
-    # Import hashing sheet (if any).
-    hashing = {}
-    if args.hashing:
-        x = pd.read_csv(args.hashing, sep="\t", header=0)
-        hashing = {**hashing, **dict(zip(x["barcode"], x["hash_name"]))}
-
-    # Generate output directory if not exists.
-    if not os.path.exists(args.out):
-        os.makedirs(args.out)
-
-    # Run the program.
-    sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, hashing=hashing, path_r1=args.r1, path_r2=args.r2, path_out=args.out)
+        # Load the pickled dictionary
+        log.info("Loading pickled dictionary.")
+        with open(args.pickle, "rb") as handle:
+            qc = pickle.load(handle)
+            
+        log.info("Calculating hashing metrics.")
+        write_cell_hashing_table(qc, args.out)
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+# # Read pickle
+# with open("/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/demux_reads/e3_zhash_qc.pickle", "rb") as handle:
+#     qc = pickle.load(handle)
+
+# out = "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/demux_reads/"
+
+# qc["hashing"]["20uM_hash_P7_B1"]["counts"]["A01_A01_LIG74_P01-A01"]
+# # e3.zhash        A01_A01_P01-A01_LIG74   20uM_hash_P7_B1 573
+
+# # UMI found in bbi-sci for this sample.
+# # zgrep -E "A01_A01_P01-A01_LIG74" 00.hash.gz | grep -E "20uM_hash_P7_B1" | grep -E "GGCGGCTA"
+
+# "CCGTCTAA" in qc["hashing"]["20uM_hash_P7_B1"]["counts"]["A01_A01_LIG74_P01-A01"]["umi"]

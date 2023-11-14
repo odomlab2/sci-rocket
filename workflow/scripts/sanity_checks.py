@@ -3,6 +3,7 @@ import logging
 from rich.console import Console
 from rich.logging import RichHandler
 
+
 def init_logger(verbose: bool = False):
     """
     Initial a Logger with rich handler.
@@ -202,7 +203,6 @@ def sanity_samples(log, samples, barcodes, config):
 
     # For experiments which have a designated hash sheet, check sanity of hashing sheet.
     if config["hashing"]:
-
         # Open the hashing sheets (.tsv) and check if hash_name and barcode columns are present.
         for experiment in config["hashing"]:
             x = pd.read_csv(config["hashing"][experiment], sep="\t", header=0)
@@ -211,7 +211,7 @@ def sanity_samples(log, samples, barcodes, config):
             if not required_columns.issubset(x.columns):
                 log.error("Sanity check (Sample sheet) - Hashing sheet {} is missing required column(s): {}".format(hashing_sheet, ", ".join(required_columns.difference(x.columns))))
                 return False
-            
+
             # Check if the hashing sheet contains duplicate barcodes for different samples.
             if x.groupby("barcode")["hash_name"].apply(lambda x: len(x.unique()) > 1).any():
                 # Check which barcodes are duplicated.
@@ -219,7 +219,6 @@ def sanity_samples(log, samples, barcodes, config):
 
                 log.error("Sanity check (Sample sheet) - Hashing sheet {} contains duplicate barcodes for different samples:\n{}".format(hashing_sheet, duplicated_barcodes))
                 return False
-
 
     # endregion ---------------------------------------------------------------------------------------
 
@@ -285,7 +284,7 @@ def check_sanity(samples, barcodes, config):
         samples (pandas.DataFrame): Imported sample-sheet.
         barcodes (pandas.DataFrame): Imported barcodes.
         config (dict): Imported config.
-    
+
     Returns:
         bool: True if the sample sheet and barcodes file are valid, False otherwise.
     """
@@ -297,7 +296,7 @@ def check_sanity(samples, barcodes, config):
         raise ValueError("Barcode file is not valid.")
 
     if not sanity_samples(log, samples, barcodes, config):
-       raise ValueError("Sample metadata is not valid.")
+        raise ValueError("Sample metadata is not valid.")
 
     # Close Logger.
     logging.shutdown()

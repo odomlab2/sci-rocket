@@ -175,4 +175,9 @@ rule sci_dash:
 
         # Remove all empty (leftover) folders.
         find . -empty -type d -delete
+
+       # Remove the hashing metrics file if it is empty.
+        if [ ! -s {input.hashing} ]; then
+            rm {input.hashing}
+        fi 
         """

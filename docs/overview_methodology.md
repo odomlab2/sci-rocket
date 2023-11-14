@@ -27,21 +27,27 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
 **Example of R1 sequence:**
 
 ```text
-  @READNAME 1:N:0:CCGTATGATT+AGATGCAACT
-  ACTTGATTGTGAGAGCTCCGTGAAAGGTTAGCAT
+      @READNAME 1:N:0:CCGTATGATT+AGATGCAACT
+                        |----p7---|+|----p5----|: p5 is reverse-complemented during demuxxing.
+      ACTTGATTGTCAGAGCTTTGGTATCCTACCAGTT
 
-  First 9 or 10nt:  Ligation barcode
-  Next 8nt:    UMI
-  Next 6nt:    Primer
-  Last 10nt:   RT Barcode
+      The R1 sequence should adhere to the following scheme:
+      First 9 or 10nt:  Ligation barcode
+      Next 6nt:    Primer
+      Next 8nt:    UMI
+      Last 10nt:   RT Barcode (sample-specific)
 
-  Anatomy of R1:
-  |ACTTGATTGT| |GAGAGCTC| |CGTGAA| |AGGTTAGCAT|
-  |-LIGATION-| |---UMI--| |Primer| |----RT----|
+      Anatomy of R1 (ligation of 10nt):
+      |ACTTGATTGT| |CAGAGC| |TTTGGTAT| |CCTACCAGTT|
+      |-LIGATION-| |Primer| |---UMI--| |----RT----|
 
-  Corrected R1 sequence (48nt):
-  |CCGTATGATT| |CCGTATGATT| |ACTTGATTGT| |AGGTTAGCAT| |GAGAGCTC|
-  |----p7----| |----p5----| |-LIGATION-| |----RT----| |---UMI--|
+      Anatomy of R1 (ligation of 9nt):
+      |CTCGTTGAT| |CAGAGC| |TTTGGTAT| |CCTACCAGTT| |T|
+      |-LIGATION| |Primer| |---UMI--| |----RT----| |.| <- Extra base.
+
+      Corrected R1 sequence (48nt):
+      |CCGTATGATT| |AGTTGCATCT| |CTCGTTGAT| |CCTACCAGTT| |TTTGGTAT|
+      |----p7----| |----p5----| |-LIGATION-| |----RT----| |---UMI--|
 ```
 
 For sample-demultiplexing, the following steps are performed:
@@ -55,10 +61,11 @@ For sample-demultiplexing, the following steps are performed:
 
 ## Hashing
 
-Reads (R2) containing both a polyA signal (AAAAAAAA) and a hashing barcode are used to flag reads as hashing-reads. These reads are used for collecting hashing metrics (with their respective R1) and subsequently removed from the analysis.
+Reads (R2) containing both a polyA signal (AAAA) and a hashing barcode are used to flag reads as hashing-reads. These reads are used for collecting hashing metrics (with their respective R1) and subsequently removed from the analysis.
 
-To flag reads as hashing-reads, we first check for the presence of the polyA signal (AAAAAAAA) in R2. If the polyA signal is present, we check for the presence of the hashing barcode in R2.
-It is assumed that the hashing barcodes are 10nt and are ideally located in the 5' start of read2 (R2), if no match is found using the first 10nt; we try to match against the closest match (hamming distance=1). If no rescue match is found, we search for the presence of any hashing barcode in the entire R2 sequence.
+To flag reads as hashing-reads, we first check for the presence of the polyA signal (AAAA) in R2 (first occurence). If this signal is present, we check for the presence of the hashing barcode in R2 prior to this poly-A signal. It is assumed that the hashing barcodes are 10nt and are (directly) prior to the poly-A signal (5' - 1nt spacer).
+
+If no match is found using the first 10nt (5' poly-A - 1nt spacer) ; we try again against the closest match (hamming distance=1). If no rescued match is found, we search for the presence of any hashing barcode in the entire R2 sequence prior to the poly-A signal.
 
 The following metrics are collected from hashing reads:
       - Number of hashing reads per hashing barcode.

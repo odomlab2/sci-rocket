@@ -1,4 +1,4 @@
-__version__ = "0.2"
+__version__ = "0.3"
 
 # Import modules.
 import argparse
@@ -71,7 +71,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
         - The R1 read is shorter than 34nt.
         - The R1 read is longer than 34nt.
         - One of the barcodes (p5, p7, ligation and/or RT) is not found within R1.
-    
+
     When a experiment/sample has a hashing sheet attached, the hashing barcode is retrieved from the R2 sequence and added to the read-name of R2.
     Additional metrics are generated for hashing experiments to keep track of the hashing barcodes per cellular barcode.
 
@@ -90,7 +90,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     """
 
     log.info("Starting sample-based demultiplexing of %s:\n(R1) %s\n(R2) %s", sequencing_name, path_r1, path_r2)
-    if(hashing):
+    if hashing:
         log.info("Hashing sheet detected for this experiment, hashing subroutines are enabled. After counting, hash-reads are discarded.")
 
     # region Open file handlers --------------------------------------------------------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     # region Generate barcode lookup tables --------------------------------------------------------------------------------------------------------------------------------
 
     # Retrieve the ligation barcodes.
-    
+
     # Determine length of sequences in the ligation barcodes.
     barcodes.loc[:, "length"] = barcodes["sequence"].str.len()
     barcodes_ligation_10nt = barcodes.query("type == 'ligation' & length == 10")
@@ -238,7 +238,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     if hashing:
         # Total number of read-pairs with correct(ed) hashing barcode.
         # For all (succesfull) reads, keep track of the number of times each hashing/UMI combination is seen per cellular barcode.
-        qc["hashing"] = {k: {"n_correct" : 0, "n_corrected" : 0, "counts" : {}} for k in hashing.values()}
+        qc["hashing"] = {k: {"n_correct": 0, "n_corrected": 0, "counts": {}} for k in hashing.values()}
 
         hash_match = "|".join(hashing.keys())
         hash_regex = re.compile(hash_match)
@@ -354,14 +354,14 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             # Retrieve the RT barcode from R1 (last 10 bp).
             sequence_rt_raw = read1.sequence[-10:]
 
-            # Retrieve the UMI from R1 (next 8 bp after the ligation barcode).
-            sequence_umi = read1.sequence[10:18]
+            # Retrieve the UMI from R1 (next 8 bp after the primer sequence of 6nt).
+            sequence_umi = read1.sequence[16:24]
         else:
             # Retrieve the RT barcode from R1 (last 10 bp, minus one).
             sequence_rt_raw = read1.sequence[-11:-1]
 
-            # Retrieve the UMI from R1 (next 8 bp after the ligation barcode).
-            sequence_umi = read1.sequence[9:17]
+            # Retrieve the UMI from R1 (next 8 bp after the primer sequence of 6nt).
+            sequence_umi = read1.sequence[15:23]
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -379,36 +379,44 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 add_uncorrectable_sequence(sequence_rt_raw, qc["uncorrectable_rt"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
-        
+
         # region Hashing ------------------------------------------------------------------------------------------------------------------------
 
-        # Check for the presence of a polyA and hash-barcode in R2.
-        # First, check if a hash is in the first 10nt of R2 first + rescue.
-        # If not, check for the perfect match of any hash-barcode in R2 (pre-compiled regex).
+        # Check for the presence of a polyA.
+        # Next, check if the 10nt hash + rescue (1 hamming) is directly upstream of polyA (-1nt spacer).
+        # If not, check for a perfect match of any hash-barcode in R2 (pre-compiled regex) prior to polyA.
         # After counting, these hash read-pairs are discarded.
         name_hash = None
-        if hashing and "AAAAAAAA" in read2.sequence:
-            sequence_hash_raw = read2.sequence[0:10]
+        if hashing:
+            # Check for polyA in R2.
+            start_poly = str.find(read2.sequence, "AAAA")
 
-            try:
-                name_hash = hashing[sequence_hash_raw]
-                sequence_hash = sequence_hash_raw
-                qc["hashing"][name_hash]["n_correct"] += 1
-            except KeyError:
-                # Rescue the hash within the first 10nt of R2.
-                sequence_hash, name_hash = find_closest_match(sequence_hash_raw, hashing)
-
-                if name_hash != None:
-                    qc["hashing"][name_hash]["n_corrected"] += 1
+            if start_poly != -1:
+                # Check hash-barcode upstream of polyA - 1nt.
+                if start_poly - 11 < 0:
+                    sequence_hash_raw = read2.sequence[0 : start_poly - 1]
                 else:
-                    # Check for the presence of a hash in the entire R2 sequence.
-                    result = hash_regex.findall(read2.sequence)
-                    
-                    if len(result) == 1:
-                        sequence_hash = result[0]
-                        name_hash = hashing[sequence_hash]
-                        qc["hashing"][name_hash]["n_correct"] += 1
-                        
+                    sequence_hash_raw = read2.sequence[start_poly - 11 : start_poly - 1]
+
+                try:
+                    name_hash = hashing[sequence_hash_raw]
+                    sequence_hash = sequence_hash_raw
+                    qc["hashing"][name_hash]["n_correct"] += 1
+                except KeyError:
+                    # Rescue the sequence directly prior to polyA.
+                    sequence_hash, name_hash = find_closest_match(sequence_hash_raw, hashing)
+
+                    if name_hash != None:
+                        qc["hashing"][name_hash]["n_corrected"] += 1
+                    else:
+                        # Check for the presence of any hash in the entire R2 sequence prior to poly-A.
+                        result = hash_regex.findall(read2.sequence[:start_poly])
+
+                        if len(result) == 1:
+                            sequence_hash = result[0]
+                            name_hash = hashing[sequence_hash]
+                            qc["hashing"][name_hash]["n_correct"] += 1
+
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
         # region Writing output files -----------------------------------------------------------------------------------------------------------
@@ -483,7 +491,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
             # Hashing metrics (if applicable and if found).
             if hashing and name_hash:
-
                 # Add the UMI/hash combination to the hash_name-specific dictionary.
                 cell_barcode2 = "_".join([name_p5, name_p7, name_ligation, name_rt])
                 if cell_barcode2 not in qc["hashing"][name_hash]["counts"]:
@@ -493,7 +500,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                 else:
                     qc["hashing"][name_hash]["counts"][cell_barcode2]["umi"].add(sequence_umi)
                     qc["hashing"][name_hash]["counts"][cell_barcode2]["count"] += 1
-            
+
             else:
                 # Write the read-pair to the correct sample file.
                 # Hashing read-pairs are discarded.
@@ -552,7 +559,15 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
 
 def init_logger():
-    # Logging parameters.
+    """
+    Initializes the logger.
+
+    Parameters:
+        None
+
+    Returns:
+        log (logging.Logger): Logger object.
+    """
     log = logging.getLogger(__name__)
 
     ch = RichHandler(show_path=False, console=Console(width=255), show_time=True)
@@ -583,13 +598,21 @@ def main(arguments):
 
     The R1 sequence should adhere to the following scheme:
     First 9 or 10nt:  Ligation barcode
-    Next 8nt:    UMI
     Next 6nt:    Primer
+    Next 8nt:    UMI
     Last 10nt:   RT Barcode (sample-specific)
 
-    Anatomy of R1:
-    |ACTTGATTGT| |GAGAGCTC| |CGTGAA| |AGGTTAGCAT|
-    |-LIGATION-| |---UMI--| |Primer| |----RT----|
+    Anatomy of R1 (ligation of 10nt):
+    |ACTTGATTGT| |CAGAGC| |TTTGGTAT| |CCTACCAGTT|
+    |-LIGATION-| |Primer| |---UMI--| |----RT----|
+
+    Anatomy of R1 (ligation of 9nt):
+    |CTCGTTGAT| |CAGAGC| |TTTGGTAT| |CCTACCAGTT| |T|
+    |-LIGATION| |Primer| |---UMI--| |----RT----| |.| <- Extra base.
+
+    Anatomy of R2 (hashing read):
+    - Has hashing barcode (10nt) within the first 10nt (0 or 1 hamming distance) or elsewhere in R2 (no hamming).
+    - Has poly-A sequence (8xA).
     """
 
     # Setup argument parser.
