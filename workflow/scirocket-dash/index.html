@@ -103,7 +103,7 @@
                     </div>
                     <br />
                     <div class="d-flex align-items-center">
-                      <div class="subheader">No. of corrections: <span style="color: #d63939" id="n_total_corrections">N/A</span></div>
+                      <div class="subheader">No. of corrections (R1): <span style="color: #d63939" id="n_total_corrections">N/A</span></div>
                       <div class="ms-auto lh-1"></div>
                     </div>
                     <div id="chart-n_corrections" class="chart-sm" style="height: 100px"></div>
@@ -200,6 +200,9 @@
                       </li>
                       <li class="nav-item">
                         <a href="#tabs-rt" class="nav-link" data-bs-toggle="tab">Counts - RT</a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="#tabs-hashing" class="nav-link" data-bs-toggle="tab">Hashing</a>
                       </li>
                       <li class="nav-item">
                         <a href="#tabs-uncorrectables" class="nav-link" data-bs-toggle="tab">Uncorrectable barcodes</a>
@@ -335,6 +338,22 @@
                         </div>
                       </div>
                       <!--End - Tab: RT plate usage-->
+                      <!--Tab: Alignment-->
+                      <div class="tab-pane" id="tabs-hashing">
+                        <div class="container">
+                          <div class="row">
+                            <div class="card">
+                              <div class="card-body">
+                                <div id="table-default" class="table-responsive">
+                                  <table class="table" id="sample-hashing-table">
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!--End Tab: Cells-->
                       <div class="tab-pane" id="tabs-uncorrectables">
                         <h4>Uncorrectable barcodes</h4>
                         <div class="container">
