@@ -8,6 +8,7 @@ import pickle
 import pandas as pd
 import numpy as np
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 def write_cell_hashing_table(qc, out):
@@ -36,12 +37,13 @@ def write_cell_hashing_table(qc, out):
     fh_hashing.write("sequencing_name\thash_barcode\tcell_barcode\tn_hash\tn_hash_umi\n")
     sequencing_name = qc["sequencing_name"]
 
-    for hash_barcode in qc["hashing"]:
-        for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
-            qc["hashing"][hash_barcode]["counts"][cell_barcode]["n_umi"] = len(qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
+    if "hashing" in qc:
+        for hash_barcode in qc["hashing"]:
+            for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
+                qc["hashing"][hash_barcode]["counts"][cell_barcode]["n_umi"] = len(qc["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
 
-            # Write metrics to file.
-            fh_hashing.write(f"{sequencing_name}\t{hash_barcode}\t{cell_barcode}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}\n")
+                # Write metrics to file.
+                fh_hashing.write(f"{sequencing_name}\t{hash_barcode}\t{cell_barcode}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['count']}\t{qc['hashing'][hash_barcode]['counts'][cell_barcode]['n_umi']}\n")
 
     # Close file-handlers.
     fh_hashing.close()
@@ -66,30 +68,23 @@ def determine_background_distribution(qc, out):
             cell_set.add(cell_barcode)
 
     # Initialize dict storing hash counts per cell.
-    cell_hash_distribution = dict.fromkeys(cell_set, 0)
+    cell_hash_distribution = {cell: {"total_hash": 0, "total_hash_umi": 0} for cell in cell_set}
 
     # For each cell, count the number of hashing barcodes.
     for hash_barcode in qc["hashing"]:
         for cell_barcode in qc["hashing"][hash_barcode]["counts"]:
-            cell_hash_distribution[cell_barcode] += qc["hashing"][hash_barcode]["counts"][cell_barcode]["count"]      
+            cell_hash_distribution[cell_barcode]["total_hash"] += qc["hashing"][hash_barcode]["counts"][cell_barcode]["count"]
+            cell_hash_distribution[cell_barcode]["total_hash_umi"] += qc["hashing"][hash_barcode]["counts"][cell_barcode]["n_umi"]
     
-    # Plot distribution.
-    plt = sns.displot(cell_hash_distribution.values(), kde=True, log_scale=True, bins=100)
-    plt.set(xlabel="Density (cells)", ylabel=r"$\mathregular{log_{10}(No. hashing reads)}$")
+    # Plot distribution of all total_hash values.
+    data_plot = pd.DataFrame.from_dict(cell_hash_distribution, orient="index")
+
+    plt = sns.displot(data_plot["total_hash"], kde=True, log_scale=True, bins=50)
+    plt.set(xlabel=r"$\mathregular{log_{10}(No. hashing reads per cell)}$", ylabel="Density")
 
     # Add log ticks to x-axis.
     plt.set(xscale="log")
     plt.set(xticks=[1, 10, 100, 1000, 10000, 100000, 1000000])
-
-    # Add ticks to y-axis (log10).
-    plt.set(yscale="log")
-    plt.set(yticks=[1, 10, 100, 1000, 10000, 100000, 1000000])
-
-    # Add light-grey grid.
-    plt.set(style="whitegrid")
-    
-    # Change font size of axis titles + bold.
-    plt.set_axis_labels(fontsize=12, fontweight="bold")
 
     # Save plot.
     plt.savefig(os.path.join(out, qc["sequencing_name"] + "_hashing_distribution.png"), dpi=300)
@@ -135,19 +130,17 @@ def main(arguments):
     # Parse arguments.
     args = parser.parse_args()
 
+    # Initialize logging.
+    log = init_logger()
+
+    # Load the pickled dictionary
+    log.info("Loading pickled dictionary.")
+    with open(args.pickle, "rb") as handle:
+        qc = pickle.load(handle)
+
     # Check if hashing was performed (skip script if not).
-    if "hashing" in qc:
-
-        # Initialize logging.
-        log = init_logger()
-
-        # Load the pickled dictionary
-        log.info("Loading pickled dictionary.")
-        with open(args.pickle, "rb") as handle:
-            qc = pickle.load(handle)
-            
-        log.info("Calculating hashing metrics.")
-        write_cell_hashing_table(qc, args.out)
+    log.info("Calculating hashing metrics.")
+    write_cell_hashing_table(qc, args.out)
 
 
 if __name__ == "__main__":
@@ -161,6 +154,7 @@ if __name__ == "__main__":
 # out = "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/demux_reads/"
 
 # qc["hashing"]["20uM_hash_P7_B1"]["counts"]["A01_A01_LIG74_P01-A01"]
+cell_hash_distribution["A01_A01_LIG74_P01-A01"]
 # # e3.zhash        A01_A01_P01-A01_LIG74   20uM_hash_P7_B1 573
 
 # # UMI found in bbi-sci for this sample.
