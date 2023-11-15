@@ -148,22 +148,3 @@ rule gather_demultiplexed_samples:
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R1.fastq.gz -print0 | xargs -0 cat > {output.R1}
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sample_name}_R2.fastq.gz -print0 | xargs -0 cat > {output.R2}
         """
-
-rule collect_hashing_metrics:
-    input:
-        qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle"
-    output:
-        hashing="{sequencing_name}/demux_reads/{sequencing_name}_hashing_metrics.tsv"
-    threads: 1
-    resources:
-        mem_mb=1024 * 2,
-    params:
-        out_dir=lambda w: "{sequencing_name}/demux_reads/".format(
-            sequencing_name=w.sequencing_name
-        ),
-    message:
-        "Collecting hashing metrics ({wildcards.sequencing_name})."
-    shell:
-        """
-        python3.10 {workflow.basedir}/scripts/demux_hashing.py --pickle {input.qc} --out {params.out_dir}
-        """

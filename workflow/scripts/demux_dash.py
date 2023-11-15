@@ -4,18 +4,69 @@ import os
 import pickle
 import glob
 import json
+import pandas as pd
 
 
-def combine_logs(path_pickle, path_star):
+def write_cell_hashing_table(data_demux, out):
+    """
+    Write the following cell-based metrics:
+        - Total no. of hash reads.
+        - Total no. of distinct UMI  per hashing barcode.
+
+    Parameters:
+        data_demux (dict): Dictionary containing the QC, incl. hashing metrics.
+        out (str): Path to output hashing metrics.
+
+    Returns:
+        data_demux (dict): Dictionary containing the QC, excl. hashing metrics.
+    """
+
+    # Create a list of dictionaries.
+    array_hashing = []
+
+    if "hashing" in data_demux:
+        for hash_barcode in data_demux["hashing"]["counts"]:
+            for cell_barcode in data_demux["hashing"][hash_barcode]["counts"]:
+                array_hashing.append(
+                    {
+                        "sequencing_name": data_demux["sequencing_name"],
+                        "hash_barcode": hash_barcode,
+                        "cell_barcode": cell_barcode,
+                        "count": data_demux["hashing"][hash_barcode]["counts"][cell_barcode]["count"],
+                        "n_umi": len(data_demux["hashing"][hash_barcode]["counts"][cell_barcode]["umi"]),
+                    }
+                )
+
+                del data_demux["hashing"][hash_barcode]["counts"][cell_barcode]["umi"]
+
+    # Convert to pandas dataframe.
+    df_hashing = pd.DataFrame(columns=["sequencing_name", "hash_barcode", "cell_barcode", "count", "n_umi"], data=array_hashing)
+
+    # Order on total hash count.
+    df_hashing = df_hashing.sort_values(by=["count"], ascending=False)
+
+    # Generate folder.
+    if not os.path.exists(os.path.dirname(out)):
+        os.makedirs(os.path.dirname(out))
+
+    # Write to file.
+    df_hashing.to_csv(out, sep="\t", index=False, header=True, encoding="utf-8", mode="w")
+
+    # Return metrics.
+    return data_demux
+
+
+def combine_logs(path_pickle, path_star, path_hashing):
     """
     Combine the demuxxing logs with the STAR logs for the sci-dash.
 
     Parameters:
         path_pickle (str): Path to the pickled dictionaries.
         path_star (str): Path to the STAR output folder.
+        path_hashing (str): Path to the hashing metrics.
 
     Returns:
-        None
+        data_demux (dict): Dictionary containing the demuxxing statistics.
     """
 
     # region Import demuxxing statistics. ---------------------------------------------------------------------------------
@@ -23,7 +74,6 @@ def combine_logs(path_pickle, path_star):
     data_samples = None
 
     # Load the pickled dictionary
-
     with open(path_pickle, "rb") as handle:
         data_demux = pickle.load(handle)
         data_samples = pickle.load(handle)
@@ -121,6 +171,11 @@ def combine_logs(path_pickle, path_star):
 
     # endregion ----------------------------------------------------------------------------------------------------------
 
+    # region Export hashing statistics. ----------------------------------------------------------------------------------
+
+    data_demux = write_cell_hashing_table(data_demux, path_hashing)
+
+    # endregion ----------------------------------------------------------------------------------------------------------
     # Convert to JSON structure and write to file.
     if data_demux != None and data_samples != None:
         data_demux["samples_qc"] = data_samples
@@ -134,6 +189,7 @@ def main(arguments):
     parser.add_argument("--path_pickle", required=True, type=str, help="(str) Path to demultiplixing qc pickle.")
     parser.add_argument("--path_star", required=True, type=str, help="(str) Path to the star alignment folder.")
     parser.add_argument("--path_out", required=True, type=str, help="(str) Path to store JSON structure.")
+    parser.add_argument("--path_hashing", required=True, type=str, help="(str) Path to store hashing metrics (if applicable).")
 
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Display help and exit.")
 
@@ -141,7 +197,7 @@ def main(arguments):
     args = parser.parse_args()
 
     # Combine the demuxxing logs with the STAR logs for the sci-dash.
-    qc = combine_logs(args.path_pickle, args.path_star)
+    data_demux = combine_logs(args.path_pickle, args.path_star, args.path_hashing)
 
     # Write the JSON structure to file.
     if not os.path.exists(os.path.dirname(args.path_out)):
@@ -149,7 +205,7 @@ def main(arguments):
 
     with open(args.path_out, "w") as handle:
         handle.write("var data = ")
-        json.dump(qc, handle, indent=4)
+        json.dump(data_demux, handle, indent=4)
 
     # Close the file
     handle.close()

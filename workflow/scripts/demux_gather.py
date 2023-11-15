@@ -21,16 +21,23 @@ def combine_pickle(pickle_dict, combined_dict):
 
         if key == "hashing":
             # Merge the hashing metrics.
-            for hash_barcode in pickle_dict[key]:
-                if hash_barcode not in combined_dict[key]:
-                    combined_dict[key][hash_barcode] = pickle_dict[key][hash_barcode]
+            for hash_barcode in pickle_dict["hashing"]:
+                
+                if hash_barcode not in combined_dict["hashing"]:
+                    combined_dict["hashing"][hash_barcode] = pickle_dict["hashing"][hash_barcode]
                 else:
-                    for cell_barcode in pickle_dict[key][hash_barcode]["counts"]:
-                        if cell_barcode not in combined_dict[key][hash_barcode]["counts"]:
-                            combined_dict[key][hash_barcode]["counts"][cell_barcode] = pickle_dict[key][hash_barcode]["counts"][cell_barcode]
+                    
+                    # Combine the n_correct and n_corrected per hash.
+                    combined_dict["hashing"][hash_barcode]["n_correct"] += pickle_dict["hashing"][hash_barcode]["n_correct"]
+                    combined_dict["hashing"][hash_barcode]["n_corrected"] += pickle_dict["hashing"][hash_barcode]["n_corrected"]
+
+                    # Combine the hash_counts per cell.
+                    for cell_barcode in pickle_dict["hashing"][hash_barcode]["counts"]:
+                        if cell_barcode not in combined_dict["hashing"][hash_barcode]["counts"]:
+                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode] = pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]
                         else:
-                            combined_dict[key][hash_barcode]["counts"][cell_barcode]["count"] += pickle_dict[key][hash_barcode]["counts"][cell_barcode]["count"]
-                            combined_dict[key][hash_barcode]["counts"][cell_barcode]["umi"].update(pickle_dict[key][hash_barcode]["counts"][cell_barcode]["umi"])
+                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"] += pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"]
+                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"].update(pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
 
         # Merge everything else.
         else:

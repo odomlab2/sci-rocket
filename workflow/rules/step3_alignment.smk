@@ -155,11 +155,11 @@ def getsamples_sequencing(wildcards):
 rule sci_dash:
     input:
         lambda w: getsamples_sequencing(w),
-        qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle",
-        hashing="{sequencing_name}/demux_reads/{sequencing_name}_hashing_metrics.tsv"
+        qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle"
     output:
         dash_folder=directory("{sequencing_name}/sci-dash/"),
         dash_json="{sequencing_name}/sci-dash/js/qc_data.js",
+        metrics_hashing="{sequencing_name}/hashing/{sequencing_name}_hashing_metrics.tsv"
     threads: 1
     resources:
         mem_mb=1024 * 2,
@@ -171,13 +171,12 @@ rule sci_dash:
         cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
 
         # Combine the sample-specific QC and STARSolo metrics.
-        python3.10 {workflow.basedir}/scripts/demux_dash.py --path_out {output.dash_json} --path_pickle {input.qc} --path_star {wildcards.sequencing_name}/alignment/
+        python3.10 {workflow.basedir}/scripts/demux_dash.py \
+        --path_out {output.dash_json} \
+        --path_pickle {input.qc} \
+        --path_star {wildcards.sequencing_name}/alignment/ \
+        --path_hashing {output.metrics_hashing}
 
         # Remove all empty (leftover) folders.
         find . -empty -type d -delete
-
-       # Remove the hashing metrics file if it is empty.
-        if [ ! -s {input.hashing} ]; then
-            rm {input.hashing}
-        fi 
         """
