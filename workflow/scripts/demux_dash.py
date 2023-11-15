@@ -25,7 +25,7 @@ def write_cell_hashing_table(data_demux, out):
     array_hashing = []
 
     if "hashing" in data_demux:
-        for hash_barcode in data_demux["hashing"]["counts"]:
+        for hash_barcode in data_demux["hashing"]:
             for cell_barcode in data_demux["hashing"][hash_barcode]["counts"]:
                 array_hashing.append(
                     {
@@ -37,7 +37,8 @@ def write_cell_hashing_table(data_demux, out):
                     }
                 )
 
-                del data_demux["hashing"][hash_barcode]["counts"][cell_barcode]["umi"]
+            # Remove the counts to save space.
+            del data_demux["hashing"][hash_barcode]["counts"]
 
     # Convert to pandas dataframe.
     df_hashing = pd.DataFrame(columns=["sequencing_name", "hash_barcode", "cell_barcode", "count", "n_umi"], data=array_hashing)
@@ -214,3 +215,16 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+args = parser.parse_args(
+    [
+        "--path_out",
+        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/sci-dash/js/qc_data.js",
+        "--path_pickle",
+        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/demux_reads/e3_zhash_qc.pickle",
+        "--path_star",
+        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/alignment/",
+        "--path_hashing",
+        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/hashing/e3_zhash_hashing_metrics.tsv",
+    ]
+)

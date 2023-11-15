@@ -30,7 +30,8 @@ def combine_pickle(pickle_dict, combined_dict):
                     # Combine the n_correct and n_corrected per hash.
                     combined_dict["hashing"][hash_barcode]["n_correct"] += pickle_dict["hashing"][hash_barcode]["n_correct"]
                     combined_dict["hashing"][hash_barcode]["n_corrected"] += pickle_dict["hashing"][hash_barcode]["n_corrected"]
-
+                    combined_dict["hashing"][hash_barcode]["n_correct_upstream"] += pickle_dict["hashing"][hash_barcode]["n_correct_upstream"]
+               
                     # Combine the hash_counts per cell.
                     for cell_barcode in pickle_dict["hashing"][hash_barcode]["counts"]:
                         if cell_barcode not in combined_dict["hashing"][hash_barcode]["counts"]:

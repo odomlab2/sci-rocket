@@ -238,7 +238,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     if hashing:
         # Total number of read-pairs with correct(ed) hashing barcode.
         # For all (succesfull) reads, keep track of the number of times each hashing/UMI combination is seen per cellular barcode.
-        qc["hashing"] = {k: {"n_correct": 0, "n_corrected": 0, "counts": {}} for k in hashing.values()}
+        qc["hashing"] = {k: {"n_correct": 0, "n_corrected": 0, "n_correct_upstream": 0, "counts": {}} for k in hashing.values()}
 
         hash_match = "|".join(hashing.keys())
         hash_regex = re.compile(hash_match)
@@ -415,7 +415,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
                         if len(result) == 1:
                             sequence_hash = result[0]
                             name_hash = hashing[sequence_hash]
-                            qc["hashing"][name_hash]["n_correct"] += 1
+                            qc["hashing"][name_hash]["n_correct_upstream"] += 1
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
