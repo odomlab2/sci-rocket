@@ -2566,6 +2566,208 @@ var data = {
             }
         ]
     },
+    "hashing": {
+        "20uM_hash_P7_A1": {
+            "n_correct": 2350202,
+            "n_corrected": 113976,
+            "n_correct_upstream": 11002
+        },
+        "20uM_hash_P7_B1": {
+            "n_correct": 1095907,
+            "n_corrected": 74303,
+            "n_correct_upstream": 8889
+        },
+        "20uM_hash_P7_C1": {
+            "n_correct": 1131595,
+            "n_corrected": 75632,
+            "n_correct_upstream": 7156
+        },
+        "20uM_hash_P7_D1": {
+            "n_correct": 1214611,
+            "n_corrected": 216726,
+            "n_correct_upstream": 8143
+        },
+        "20uM_hash_P7_E1": {
+            "n_correct": 872909,
+            "n_corrected": 35710,
+            "n_correct_upstream": 16065
+        },
+        "20uM_hash_P7_F1": {
+            "n_correct": 902717,
+            "n_corrected": 107583,
+            "n_correct_upstream": 4496
+        },
+        "20uM_hash_P7_G1": {
+            "n_correct": 549364,
+            "n_corrected": 55338,
+            "n_correct_upstream": 6013
+        },
+        "20uM_hash_P7_H1": {
+            "n_correct": 813570,
+            "n_corrected": 52857,
+            "n_correct_upstream": 15896
+        },
+        "10uM_hash_P7_A2": {
+            "n_correct": 647447,
+            "n_corrected": 105205,
+            "n_correct_upstream": 4021
+        },
+        "10uM_hash_P7_B2": {
+            "n_correct": 310425,
+            "n_corrected": 40008,
+            "n_correct_upstream": 2025
+        },
+        "10uM_hash_P7_C2": {
+            "n_correct": 549859,
+            "n_corrected": 37068,
+            "n_correct_upstream": 4277
+        },
+        "10uM_hash_P7_D2": {
+            "n_correct": 489091,
+            "n_corrected": 71717,
+            "n_correct_upstream": 2426
+        },
+        "10uM_hash_P7_E2": {
+            "n_correct": 343043,
+            "n_corrected": 45380,
+            "n_correct_upstream": 1405
+        },
+        "10uM_hash_P7_F2": {
+            "n_correct": 233437,
+            "n_corrected": 15102,
+            "n_correct_upstream": 6038
+        },
+        "10uM_hash_P7_G2": {
+            "n_correct": 146462,
+            "n_corrected": 6784,
+            "n_correct_upstream": 2808
+        },
+        "10uM_hash_P7_H2": {
+            "n_correct": 496746,
+            "n_corrected": 30966,
+            "n_correct_upstream": 4196
+        },
+        "5uM_hash_P7_A3": {
+            "n_correct": 99683,
+            "n_corrected": 3667,
+            "n_correct_upstream": 1330
+        },
+        "5uM_hash_P7_B3": {
+            "n_correct": 105717,
+            "n_corrected": 13317,
+            "n_correct_upstream": 1138
+        },
+        "5uM_hash_P7_C3": {
+            "n_correct": 77844,
+            "n_corrected": 9585,
+            "n_correct_upstream": 5967
+        },
+        "5uM_hash_P7_D3": {
+            "n_correct": 150785,
+            "n_corrected": 5603,
+            "n_correct_upstream": 1021
+        },
+        "5uM_hash_P7_E3": {
+            "n_correct": 72978,
+            "n_corrected": 8234,
+            "n_correct_upstream": 5389
+        },
+        "5uM_hash_P7_F3": {
+            "n_correct": 147469,
+            "n_corrected": 14802,
+            "n_correct_upstream": 1441
+        },
+        "5uM_hash_P7_G3": {
+            "n_correct": 93900,
+            "n_corrected": 5056,
+            "n_correct_upstream": 2602
+        },
+        "5uM_hash_P7_H3": {
+            "n_correct": 74171,
+            "n_corrected": 2370,
+            "n_correct_upstream": 626
+        },
+        "2.5uM_hash_P7_A4": {
+            "n_correct": 101910,
+            "n_corrected": 8337,
+            "n_correct_upstream": 3253
+        },
+        "2.5uM_hash_P7_B4": {
+            "n_correct": 87267,
+            "n_corrected": 5849,
+            "n_correct_upstream": 1158
+        },
+        "2.5uM_hash_P7_C4": {
+            "n_correct": 115563,
+            "n_corrected": 16921,
+            "n_correct_upstream": 18675
+        },
+        "2.5uM_hash_P7_D4": {
+            "n_correct": 82363,
+            "n_corrected": 7046,
+            "n_correct_upstream": 1310
+        },
+        "2.5uM_hash_P7_E4": {
+            "n_correct": 113673,
+            "n_corrected": 9129,
+            "n_correct_upstream": 8405
+        },
+        "2.5uM_hash_P7_F4": {
+            "n_correct": 65419,
+            "n_corrected": 3391,
+            "n_correct_upstream": 1783
+        },
+        "2.5uM_hash_P7_G4": {
+            "n_correct": 105725,
+            "n_corrected": 13936,
+            "n_correct_upstream": 5295
+        },
+        "2.5uM_hash_P7_H4": {
+            "n_correct": 152511,
+            "n_corrected": 7789,
+            "n_correct_upstream": 6031
+        },
+        "1.25uM_hash_P7_A5": {
+            "n_correct": 68694,
+            "n_corrected": 5976,
+            "n_correct_upstream": 1857
+        },
+        "1.25uM_hash_P7_B5": {
+            "n_correct": 38125,
+            "n_corrected": 15986,
+            "n_correct_upstream": 20919
+        },
+        "1.25uM_hash_P7_C5": {
+            "n_correct": 63414,
+            "n_corrected": 3851,
+            "n_correct_upstream": 3066
+        },
+        "1.25uM_hash_P7_D5": {
+            "n_correct": 39097,
+            "n_corrected": 5712,
+            "n_correct_upstream": 8178
+        },
+        "1.25uM_hash_P7_E5": {
+            "n_correct": 106160,
+            "n_corrected": 11178,
+            "n_correct_upstream": 770
+        },
+        "1.25uM_hash_P7_F5": {
+            "n_correct": 61075,
+            "n_corrected": 15684,
+            "n_correct_upstream": 4340
+        },
+        "1.25uM_hash_P7_G5": {
+            "n_correct": 40957,
+            "n_corrected": 4836,
+            "n_correct_upstream": 6319
+        },
+        "1.25uM_hash_P7_H5": {
+            "n_correct": 91203,
+            "n_corrected": 7465,
+            "n_correct_upstream": 1771
+        }
+    },
     "uncorrectables_sankey": [
         {
             "source": "(True, True, True, True)",

@@ -436,10 +436,10 @@ function generate_hashing_table(data) {
   for (var sample in data) {
     var row = table.insertRow(-1);
     row.insertCell(0).innerHTML = sample;
-    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
-    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
-    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
-    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct + data[sample].n_corrected + data[sample].n_correct_upstream);
+    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct);
+    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_corrected);
+    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct_upstream);
 
     // Set the sorting classes of td elements
     row.cells[0].className = "sort-hashbarcode";
