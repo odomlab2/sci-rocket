@@ -57,6 +57,13 @@ rule split_R2:
 
 
 # ---- Demultiplex each splitted R1 and R2 file to generate sample-specific fastq.gz files. ----
+
+def get_hashing(w):
+    if w.sequencing_name in config["hashing"]:
+        return "--hashing " + config["hashing"][w.sequencing_name]
+    else:
+        return ""
+        
 rule demultiplex_fastq_split:
     input:
         R1="{sequencing_name}/raw_reads/R1_{scatteritem}.fastq.gz",
@@ -71,10 +78,19 @@ rule demultiplex_fastq_split:
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
+        path_hashing=lambda w: get_hashing(w),
     message:
         "Demultiplexing the scattered .fastq.gz files ({wildcards.sequencing_name})."
     shell:
-        "python3.10 {workflow.basedir}/scripts/demux_rocket.py --sequencing_name {wildcards.sequencing_name} --samples {params.path_samples} --barcodes {params.path_barcodes} --r1 {input[0]} --r2 {input[1]} --out {output} &> {log}"
+        """
+        python3.10 {workflow.basedir}/scripts/demux_rocket.py \
+        --sequencing_name {wildcards.sequencing_name} \
+        --samples {params.path_samples} \
+        --barcodes {params.path_barcodes} \
+        {params.path_hashing} \
+        --r1 {input[0]} --r2 {input[1]} \
+        --out {output} &> {log}
+        """
 
 
 rule gather_demultiplexed_sequencing:
@@ -91,7 +107,7 @@ rule gather_demultiplexed_sequencing:
         whitelist_rt="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_rt.txt",
     threads: 1
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 4,
     params:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
@@ -101,7 +117,7 @@ rule gather_demultiplexed_sequencing:
     shell:
         """
         # Combine pickles.
-        python3.10 {workflow.basedir}/scripts/demux_combine_pickles.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
+        python3.10 {workflow.basedir}/scripts/demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
 
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz

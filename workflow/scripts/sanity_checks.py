@@ -1,4 +1,30 @@
 import pandas as pd
+import logging
+from rich.console import Console
+from rich.logging import RichHandler
+
+
+def init_logger(verbose: bool = False):
+    """
+    Initial a Logger with rich handler.
+
+    Returns:
+        logging.Logger: logger
+    """
+    log = logging.getLogger(__name__)
+    log.setLevel(logging.INFO)
+
+    console = Console(force_terminal=True)
+    ch = RichHandler(show_path=False, console=console, show_time=True)
+    formatter = logging.Formatter("sci-rocket: %(message)s")
+    ch.setFormatter(formatter)
+    log.addHandler(ch)
+    log.propagate = False
+
+    if verbose:
+        log.setLevel(logging.DEBUG)
+
+    return log
 
 
 def retrieve_p5_barcodes(log, p5, barcodes_p5):
@@ -127,7 +153,7 @@ def sanity_samples(log, samples, barcodes, config):
         return False
 
     # Check if the sample sheet contains the required columns.
-    required_columns = set(["path_bcl", "sequencing_name", "p5", "p7", "barcode_rt", "sample_name", "species", "n_expected_cells"])
+    required_columns = set(["path_bcl", "sequencing_name", "p5", "p7", "rt", "sample_name", "species", "n_expected_cells"])
     if not required_columns.issubset(samples.columns):
         log.error("Sanity check (Sample sheet) - Missing required column(s): {}".format(", ".join(required_columns.difference(samples.columns))))
         return False
@@ -153,8 +179,8 @@ def sanity_samples(log, samples, barcodes, config):
     barcodes_rt = barcodes.query("type == 'rt'")["barcode"].unique()
 
     # Check if the sample sheet contains RT barcodes which are not defined in the config.
-    if not set(samples["barcode_rt"].unique()).issubset(barcodes_rt):
-        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the barcodes file: {}".format(", ".join(set(samples["barcode_rt"].unique()).difference(barcodes_rt))))
+    if not set(samples["rt"].unique()).issubset(barcodes_rt):
+        log.error("Sanity check (Sample sheet) - Contains RT barcodes which are not defined in the barcodes file: {}".format(", ".join(set(samples["rt"].unique()).difference(barcodes_rt))))
         return False
 
     # region Sanity of p5/p7 indexes ---------------------------------------------------------------
@@ -171,7 +197,30 @@ def sanity_samples(log, samples, barcodes, config):
     if not indexes_p7:
         return False
 
-    # endregion ----------------------------------------------------------------------------------------------------------------
+    # endregion -------------------------------------------------------------------------------------
+
+    # region Sanity of hash heets -------------------------------------------------------------------
+
+    # For experiments which have a designated hash sheet, check sanity of hashing sheet.
+    if config["hashing"]:
+        # Open the hashing sheets (.tsv) and check if hash_name and barcode columns are present.
+        for experiment in config["hashing"]:
+            x = pd.read_csv(config["hashing"][experiment], sep="\t", header=0)
+            required_columns = set(["hash_name", "barcode"])
+
+            if not required_columns.issubset(x.columns):
+                log.error("Sanity check (Sample sheet) - Hashing sheet {} is missing required column(s): {}".format(hashing_sheet, ", ".join(required_columns.difference(x.columns))))
+                return False
+
+            # Check if the hashing sheet contains duplicate barcodes for different samples.
+            if x.groupby("barcode")["hash_name"].apply(lambda x: len(x.unique()) > 1).any():
+                # Check which barcodes are duplicated.
+                duplicated_barcodes = x.groupby("barcode")["hash_name"].apply(lambda x: ", ".join(x.unique())).reset_index()
+
+                log.error("Sanity check (Sample sheet) - Hashing sheet {} contains duplicate barcodes for different samples:\n{}".format(hashing_sheet, duplicated_barcodes))
+                return False
+
+    # endregion ---------------------------------------------------------------------------------------
 
     # Otherwise, the sample sheet is valid.
     return True
@@ -225,3 +274,29 @@ def sanity_barcodes(log, barcodes):
 
     # If all checks pass, the barcodes file is valid.
     return True
+
+
+def check_sanity(samples, barcodes, config):
+    """
+    Checks for the sanity of the sample sheet and barcodes file.
+
+    Args:
+        samples (pandas.DataFrame): Imported sample-sheet.
+        barcodes (pandas.DataFrame): Imported barcodes.
+        config (dict): Imported config.
+
+    Returns:
+        bool: True if the sample sheet and barcodes file are valid, False otherwise.
+    """
+
+    # Initialize logging.
+    log = init_logger()
+
+    if not sanity_barcodes(log, barcodes):
+        raise ValueError("Barcode file is not valid.")
+
+    if not sanity_samples(log, samples, barcodes, config):
+        raise ValueError("Sample metadata is not valid.")
+
+    # Close Logger.
+    logging.shutdown()

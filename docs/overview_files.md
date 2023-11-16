@@ -6,10 +6,14 @@
 * **sequencing_name**: Sequencing name (e.g., run123), used to store sequencing-specific files.
 * **p5**: PCR (p5) index (e.g. A01:H01, or **column(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
 * **p7**: PCR (p7) index (e.g. G01:G12, or **rows(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
-* **barcode_rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
+* **rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
 * **sample_name**: Name of the demultiplexed sample, used to generate sample-specific files.
 * **species**: Reference species (e.g. mouse or human).
 * **n_expected_cells**: Number of expected cells in the (demultiplexed) sample (used during UMI filtering).
+
+In addition, the following columns are optional:
+
+* **hashing_sheet**: Path to a hashing sheet (.tsv) containing the hashing barcodes used in the experiment.
 
 See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/workflow/examples/example_samplesheet.tsv).
 
@@ -30,3 +34,10 @@ The workflow requires a file (.tsv) containing the barcodes used in the experime
 * **type**: Type of barcode (`ligation`, `p5`, `p7` or `rt`).
 * **barcode**: Name of the barcode (e.g. A01).
 * **sequence**: Nucleotide sequence of the barcode.
+
+## Hashing sheet
+
+The hashing workflow requires a separate file (.tsv) containing the hashing schematics used in the experiment with at least the following required columns:
+
+* hash_name: Name of the hashing experiment (e.g. hash_exp1).
+* barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).

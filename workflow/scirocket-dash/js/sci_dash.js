@@ -271,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // 8. Mean gene per cell
 // 9. Sequencing saturation
 function generate_starsolo_table(data) {
-  document.getElementById("sample-starsolo-table").innerHTML = '<table class="table" id="sample-starsolo-table"> <thead> <tr> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreads"># Reads</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenes"># uniquely-mapped reads<br>(genes)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalcellsfiltered"># Cells<br>(filtered)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanreadscell">Mean reads<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenescells"># uniquely-mapped reads<br>(genes + cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanumicell">Mean UMI<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meangenescell">Mean genes<br>(per cell)</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sequencingsaturation">Sequencing<br>saturation</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
+  document.getElementById("sample-starsolo-table").innerHTML = '<table class="table" id="sample-starsolo-table"> <thead> <tr> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreads">Total Reads</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenes">Uniquely mapped<br><small>(genes)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalcellsfiltered">Cells<br><small>(filtered)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanreadscell">Mean reads<br><small>(per cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenescells">Uniquely mapped<br><small>(genes + cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanumicell">Mean UMI<br><small>(per cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meangenescell">Mean genes<br><small>(per cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sequencingsaturation">Sequencing<br>saturation</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
   
   var table = document.getElementById("sample-starsolo-table");
   for (var sample in data) {
@@ -354,7 +354,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // 5. Total reads filtered out.
 // 6. Total chimeric reads
 function generate_star_table(data) {
-  document.getElementById("sample-alignment-table").innerHTML = '<table class="table" id="sample-alignment-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th> <button class="table-sort" data-sort="sort-totalreads">Total reads</button> </th> <th> <button class="table-sort" data-sort="sort-uniquereads">Uniquely-mapped</button> </th> <th> <button class="table-sort" data-sort="sort-readmulti">Multimapping</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readfilter">Filtered</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readchimeric">Chimeric reads</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
+  document.getElementById("sample-alignment-table").innerHTML = '<table class="table" id="sample-alignment-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th> <button class="table-sort" data-sort="sort-totalreads">Total reads</button> </th> <th> <button class="table-sort" data-sort="sort-uniquereads">Uniquely mapped</button> </th> <th> <button class="table-sort" data-sort="sort-readmulti">Multimapping</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readfilter">Filtered</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readchimeric">Chimeric reads</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
   
   var table = document.getElementById("sample-alignment-table");
   for (var sample in data) {
@@ -418,6 +418,48 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
+//--------------------------------------------
+// Table - Hashing summary.
+//--------------------------------------------
+
+// For each hashing barcode, generate a row in the table.
+// The row will contain the following information:
+// 1. Hashing barcode (name)
+// 2. Total counts
+// 3. Total count (correct)
+// 4. Total count (corrected)
+// 5. Total count (correct - upstream)
+function generate_hashing_table(data) {
+  document.getElementById("sample-hashing-table").innerHTML = '<table class="table" id="sample-hashing-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-hashbarcode">Hash barcode</button> </th> <th> <button class="table-sort" data-sort="sort-totalcounts">Total counts</button> </th> <th> <button class="table-sort" data-sort="sort-totalcountscorrect">No. correct<br><small>(11nt prior to poly-A)</small></button> </th> <th> <button style="color: #d63939" class="table-sort" data-sort="sort-totalcountscorrected">No. rescued<br><small>(11nt prior to poly-A)</small></button> </th> <th> <button style="color: #d63939" class="table-sort" data-sort="sort-totalcountscorrectupstream">No. correct<br><small>(>11nt prior to poly-A)</small></button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
+  
+  var table = document.getElementById("sample-hashing-table");
+  for (var sample in data) {
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = sample;
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct + data[sample].n_corrected + data[sample].n_correct_upstream);
+    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct);
+    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_corrected);
+    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct_upstream);
+
+    // Set the sorting classes of td elements
+    row.cells[0].className = "sort-hashbarcode";
+    row.cells[1].className = "sort-totalcounts";
+    row.cells[2].className = "sort-totalcountscorrect";
+    row.cells[3].className = "sort-totalcountscorrected";
+    row.cells[4].className = "sort-totalcountscorrectupstream";
+  }
+}
+document.addEventListener("DOMContentLoaded", function () {
+
+  generate_hashing_table(data.hashing);
+
+  const list = new List("sample-hashing-table", {
+    sortClass: "table-sort",
+    listClass: "table-tbody",
+    valueNames: ["sort-hashbarcode", "sort-totalcounts", "sort-totalcountscorrect", "sort-totalcountscorrected", "sort-totalcountscorrectupstream"],
+  });
+
+});
 
 //--------------------------------------------
 // Chart - Ligation usage.

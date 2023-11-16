@@ -18,8 +18,30 @@ def combine_pickle(pickle_dict, combined_dict):
     for key in pickle_dict:
         if key in ["sequencing_name", "version"]:
             continue
+
+        if key == "hashing":
+            # Merge the hashing metrics.
+            for hash_barcode in pickle_dict["hashing"]:
+                
+                if hash_barcode not in combined_dict["hashing"]:
+                    combined_dict["hashing"][hash_barcode] = pickle_dict["hashing"][hash_barcode]
+                else:
+                    
+                    # Combine the n_correct and n_corrected per hash.
+                    combined_dict["hashing"][hash_barcode]["n_correct"] += pickle_dict["hashing"][hash_barcode]["n_correct"]
+                    combined_dict["hashing"][hash_barcode]["n_corrected"] += pickle_dict["hashing"][hash_barcode]["n_corrected"]
+                    combined_dict["hashing"][hash_barcode]["n_correct_upstream"] += pickle_dict["hashing"][hash_barcode]["n_correct_upstream"]
+               
+                    # Combine the hash_counts per cell.
+                    for cell_barcode in pickle_dict["hashing"][hash_barcode]["counts"]:
+                        if cell_barcode not in combined_dict["hashing"][hash_barcode]["counts"]:
+                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode] = pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]
+                        else:
+                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"] += pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"]
+                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"].update(pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
+
+        # Merge everything else.
         else:
-            # Check if value is a dictionary
             if isinstance(pickle_dict[key], dict):
                 for index in pickle_dict[key]:
                     if index not in combined_dict[key]:
@@ -37,6 +59,7 @@ def combine_pickle(pickle_dict, combined_dict):
                 combined_dict[key].update(pickle_dict[key])
 
     return combined_dict
+
 
 def combine_scattered(path_demux_scatter, path_out):
     """
@@ -65,10 +88,9 @@ def combine_scattered(path_demux_scatter, path_out):
     for path_pickle in paths_pickle:
         with open(path_pickle, "rb") as handle:
             print(f"Loading {path_pickle}")
-            
+
             # Combine the qc dictionaries.
             qc_pickle = pickle.load(handle)
-            
 
             # If the combined dictionary is empty, add the pickled dictionary
             if qc is None:
@@ -78,7 +100,7 @@ def combine_scattered(path_demux_scatter, path_out):
 
             # Combine the sample_dict dictionaries.
             sample_dict_pickle = pickle.load(handle)
-            
+
             if sample_dict is None:
                 sample_dict = sample_dict_pickle
             else:

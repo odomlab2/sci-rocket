@@ -13,36 +13,19 @@ import pandas as pd
 
 # Custom modules.
 sys.path.insert(0, "scripts/")
-import logging_setup
 import sanity_checks
 
-# Set up logging. ----
-
-log = logging_setup.init_logger()
-
-## Sanity checks of input data. ----
-
-# Read sample metadata.
-samples = pd.read_csv(config["path_samples"], sep="\t", dtype=str)
-
-# Read barcodes.
+## Import samples and barcodes. ----
+samples = pd.read_csv(config["path_samples"], sep="\t", dtype=str, comment="#")
 barcodes = pd.read_csv(config["path_barcodes"], sep="\t", comment="#")
 
-if not sanity_checks.sanity_barcodes(log, barcodes):
-    raise ValueError("Barcode file is not valid.")
+## Sanity checks of inputs. ----
+sanity_checks.check_sanity(samples, barcodes, config)
 
-if not sanity_checks.sanity_samples(log, samples, barcodes, config):
-    raise ValueError("Sample metadata is not valid.")
-
-# Select unique samples for which to generate sample-specific files.
+## Select unique samples for which to generate sample-specific files. ----
 samples_unique = samples.drop_duplicates(
     subset=["path_bcl", "sequencing_name", "sample_name", "species"]
 )
-
-# Close log file.
-log.handlers[0].close()
-log.removeHandler(log.handlers[0])
-
 
 # Constrain wildcard values to resolve downstream mixtures. ----
 wildcard_constraints:
