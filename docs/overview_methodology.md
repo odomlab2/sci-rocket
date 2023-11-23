@@ -22,6 +22,16 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
 
 > Parallization is performed per sequencing run and split chunk.
 
+### Optional steps
+
+1. (*Mus musculus*-only) Haplotype demultiplexing.
+      * Adds haplotype-specific read tags (HP) to the STARSolo BAM files using known haplotype-specific SNPs (**MGP** + **haplotag**).
+      * Generate haplotype-specific read-counts per gene per cell (H1, H2, UA) (**umi_tools**).
+
+## Downstream analysis
+
+For downstream analysis, we also maintain an R package to analyze results produced by **sci-rocket** called [**scir**](https://github.com/odomlab2/scir).
+
 ## Sample demultiplexing (without hashing)
 
 **Example of R1 sequence:**

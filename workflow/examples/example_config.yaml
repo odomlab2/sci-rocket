@@ -1,5 +1,15 @@
-#################################
-# --- Required parameters ----#
+#################################################################
+# Edit this file to specify the parameters for the workflow.
+#
+# Table of contents:
+# 1. Required parameters
+# 2. Custom tool settings (optional)
+# 3. Hashing parameters (optional)
+# 4. Haplotyping parameters (optional)
+#################################################################
+
+###################################
+# --- 1. Required parameters ----#
 
 # Path to sample sheet; see README for details.
 path_samples: "examples/example_samplesheet.tsv"
@@ -23,22 +33,9 @@ species:
     genome_gtf: ""
     star_index: False
 
-################################
-# ---  Hashing parameters  ----#
 
-# Sequencing/experiment runs on which additional hashing barcodes have been added can be specified here.
-# The identifier should be matching with the 'sequencing_name' column in the sample sheet.
-# The hashing sheet should contain the following columns:
-# - hash_name: Name of the hashing experiment.
-# - barcode: Sequence of the hashing barcode (searched for in R2).
-#
-# If no hashing is needed/performed, remove this section or leave it empty.
-hashing:
-  sx11: "examples/example_hashing.tsv"
-
-
-################################
-# ---  Custom parameters  ----#
+###################################
+# --- 2. Custom tool settings ----#
 
 # Custom settings for various major steps of the workflow.
 # Important: (star_index): Change the --sjdbOverhang parameter to the read length of R2 (i.e. the read containing the cDNA sequence) - 1.
@@ -54,3 +51,28 @@ settings:
   star_index: "--sjdbOverhang 83"
   # Custom settings for STARSolo alignment.
   star: "--soloFeatures GeneFull --soloCellReadStats Standard --soloMultiMappers EM --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outSAMunmapped Within --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM"
+
+
+###################################
+# ---- 3. Hashing parameters -----#
+
+# Sequencing/experiment runs on which additional hashing barcodes have been added can be specified here.
+# The identifier should be matching with the 'sequencing_name' column in the sample sheet.
+# The hashing sheet should contain the following columns:
+# - hash_name: Name of the hashing experiment.
+# - barcode: Sequence of the hashing barcode (searched for in R2).
+#
+# If no hashing is needed/performed, remove this section or leave it empty.
+hashing:
+  sx11: "examples/example_hashing.tsv"
+
+
+###################################
+# -- 4. Haplotyping parameters ---#
+# * Haplotyping currently only works for mouse samples. * 
+
+# Path to a pre-downloaded chr-prefixed MGP (SNPs and InDels) file.
+path_mgp: ""
+
+# Link to a RepeatMasker file for the reference genome (GRCm39).
+url_repeatmasker: "http://hgdownload.soe.ucsc.edu/goldenPath/mm39/database/rmsk.txt.gz"

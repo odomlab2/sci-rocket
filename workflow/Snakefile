@@ -12,7 +12,7 @@ import sys
 import pandas as pd
 
 # Custom modules.
-sys.path.insert(0, "scripts/")
+sys.path.insert(0, "scripts/demultiplexing")
 import sanity_checks
 
 ## Import samples and barcodes. ----
@@ -26,6 +26,13 @@ sanity_checks.check_sanity(samples, barcodes, config)
 samples_unique = samples.drop_duplicates(
     subset=["path_bcl", "sequencing_name", "sample_name", "species"]
 )
+
+# Select samples for haplotyping (optional).
+samples_unique_haplotyping = samples_unique[
+    samples_unique[["strain1", "strain2"]].notna().all(axis=1) &
+    (samples_unique["species"] == "mouse")
+]
+
 
 # Constrain wildcard values to resolve downstream mixtures. ----
 wildcard_constraints:
@@ -49,7 +56,17 @@ workdir: config["dir_output"]
 
 rule all:
     input:
+        # Run sci-rocket demultiplexing pipeline.
         expand("{sequencing_name}/sci-dash/", sequencing_name=samples_unique["sequencing_name"]),
+        
+        # Optional haplotyping rule (Mus musculus).
+        expand(
+            "{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts.txt",
+            sequencing_name=samples_unique_haplotyping["sequencing_name"],
+            sample_name=samples_unique_haplotyping["sample_name"],
+            strain1=samples_unique_haplotyping["strain1"],
+            strain2=samples_unique_haplotyping["strain2"],
+        ),
 
 
 # Load rules ----
@@ -58,3 +75,5 @@ rule all:
 include: "rules/step1_bcl2fastq.smk"
 include: "rules/step2_demultiplexing_fastq.smk"
 include: "rules/step3_alignment.smk"
+include: "rules/step4_dashboard.smk"
+include: "rules/step5_haplotyping.smk"
