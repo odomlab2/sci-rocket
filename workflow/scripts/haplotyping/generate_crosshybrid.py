@@ -186,10 +186,3 @@ def generate_hybrid_genotype(args):
 if __name__ == '__main__':
     main(sys.argv[1:])
     sys.exit()
-
-# args = parser.parse_args([
-#     "--haplotype", "/home/j103t/odomLab/LesionSegregration_F1/data/workflow/MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz",
-#     "--h1", "CAST_EiJ",
-#     "--cross_name", "F1",
-#     "--out", "/home/j103t/test/f1.vcf.gz",
-#     "--highconfidence"])

@@ -11,10 +11,6 @@
 - **species**: Reference species (e.g. mouse or human).
 - **n_expected_cells**: Number of expected cells in the (demultiplexed) sample (used during UMI filtering).
 
-In addition, the following columns are optional:
-
-- **hashing_sheet**: Path to a hashing sheet (.tsv) containing the hashing barcodes used in the experiment.
-
 See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/workflow/examples/example_samplesheet.tsv).
 
 > - **p5** and **p7** are used to denote the PCR indexes belonging to a particular sample. The indexes are translated to all relevant combinations within the sequencing-run.
@@ -41,6 +37,16 @@ The hashing workflow requires a separate file (.tsv) containing the hashing sche
 
 - hash_name: Name of the hashing experiment (e.g. hash_exp1).
 - barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).
+
+To specify which samples are to be hashed (and using which hashing-sheet), fill each sample with the respective path to the hashing sheet in the config.yaml file.
+E.g, for two hashing experiments which use the same hashing sheet:
+
+```yaml
+# ---- 3. Hashing parameters -----#
+hashing:
+  hash_exp1: "workflow/examples/example_hashing_sheet.tsv"
+  hash_exp2: "workflow/examples/example_hashing_sheet.tsv"
+```
 
 ## Haplotyping (optional; _Mus musculus_ cross-experiments only)
 
