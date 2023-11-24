@@ -33,7 +33,7 @@ rule mgp_download:
     shell:
         """
         # If the MGP database (path_mgp) is already downloaded, symlink it.
-        if [[ -d {params.path_mgp} ]]; then
+        if [[ -z {params.path_mgp} ]]; then
             touch {output.mgp_snp}
             touch {output.mgp_indel}
             touch {output.mgp_snp_idx}

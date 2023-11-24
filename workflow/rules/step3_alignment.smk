@@ -39,9 +39,9 @@ def get_expected_cells(wildcards):
 
 rule generate_index_STAR:
     output:
-        directory("{sequencing_name}/resources/index_star/{species}/"),
+        temp(directory("resources/index_star/{species}/")),
     log:
-        "logs/step3_alignment/generate_index_STAR_{sequencing_name}_{species}.log",
+        "logs/step3_alignment/generate_index_STAR_{species}.log",
     threads: 20
     resources:
         mem_mb=1024 * 50,
@@ -57,7 +57,6 @@ rule generate_index_STAR:
         """
         # Check if STAR_index is given. If not, generate it.
         if [ ! -z "{params.star_index}" ]; then
-            echo "STAR index given. Symlinking to output directory.
             ln -s {params.star_index} {output}
         else
             STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} >& {log}
@@ -69,7 +68,7 @@ rule starSolo_align:
     input:
         R1="{sequencing_name}/fastp/{sample_name}_R1.fastq.gz",
         R2="{sequencing_name}/fastp/{sample_name}_R2.fastq.gz",
-        index="{sequencing_name}/resources/index_star/{species}/",
+        index="resources/index_star/{species}/",
         whitelist_p7="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p7.txt",
         whitelist_p5="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p5.txt",
         whitelist_ligation="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_ligation.txt",
@@ -117,8 +116,8 @@ rule starSolo_align:
         --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.sampleName} >& {log}
 
         # Convert the barcodes to the barcode naming scheme.
-        python3.10 {workflow.basedir}/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
-        python3.10 {workflow.basedir}/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
         """
 
 

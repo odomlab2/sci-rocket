@@ -95,7 +95,7 @@ rule demultiplex_fastq_split:
         "Demultiplexing the scattered .fastq.gz files ({wildcards.sequencing_name})."
     shell:
         """
-        python3.10 {workflow.basedir}/scripts/demultiplexing/demux_rocket.py \
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/demux_rocket.py \
         --sequencing_name {wildcards.sequencing_name} \
         --samples {params.path_samples} \
         --barcodes {params.path_barcodes} \
@@ -131,7 +131,7 @@ rule gather_demultiplexed_sequencing:
     shell:
         """
         # Combine pickles.
-        python3.10 {workflow.basedir}/scripts/demultiplexing//demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing//demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
 
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz

@@ -41,7 +41,7 @@ rule sci_dash:
         cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
 
         # Combine the sample-specific QC and STARSolo metrics.
-        python3.10 {workflow.basedir}/scripts/demultiplexing/demux_dash.py \
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/demux_dash.py \
         --path_out {output.dash_json} \
         --path_pickle {input.qc} \
         --path_star {wildcards.sequencing_name}/alignment/ \
