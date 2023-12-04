@@ -56,7 +56,7 @@ rule generate_index_STAR:
     shell:
         """
         # Check if STAR_index is given. If not, generate it.
-        if [ ! -z "{params.star_index}" ]; then
+        if [ ! -z {params.star_index} ]; then
             ln -s {params.star_index} {output}
         else
             STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} >& {log}

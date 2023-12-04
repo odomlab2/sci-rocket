@@ -67,7 +67,7 @@ rule mgp_chr_prefix:
         "Adding chr-prefix to the MGP database: {input}"
     shell:
         """
-        if [[ ! -z {params.path_mgp} ]]; then
+        if [ ! -z {params.path_mgp} ]; then
             ln -s {params.path_mgp} {output.vcf}
             ln -s {params.path_mgp}.tbi {output.tbi}
         else
