@@ -461,9 +461,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             # Set the quality of R1 to random good quality.
             read1.quality = "F" * len(read1.sequence)
 
-            # Set the read-name of R2 to include the various barcodes.
+            # Set the read-name of R1 and R2 to include the various barcodes.
             # P5<i>-P7<i>|R2|LIG|RT_UMI
             # VH00211:236:AACK2KFM5:1:1101:28873:1000|P5A01-P7D10|LIGN|P01-D04_GCGAGCGT
+            read1.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read1.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
             read2.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read2.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
 
             # Count as a successful read-pair.

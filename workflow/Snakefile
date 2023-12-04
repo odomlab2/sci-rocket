@@ -39,7 +39,9 @@ wildcard_constraints:
     sequencing_name="|".join(
         [re.escape(str(x)) for x in samples_unique["sequencing_name"]]
     ),
-    sample_name="|".join([re.escape(str(x)) for x in samples_unique["sample_name"]])
+    sample_name="|".join([re.escape(str(x)) for x in samples_unique["sample_name"]]),
+    strain1="|".join([re.escape(str(x)) for x in samples_unique_haplotyping["strain1"]]),
+    strain2="|".join([re.escape(str(x)) for x in samples_unique_haplotyping["strain2"]]),
 
 
 # Workflow output. ----

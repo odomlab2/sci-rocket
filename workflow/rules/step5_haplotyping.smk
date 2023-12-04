@@ -16,11 +16,11 @@
 
 rule mgp_download:
     output:
-        mgp_snp=temp("MGP/mgp_REL2021_snps.vcf.gz"),
-        mgp_snp_idx=temp("MGP/mgp_REL2021_snps.vcf.gz.csi"),
-        mgp_indel=temp("MGP/mgp_REL2021_indels.vcf.gz"),
-        mgp_indel_idx=temp("MGP/mgp_REL2021_indels.vcf.gz.csi"),
-        mgp_combined=temp("MGP/mgp_REL2021_snps_indels.vcf.gz"),
+        mgp_snp=temp("resources/MGP/mgp_REL2021_snps.vcf.gz"),
+        mgp_snp_idx=temp("resources/MGP/mgp_REL2021_snps.vcf.gz.csi"),
+        mgp_indel=temp("resources/MGP/mgp_REL2021_indels.vcf.gz"),
+        mgp_indel_idx=temp("resources/MGP/mgp_REL2021_indels.vcf.gz.csi"),
+        mgp_combined=temp("resources/MGP/mgp_REL2021_snps_indels.vcf.gz"),
     log:
         "logs/haplotyping/prepare_mgp.log",
     threads: 10
@@ -33,7 +33,7 @@ rule mgp_download:
     shell:
         """
         # If the MGP database (path_mgp) is already downloaded, symlink it.
-        if [[ -z {params.path_mgp} ]]; then
+        if [[ ! -z {params.path_mgp} ]]; then
             touch {output.mgp_snp}
             touch {output.mgp_indel}
             touch {output.mgp_snp_idx}
@@ -54,10 +54,10 @@ rule mgp_download:
 
 rule mgp_chr_prefix:
     input:
-        "MGP/mgp_REL2021_snps_indels.vcf.gz",
+        "resources/MGP/mgp_REL2021_snps_indels.vcf.gz",
     output:
-        vcf="MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz",
-        tbi="MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz.tbi",
+        vcf="resources/MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz",
+        tbi="resources/MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz.tbi",
     threads: 8
     conda:
         "envs/sci-haplotyping.yaml",
@@ -67,22 +67,22 @@ rule mgp_chr_prefix:
         "Adding chr-prefix to the MGP database: {input}"
     shell:
         """
-        if [[ -d {params.path_mgp} ]]; then
+        if [[ ! -z {params.path_mgp} ]]; then
             ln -s {params.path_mgp} {output.vcf}
+            ln -s {params.path_mgp}.tbi {output.tbi}
         else
             zcat {input} | awk '{{if($1 ~ "^#") {{gsub("contig=<ID=", "contig=<ID=chr"); gsub("contig=<ID=chrMT", "contig=<ID=chrM"); print}} else {{gsub("^MT", "M"); print "chr"$0}}}}' | bcftools view -O z -o {output.vcf}
+            bcftools index -t {output.vcf}
         fi
-
-        bcftools index -t {output.vcf}
         """
 
 
 rule generate_hybrid_vcf:
     input:
-        mgp="MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz",
-        mgp_index="MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz.tbi",
+        mgp="resources/MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz",
+        mgp_index="resources/MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz.tbi",
     output:
-        vcf=temp("MGP/{strain1}_{strain2}_hybrid.vcf.gz"),
+        vcf=temp("resources/MGP/{strain1}_{strain2}_hybrid.vcf.gz"),
     log:
         "logs/haplotyping/generate_hybrid_vcf_{strain1}_{strain2}.log",
     threads: 2
@@ -96,21 +96,21 @@ rule generate_hybrid_vcf:
         """
         # If strain1 or strain2 is B6, only use the other strain.
         if [[ "{wildcards.strain1}" == "B6" ]]; then
-            python3 {workflow.basedir}/scripts/haplotyping/generate_crosshybrid.py \
+            python3 {workflow.basedir}/rules/scripts/haplotyping/generate_crosshybrid.py \
                 --haplotype {input.mgp} \
                 --h1 {wildcards.strain2} \
                 --out {output.vcf} \
                 --highconfidence \
                 >& {log}
         elif [[ "{wildcards.strain2}" == "B6" ]]; then
-            python3 {workflow.basedir}/scripts/haplotyping/generate_crosshybrid.py \
+            python3 {workflow.basedir}/rules/scripts/haplotyping/generate_crosshybrid.py \
                 --haplotype {input.mgp} \
                 --h1 {wildcards.strain1} \
                 --out {output.vcf} \
                 --highconfidence \
                 >& {log}
         else
-            python3 {workflow.basedir}/scripts/haplotyping/generate_crosshybrid.py \
+            python3 {workflow.basedir}/rules/scripts/haplotyping/generate_crosshybrid.py \
                 --haplotype {input.mgp} \
                 --h1 {wildcards.strain1} \
                 --h2 {wildcards.strain2} \
@@ -123,10 +123,10 @@ rule generate_hybrid_vcf:
 
 rule normalize_hybrid_vcf:
     input:
-        vcf="MGP/{strain1}_{strain2}_hybrid.vcf.gz",
+        vcf="resources/MGP/{strain1}_{strain2}_hybrid.vcf.gz",
     output:
-        vcf=temp("MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz"),
-        idx=temp("MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz.tbi"),
+        vcf=temp("resources/MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz"),
+        idx=temp("resources/MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz.tbi"),
     threads: 1
     params:
         fasta=lambda w: config["species"]["mouse"]["genome"],
@@ -147,7 +147,7 @@ rule normalize_hybrid_vcf:
 
 rule download_repeatmasker:
     output:
-        repeatmasker=temp("MGP/rmsk.bed"),
+        repeatmasker=temp("resources/MGP/rmsk.bed"),
     threads: 1
     resources:
         mem_mb=1024 * 2,
@@ -158,24 +158,24 @@ rule download_repeatmasker:
     message: "Downloading Repeatmasker file (GRCm39)."
     shell:
         """
-        wget -O MGP/rmsk.txt.gz {params.url_repeatmasker}
+        wget -O resources/MGP/rmsk.txt.gz {params.url_repeatmasker}
 
         # Convert to BED format.
-        zgrep -E "\(.\)n" MGP/rmsk.txt.gz | awk '{{print $6"\t"$7"\t"$8"\t"$11"\t"$12"\t"$13}}' > {output.repeatmasker}
+        zgrep -E "\(.\)n" resources/MGP/rmsk.txt.gz | awk '{{print $6"\t"$7"\t"$8"\t"$11"\t"$12"\t"$13}}' > {output.repeatmasker}
 
         # Remove temporary file.
-        rm MGP/rmsk.txt.gz
+        rm resources/MGP/rmsk.txt.gz
         """
 
 
 rule filter_repeatmasker:
     input:
-        vcf="MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz",
-        idx="MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz.tbi",
-        repeatmasker="MGP/rmsk.bed",
+        vcf="resources/MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz",
+        idx="resources/MGP/{strain1}_{strain2}_hybrid_norm.vcf.gz.tbi",
+        repeatmasker="resources/MGP/rmsk.bed",
     output:
-        vcf="MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz",
-        idx="MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz.tbi",
+        vcf="resources/MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz",
+        idx="resources/MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz.tbi",
     threads: 1
     conda:
         "envs/sci-haplotyping.yaml",
@@ -188,8 +188,8 @@ rule filter_repeatmasker:
 rule run_haplotag:
     input:
         bam="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.bam",
-        vcf="MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz",
-        idx="MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz.tbi",
+        vcf="resources/MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz",
+        idx="resources/MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz.tbi",
     output:
         bam="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
         bai="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
@@ -310,7 +310,7 @@ rule join_counts:
         "Retrieving counts from {input.counts_h1}, {input.counts_h2} and {input.counts_ua}."
     shell:
         """
-        python3 {workflow.basedir}/scripts/haplotyping/join_counts.py \
+        python3 {workflow.basedir}/rules/scripts/haplotyping/join_counts.py \
             --h1 {input.counts_h1} \
             --h2 {input.counts_h2} \
             --ua {input.counts_ua} \
