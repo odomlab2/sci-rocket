@@ -28,10 +28,14 @@ samples_unique = samples.drop_duplicates(
 )
 
 # Select samples for haplotyping (optional).
-samples_unique_haplotyping = samples_unique[
-    samples_unique[["strain1", "strain2"]].notna().all(axis=1) &
-    (samples_unique["species"] == "mouse")
-]
+# Check if strain1 exist.
+if("strain1" in samples_unique.columns and "strain2" in samples_unique.columns):
+    samples_unique_haplotyping = samples_unique[
+        samples_unique[["strain1", "strain2"]].notna().all(axis=1) &
+        (samples_unique["species"] == "mouse")
+    ]
+else:
+    samples_unique_haplotyping = pd.DataFrame(columns = ["sequencing_name", "sample_name", "strain1", "strain2"])
 
 
 # Constrain wildcard values to resolve downstream mixtures. ----
