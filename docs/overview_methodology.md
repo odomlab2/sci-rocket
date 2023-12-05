@@ -65,7 +65,7 @@ For sample-demultiplexing, the following steps are performed:
 1. Extracts p5, p7 PCR indexes from the read-name of R1 and ligation, RT and UMI barcodes from sequence of read 1 (R1).
 2. If no match, corrects p5, p7, ligation and/or RT barcode to nearest match (with max. 1nt difference). If multiple close matches, discard read-pair.
    - For ligation barcodes of 9nt in length, an extra G is added to the ligation sequence as padding to ensure 48nt R1 sequence.
-3. Add the barcodes to the read-name of read 2 (R2):  
+3. Add the barcodes to the read-names of read 1 and 2:  
    `@READNAME|P5-<p5>-P7-<p7>|<ligation>|<rt>_<UMI>`
 4. Generate sample-specific paired-end fq.gz files with corrected R1 sequence (48nt) and R2 sequence.
 
@@ -89,6 +89,11 @@ These metrics are used to determine the hashing efficiency and to correct for UM
 
 - count: Total number of hashing reads for that specific cell-barcode / hash-barcode combination.
 - n_umi: Number of unique UMIs for that specific cell-barcode / hash-barcode combination.
+
+## Haplotyping (optional; _Mus musculus_ cross-experiments only)
+
+As optional procedure, **sci-rocket** can be used to further haplotype the sex-chromosome X of the demultiplexed samples, e.g. in the case of mouse F1 cross-hybrids, see [here](overview_files.md#haplotyping-optional-mus-musculus-cross-experiments-only) for more information.
+This will download (or symlink) the [MGP](http://www.sanger.ac.uk/science/data/mouse-genomes-project) database and perform haplotype-specific read-counting using **whatshap** on F1-informative heterozygous SNPs.
 
 ## Output
 
