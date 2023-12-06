@@ -276,7 +276,7 @@ rule count_haplotagged_reads:
         bam="{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam",
         bai="{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam.bai"
     output:
-        counts="{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_{type}.txt",
+        counts=temp("{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_{type}.txt"),
     log:
         "logs/haplotyping/count_haplotagged_reads_{sequencing_name}_{sample_name}_{strain1}_{strain2}_{type}.log",
     threads: 2
@@ -304,6 +304,8 @@ rule join_counts:
     threads: 1
     resources:
         mem_mb=1024 * 20,
+    params:
+        path_barcodes=config["path_barcodes"],
     conda:
         "envs/sci-haplotyping.yaml",
     message:
@@ -314,5 +316,6 @@ rule join_counts:
             --h1 {input.counts_h1} \
             --h2 {input.counts_h2} \
             --ua {input.counts_ua} \
+            --barcodes {params.path_barcodes} \
             --output {output.counts}
         """
