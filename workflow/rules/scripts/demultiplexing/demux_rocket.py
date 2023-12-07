@@ -1,4 +1,4 @@
-__version__ = "0.3"
+__version__ = "0.4"
 
 # Import modules.
 import argparse
@@ -10,15 +10,22 @@ import pickle
 import pysam
 import sys
 import re
-
-from Levenshtein import distance as hamming
-from rich.console import Console
-from rich.logging import RichHandler
+from rapidfuzz import process, distance
 from sanity_checks import retrieve_p5_barcodes, retrieve_p7_barcodes
 
+# Logging modules.
+from rich.console import Console
+from rich.logging import RichHandler
 
+# Memoization
+import functools
+from frozendict import frozendict
+
+
+@functools.cache
 def find_closest_match(sequence, comparison):
-    """Find the closest match between a sequence and a dictionary of sequences.
+    """
+    Find the closest match between a sequence and a dictionary of sequences.
     If there is only one match with a hamming distance of 1, return the name and sequence.
     If there are multiple matches with a hamming distance of 1, return None.
 
@@ -32,12 +39,12 @@ def find_closest_match(sequence, comparison):
     """
 
     # Calculate the hamming distance between sequence and all keys in dict.
-    distances = {k: hamming(sequence, k, score_cutoff=1) for k in comparison.keys()}
-    distances = {k: v for k, v in distances.items() if v == 1}
+    # Only keep the keys with a hamming distance of 1.
+    distances = process.extract(sequence, comparison.keys(), scorer=distance.Hamming.distance, score_cutoff=1, limit=2)
 
     # If there is only one key with a distance of 1, return the name and sequence.
     if len(distances) == 1:
-        sequence = next(iter(distances))
+        sequence = distances[0][0]
         return sequence, comparison[sequence]
     else:
         return None, None
@@ -108,8 +115,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     path_r2_discarded = os.path.join(path_out, sequencing_name + "_R2_discarded.fastq.gz")
 
     try:
-        fh_discarded_r1 = gzip.open(path_r1_discarded, "wt")
-        fh_discarded_r2 = gzip.open(path_r2_discarded, "wt")
+        fh_discarded_r1 = gzip.open(path_r1_discarded, "wt", compresslevel=2)
+        fh_discarded_r2 = gzip.open(path_r2_discarded, "wt", compresslevel=2)
     except OSError:
         log.error(
             "Could not generate the discarded output files, please check the paths:\n(R1 discarded) %s\n(R2 discarded) %s",
@@ -132,8 +139,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
         try:
             # Open file handlers for output R1 and R2 files.
-            dict_fh_out[sample]["R1"] = gzip.open(path_r1_out, "wt")
-            dict_fh_out[sample]["R2"] = gzip.open(path_r2_out, "wt")
+            dict_fh_out[sample]["R1"] = gzip.open(path_r1_out, "wt", compresslevel=2)
+            dict_fh_out[sample]["R2"] = gzip.open(path_r2_out, "wt", compresslevel=2)
 
         except OSError:
             log.error("Could not generate the sample-specific demultiplexed output files, please check the paths:\n(R1) %s\n(R2) %s", path_r1_out, path_r2_out)
@@ -143,7 +150,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     path_log_discarded = os.path.join(path_out, "log_" + sequencing_name + "_discarded_reads.tsv.gz")
 
     try:
-        fh_discarded_log = gzip.open(path_log_discarded, "wt")
+        fh_discarded_log = gzip.open(path_log_discarded, "wt", compresslevel=2)
     except OSError:
         log.error("Could not generate the discarded reads log file, please check the path:\n%s", path_log_discarded)
         sys.exit(1)
@@ -174,15 +181,15 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     barcodes_p7 = barcodes.query("type == 'p7' & barcode in @indexes_p7")
 
     # Generate dicts for fast lookup.
-    dict_rt = dict(zip(barcodes_rt["sequence"], barcodes_rt["barcode"]))
-    dict_p5 = dict(zip(barcodes_p5["sequence"], barcodes_p5["barcode"]))
-    dict_p7 = dict(zip(barcodes_p7["sequence"], barcodes_p7["barcode"]))
-    dict_ligation_10nt = dict(zip(barcodes_ligation_10nt["sequence"], barcodes_ligation_10nt["barcode"]))
-    dict_ligation_9nt = dict(zip(barcodes_ligation_9nt["sequence"], barcodes_ligation_9nt["barcode"]))
-    dict_ligation = {**dict_ligation_10nt, **dict_ligation_9nt}
+    dict_rt = frozendict(zip(barcodes_rt["sequence"], barcodes_rt["barcode"]))
+    dict_p5 = frozendict(zip(barcodes_p5["sequence"], barcodes_p5["barcode"]))
+    dict_p7 = frozendict(zip(barcodes_p7["sequence"], barcodes_p7["barcode"]))
+    dict_ligation_10nt = frozendict(zip(barcodes_ligation_10nt["sequence"], barcodes_ligation_10nt["barcode"]))
+    dict_ligation_9nt = frozendict(zip(barcodes_ligation_9nt["sequence"], barcodes_ligation_9nt["barcode"]))
+    dict_ligation = frozendict({**dict_ligation_10nt, **dict_ligation_9nt})
 
     # The p5 index needs to be reverse complemented.
-    dict_p5 = {k[::-1].translate(str.maketrans("ATCG", "TAGC")): v for k, v in dict_p5.items()}
+    dict_p5 = frozendict({k[::-1].translate(str.maketrans("ATCG", "TAGC")): v for k, v in dict_p5.items()})
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -461,9 +468,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
             # Set the quality of R1 to random good quality.
             read1.quality = "F" * len(read1.sequence)
 
-            # Set the read-name of R2 to include the various barcodes.
+            # Set the read-name of R1 and R2 to include the various barcodes.
             # P5<i>-P7<i>|R2|LIG|RT_UMI
             # VH00211:236:AACK2KFM5:1:1101:28873:1000|P5A01-P7D10|LIGN|P01-D04_GCGAGCGT
+            read1.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read1.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
             read2.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read2.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
 
             # Count as a successful read-pair.
@@ -658,22 +666,3 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
-
-# args = parser.parse_args(
-#     [
-#         "--sequencing_name",
-#         "e3_zhash",
-#         "--samples",
-#         "/home/j103t/jvanriet/git/sci-rocket/workflow/examples/example_samplesheet.tsv",
-#         "--barcodes",
-#         "/home/j103t/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv",
-#         "--r1",
-#         "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/raw_reads/R1_5-of-10.fastq.gz",
-#         "--r2",
-#         "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/raw_reads/R2_5-of-10.fastq.gz",
-#         "--out",
-#         "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/demux_reads_scatter/5-of-10",
-#         "--hashing",
-#         "/home/j103t/jvanriet/git/sci-rocket/workflow/examples/example_hashing.tsv",
-#     ]
-# )

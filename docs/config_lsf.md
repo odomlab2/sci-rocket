@@ -9,7 +9,6 @@ These commands were used to set up the LSF profile on the DKFZ LSF cluster.
 profile_dir="/home/<username>/.config/snakemake"
 mkdir -p "$profile_dir"
 
-pip3 install --user pipx
 python3 -m cookiecutter $profile_dir gh:Snakemake-Profiles/lsf
 ```
 

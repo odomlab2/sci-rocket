@@ -1,5 +1,11 @@
-# Rules related to demultiplexing sci-RNA-seq3 data.
-
+#   * Generate sample-specific .fastq.gz files by demultiplexing the sci-seq barcodes. *
+#
+#   1. split_R1:                            Split the R1 file into smaller files which will be handled in parallel.
+#   2. split_R2:                            Split the R2 file into smaller files which will be handled in parallel.
+#   3. demultiplex_fastq_split:             Demultiplex each splitted R1 and R2 file to generate sample-specific fastq.gz files (in parallel).
+#   4. gather_demultiplexed_sequencing:     Combine the discarded and whitelist files (from multiple parallel jobs).
+#   5. gather_demultiplexed_samples:        Combine the sample-specific fastq.fz files (from multiple parallel jobs).
+#############
 
 # ---- Split R1 and R2 files into smaller files which will be handled in parallel. ----
 rule split_R1:
@@ -13,7 +19,7 @@ rule split_R1:
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 10,
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R1_{i}-of-"
@@ -21,11 +27,13 @@ rule split_R1:
             + ".fastq.gz"
             for i in range(1, workflow._scatter["fastq_split"] + 1)
         ],
+    conda:
+        "envs/sci-rocket.yaml",        
     message:
         "Generating multiple evenly-sized R1 chunks ({wildcards.sequencing_name})."
     shell:
         """
-        fastqsplitter -i {input} {params.out} -t 1
+        fastqsplitter -i {input} {params.out} -t 1 -c 1
         """
 
 
@@ -40,7 +48,7 @@ rule split_R2:
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 10,
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R2_{i}-of-"
@@ -48,6 +56,8 @@ rule split_R2:
             + ".fastq.gz"
             for i in range(1, workflow._scatter["fastq_split"] + 1)
         ],
+    conda:
+        "envs/sci-rocket.yaml",
     message:
         "Generating multiple evenly-sized R2 chunks ({wildcards.sequencing_name})."
     shell:
@@ -79,11 +89,13 @@ rule demultiplex_fastq_split:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
         path_hashing=lambda w: get_hashing(w),
+    conda:
+        "envs/sci-rocket.yaml",
     message:
         "Demultiplexing the scattered .fastq.gz files ({wildcards.sequencing_name})."
     shell:
         """
-        python3.10 {workflow.basedir}/scripts/demux_rocket.py \
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/demux_rocket.py \
         --sequencing_name {wildcards.sequencing_name} \
         --samples {params.path_samples} \
         --barcodes {params.path_barcodes} \
@@ -112,12 +124,14 @@ rule gather_demultiplexed_sequencing:
         path_demux_scatter=lambda w: "{sequencing_name}/demux_reads_scatter/".format(
             sequencing_name=w.sequencing_name
         ),
+    conda:
+        "envs/sci-rocket.yaml",
     message:
         "Combining the discarded and whitelist files ({wildcards.sequencing_name})."
     shell:
         """
         # Combine pickles.
-        python3.10 {workflow.basedir}/scripts/demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing//demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
 
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.sequencing_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.sequencing_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.sequencing_name}/demux_reads/{wildcards.sequencing_name}_R1_discarded.fastq.gz

@@ -2,42 +2,60 @@
 
 **sci-rocket** requires a sample sheet (.tsv) with at least the following required columns:
 
-* **path_bcl**: Path to folder containing the BCL files.
-* **sequencing_name**: Sequencing name (e.g., run123), used to store sequencing-specific files.
-* **p5**: PCR (p5) index (e.g. A01:H01, or **column(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
-* **p7**: PCR (p7) index (e.g. G01:G12, or **rows(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
-* **rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
-* **sample_name**: Name of the demultiplexed sample, used to generate sample-specific files.
-* **species**: Reference species (e.g. mouse or human).
-* **n_expected_cells**: Number of expected cells in the (demultiplexed) sample (used during UMI filtering).
-
-In addition, the following columns are optional:
-
-* **hashing_sheet**: Path to a hashing sheet (.tsv) containing the hashing barcodes used in the experiment.
+- **path_bcl**: Path to folder containing the BCL files.
+- **sequencing_name**: Sequencing name (e.g., run123), used to store sequencing-specific files.
+- **p5**: PCR (p5) index (e.g. A01:H01, or **column(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
+- **p7**: PCR (p7) index (e.g. G01:G12, or **rows(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
+- **rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
+- **sample_name**: Name of the demultiplexed sample, used to generate sample-specific files.
+- **species**: Reference species (e.g. mouse or human).
+- **n_expected_cells**: Number of expected cells in the (demultiplexed) sample (used during UMI filtering).
 
 See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/workflow/examples/example_samplesheet.tsv).
 
-> * **p5** and **p7** are used to denote the PCR indexes belonging to a particular sample. The indexes are translated to all relevant combinations within the sequencing-run.
->   * To specify one or multiple p5/p7 strips, use the following format:
->     * p5 (1 strips): `A01:H01`
->     * p5 (1.5 strips): `A01:H01,A02:D02`
->     * p5 (2 strips): `A01:H01,A02:H02`
->     * p7 (1 strip): `G01:G12`
->     * p7 (1.5 strips): `G01:G12,H01:H06`
->     * p7 (2 strips): `G01:G12,H01:H12`
-> * **species** should be present in the `config.yaml` file with their respective genome sequences (.fa) and gene-annotations (.gtf) used to generate mapping indexes.
+> - **p5** and **p7** are used to denote the PCR indexes belonging to a particular sample. The indexes are translated to all relevant combinations within the sequencing-run.
+>   - To specify one or multiple p5/p7 strips, use the following format:
+>     - p5 (1 strips): `A01:H01`
+>     - p5 (1.5 strips): `A01:H01,A02:D02`
+>     - p5 (2 strips): `A01:H01,A02:H02`
+>     - p7 (1 strip): `G01:G12`
+>     - p7 (1.5 strips): `G01:G12,H01:H06`
+>     - p7 (2 strips): `G01:G12,H01:H12`
+> - **species** should be present in the `config.yaml` file with their respective genome sequences (.fa) and gene-annotations (.gtf) used to generate mapping indexes.
 
 ## Barcode design
 
 The workflow requires a file (.tsv) containing the barcodes used in the experiment with at least the following required columns:
 
-* **type**: Type of barcode (`ligation`, `p5`, `p7` or `rt`).
-* **barcode**: Name of the barcode (e.g. A01).
-* **sequence**: Nucleotide sequence of the barcode.
+- **type**: Type of barcode (`ligation`, `p5`, `p7` or `rt`).
+- **barcode**: Name of the barcode (e.g. A01).
+- **sequence**: Nucleotide sequence of the barcode.
 
 ## Hashing sheet
 
 The hashing workflow requires a separate file (.tsv) containing the hashing schematics used in the experiment with at least the following required columns:
 
-* hash_name: Name of the hashing experiment (e.g. hash_exp1).
-* barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).
+- hash_name: Name of the hashing experiment (e.g. hash_exp1).
+- barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).
+
+To specify which samples are to be hashed (and using which hashing-sheet), fill each sample with the respective path to the hashing sheet in the config.yaml file.
+E.g, for two hashing experiments which use the same hashing sheet:
+
+```yaml
+# ---- 3. Hashing parameters -----#
+hashing:
+  hash_exp1: "workflow/examples/example_hashing_sheet.tsv"
+  hash_exp2: "workflow/examples/example_hashing_sheet.tsv"
+```
+
+## Haplotyping (optional; _Mus musculus_ cross-experiments only)
+
+As optional procedure, **sci-rocket** can be used to further haplotype the sex-chromosome X of the demultiplexed samples, e.g. in the case of mouse F1 cross-hybrids. For this, the following columns can be added to the sample-sheet:
+
+- **strain1**: Name of the first strain (e.g. B6 (C57BL/6J)).
+- **strain2**: Name of the second strain (e.g. CAST/EiJ).
+
+> These strains should be present in the [Mouse Genome Project (MGP) database](https://www.sanger.ac.uk/science/data/mouse-genomes-project).
+> For C57BL/6J (wt), use `B6` as strain name.
+
+This will add haplotype-specific read tags (HP) to the STARSolo BAM files and will output an additional `haplotyping` folder which contains cell-based read-counts per gene per haplotype (H1, H2, UA) for chromosome X.

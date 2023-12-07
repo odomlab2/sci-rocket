@@ -7,10 +7,11 @@ Please see the set-up instructions below for more information on how to install 
 ## Pre-requirements
 
 1. A conda system, e.g., [conda](https://docs.conda.io/en/latest/), [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [micromamba](https://micromamba.readthedocs.io/en/latest/)
-2. Cluster-specific Snakemake configuration for batch-job submission
+2. Snakemake (see set-up instructions below)
+3. Cluster-specific Snakemake configuration for batch-job submission
       * E.g., [LSF](https://github.com/Snakemake-Profiles/lsf) or [SLURM](https://github.com/Snakemake-Profiles/slurm)
 
-We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environment in which all software dependencies (incl. Snakemake) are installed (`workflow/envs/env.yaml`).
+We make use of pre-defined [conda](https://docs.conda.io/en/latest/) environment(s) which houses all software dependencies (`workflow/envs/`). These are installed automatically by Snakemake when running the workflow (`--use-conda`).
 
 ## Set-up
 
@@ -20,24 +21,20 @@ We make use of a pre-defined [conda](https://docs.conda.io/en/latest/) environme
       git clone https://github.com/odomlab2/sci-rocket
       ```
 
-2. Create the conda environment (default name: `sci-rocket`):
+2. Download and install snakemake (e.g. using conda or micromamba):
 
       ```bash
-      cd sci-rocket
-      micromamba create -f workflow/envs/sci-rocket.yaml
+      # This will install snakemake into a new conda environment called 'snakemake'
+      micromamba create -c conda-forge -c bioconda -n snakemake snakemake
+      # Switch to the 'snakemake' environment
+      micromamba activate snakemake
       ```
 
-3. Activate the conda environment:
-
-      ```bash
-      micromamba activate sci-rocket
-      ```
-
-4. Run the workflow:
+3. Run the workflow:
 
       ```bash
       cd workflow/
-      snakemake --profile <profile_name> --configfile <path_config>
+      snakemake --use-conda --profile <profile_name> --configfile <path_config>
       ```
 
 **Useful Snakemake parameters**:

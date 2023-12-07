@@ -12,25 +12,25 @@
 # --- 1. Required parameters ----#
 
 # Path to sample sheet; see README for details.
-path_samples: "examples/example_samplesheet.tsv"
+path_samples: "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/testing/testing_samplesheet.tsv"
 
 # Path to barcode files for demultiplexing. See examples/barcodes.tsv for an example and README for details.
-path_barcodes: "examples/example_barcodes.tsv"
+path_barcodes: "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv"
 
 # Path to the output folder.
-dir_output: "examples/output/"
+dir_output: "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/"
 
 # Path to fasta and GTF file containing the main reference genome and annotations.
 # The identifier (e.g. mouse) is used to identify the species as specified in the sample sheet.
 # star_index (path) is optional and can be set to "" if no STAR index is already available (this will be generated as part of the workflow).
 species:
   mouse:
-    genome: "xxx.fa"
-    genome_gtf: "xxx.gtf"
+    genome: "/omics/groups/OE0538/internal/projects/sharedData/GRCm39/genome/GRCm39.primary_assembly.genome.fa"
+    genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/GRCm39/annotation/gencode.vM31.basic.annotation.gtf"
     star_index: ""
   zebrafish:
-    genome: ""
-    genome_gtf: ""
+    genome: "/omics/groups/OE0538/internal/projects/sharedData/GRCz11/Danio_rerio_GRCZ11.dna.chr-only.fa"
+    genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/GRCz11/Danio_rerio.GRCz11.110.gtf"
     star_index: ""
 
 
@@ -42,13 +42,13 @@ species:
 # Important: (star_index): For example, if R2 is 84bp long, then --sjdbOverhang should be set to 83.
 settings:
   # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
-  scatter_fastq_split: 10
+  scatter_fastq_split: 30
   # Custom settings for bcl2fastq.
   bcl2fastq: "--barcode-mismatches 1 --ignore-missing-positions --ignore-missing-controls --ignore-missing-filter --ignore-missing-bcls --no-lane-splitting --minimum-trimmed-read-length 15 --mask-short-adapter-reads 15"
   # Custom settings for fastp.
   fastp: "--detect_adapter_for_pe --qualified_quality_phred 15 --dont_eval_duplication --length_required 10"
   # Custom settings for STAR genome preparation.
-  star_index: "--sjdbOverhang 83"
+  star_index: "--sjdbOverhang 183"
   # Custom settings for STARSolo alignment.
   star: "--soloFeatures GeneFull --soloCellReadStats Standard --soloMultiMappers EM --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outSAMunmapped Within --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM"
 
@@ -64,7 +64,7 @@ settings:
 # - barcode: Sequence of the hashing barcode (searched for in R2).
 
 hashing:
-  sample1: "examples/example_hashing.tsv"
+  test_hashing: "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/workflow/examples/example_hashing.tsv"
 
 
 ###################################
@@ -72,7 +72,7 @@ hashing:
 # * Haplotyping currently only works for mouse samples. * 
 
 # Path to a pre-downloaded chr-prefixed MGP (SNPs and InDels) file.
-path_mgp: ""
+path_mgp: "/omics/groups/OE0538/internal/projects/sharedData/MGP/mgp_REL2021_snps_indels_chr_prefix.vcf.gz"
 
 # Link to a RepeatMasker file for the reference genome (GRCm39).
 url_repeatmasker: "http://hgdownload.soe.ucsc.edu/goldenPath/mm39/database/rmsk.txt.gz"

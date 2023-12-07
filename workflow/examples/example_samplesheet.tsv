@@ -1,9 +1,3 @@
 path_bcl	sequencing_name	p5	p7	rt	sample_name	species	n_expected_cells
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A01	cc_p388di	mouse	10000
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A02	sx2_liver_meoh	mouse	10000
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A03	sx9_liver_pfa	mouse	10000
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A04	sx9_liver_pfa	mouse	10000
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A05	sx9_liver_pfa	mouse	10000
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A06	sx10_liver_80p	mouse	10000
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A07	sx10_liver_80p	mouse	10000
-/omics/groups/OE0538/internal/projects/sexomics/data/rawData/bcl/230316_VH00211_239_AACK2K3M5/	sx11	A02:H02	H01:H12,G02:G04	P01-A08	sx10_liver_100p	mouse	10000
+/bcl/230316_VH00211_239_AACK2K3M5/	testRun	A02:H02	H01:H12,G02:G04	P01-A01	sample1	mouse	10000
+/bcl/230316_VH00211_239_AACK2K3M5/	testRun	A02:H02	H01:H12,G02:G04	P01-A02	sample2	mouse	10000

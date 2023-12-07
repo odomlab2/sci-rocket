@@ -1,4 +1,9 @@
-# Rules related to converting bcl files to fastq files with p5 and p7 indexes within the read name.
+#   * Convert BCL files to Undetermined.fastq.gz files with p5+p7 in the read-name. *
+#
+#   1. make_fake_samplesheet:       Generate fake sample-sheet to allow indexes to be added to R1/R2.
+#   2. bcl2fastq:                   Convert bcl to fastq with p5 and p7 indexes within the read name.
+#############
+
 def get_bcl2fastq_input(sequencing_name):
     """Return the path to the bcl files for a given sequencing run."""
     return samples_unique.query("sequencing_name == @sequencing_name").path_bcl.values[
@@ -37,6 +42,8 @@ rule bcl2fastq:
     params:
         path_out="{sequencing_name}/raw_reads/",
         extra=config["settings"]["bcl2fastq"],
+    conda:
+        "envs/sci-rocket.yaml",
     message: "Converting bcl to fastq with p5 and p7 indexes within the read name ({wildcards.sequencing_name})."
     shell:
         """

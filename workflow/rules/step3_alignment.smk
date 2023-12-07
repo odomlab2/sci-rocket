@@ -1,6 +1,10 @@
-#############################################
-#  fastp: Trimming adapters and low-quality reads
-#############################################
+#   * Perform pre-processing and alignment of sci-seq reads. *
+#
+#   1. trim_fastp:                      Trimming adapters and low-quality reads.
+#   2. generate_index_STAR:             Generating (or symlinking) STAR indexes.
+#   3. starSolo_align:                  Aligning reads with STARsolo and adjusting the cellular barcode scheming to resemble sci-seq scheme.
+#   4. sambamba_index:                  Indexing BAM files.
+#############
 
 
 rule trim_fastp:
@@ -19,26 +23,25 @@ rule trim_fastp:
         mem_mb=1024 * 4,
     params:
         extra=config["settings"]["fastp"],
+    conda:
+        "envs/sci-rocket.yaml",
     message:
         "Trimming adapters and low-quality reads with fastp ({wildcards.sample_name})."
     shell:
         "fastp {params.extra} --html {output.html} --json {output.json} --thread {threads} --in1 {input.R1} --in2 {input.R2} --out1 {output.R1} --out2 {output.R2} >& {log}"
 
 
-#############################################
-#  STAR: Alignment
-#############################################
-
 # Retrieve the expected no. of cells for a given (demultiplexed) sample.
 def get_expected_cells(wildcards):
     x = samples_unique[samples_unique["sample_name"] == wildcards.sample_name]
     return x["n_expected_cells"].values[0]
 
+
 rule generate_index_STAR:
     output:
-        directory("{sequencing_name}/resources/index_star/{species}/"),
+        temp(directory("resources/index_star/{species}/")),
     log:
-        "logs/step3_alignment/generate_index_STAR_{sequencing_name}_{species}.log",
+        "logs/step3_alignment/generate_index_STAR_{species}.log",
     threads: 20
     resources:
         mem_mb=1024 * 50,
@@ -47,28 +50,32 @@ rule generate_index_STAR:
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
         star_index=lambda w: config["species"][w.species]["star_index"],
         extra=config["settings"]["star_index"],
+    conda:
+        "envs/sci-rocket.yaml",
     message: "Generating (or symlinking) STAR indexes."
-    run:
-        if params.star_index:
-            shell("ln -s {input.star_index} {output}")
-        else:
-            shell(
-                "STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} >& {log}"
-            )
+    shell:
+        """
+        # Check if STAR_index is given. If not, generate it.
+        if [ ! -z {params.star_index} ]; then
+            ln -s {params.star_index} {output}
+        else
+            STAR {params.extra} --runThreadN {threads} --runMode genomeGenerate --genomeFastaFiles {params.fasta} --genomeDir {output} --sjdbGTFfile {params.gtf} >& {log}
+        fi
+        """
 
 
 rule starSolo_align:
     input:
         R1="{sequencing_name}/fastp/{sample_name}_R1.fastq.gz",
         R2="{sequencing_name}/fastp/{sample_name}_R2.fastq.gz",
-        index="{sequencing_name}/resources/index_star/{species}/",
+        index="resources/index_star/{species}/",
         whitelist_p7="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p7.txt",
         whitelist_p5="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p5.txt",
         whitelist_ligation="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_ligation.txt",
         whitelist_rt="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_rt.txt",
     output:
-        BAM="{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
-        SJ="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
+        bam="{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
+        sj="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
         log1="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out",
         log2=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.out"),
         log3=temp(
@@ -94,8 +101,10 @@ rule starSolo_align:
         extra=config["settings"]["star"],
         path_barcodes=config["path_barcodes"],
         n_expected_cells=lambda w: get_expected_cells(w),
+    conda:
+        "envs/sci-rocket.yaml",
     message:
-        "Aligning reads with STAR ({wildcards.sample_name})."
+        "Aligning reads with STARSolo ({wildcards.sample_name})."
     shell:
         """
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
@@ -107,13 +116,10 @@ rule starSolo_align:
         --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.sampleName} >& {log}
 
         # Convert the barcodes to the barcode naming scheme.
-        python3.10 {workflow.basedir}/scripts/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
-        python3.10 {workflow.basedir}/scripts/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
+        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
         """
 
-#############################################
-#  Sambamba: Indexing
-#############################################
 
 rule sambamba_index:
     input:
@@ -125,58 +131,10 @@ rule sambamba_index:
     threads: 8
     resources:
         mem_mb=1024 * 2,
+    conda:
+        "envs/sci-rocket.yaml",
     message:
         "Indexing BAM ({wildcards.sample_name})."
     shell:
         "sambamba index -t {threads} {input} {output} >& {log}"
 
-
-#############################################
-# Generate the sci-dashboard report.
-#############################################
-
-# Get the samples for a given sequencing run (and sci-dash).
-def getsamples_sequencing(wildcards):
-    x = samples_unique[samples_unique["sequencing_name"] == wildcards.sequencing_name]
-    
-    files = ["{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam.bai".format(
-        sequencing_name=sequencing_name,
-        sample_name=sample_name,
-        species=species,
-    )
-    for sequencing_name, sample_name, species in zip(
-        x["sequencing_name"],
-        x["sample_name"],
-        x["species"],
-    )]
-
-    return files
-
-rule sci_dash:
-    input:
-        lambda w: getsamples_sequencing(w),
-        qc="{sequencing_name}/demux_reads/{sequencing_name}_qc.pickle"
-    output:
-        dash_folder=directory("{sequencing_name}/sci-dash/"),
-        dash_json="{sequencing_name}/sci-dash/js/qc_data.js",
-        metrics_hashing="{sequencing_name}/hashing/{sequencing_name}_hashing_metrics.tsv"
-    threads: 1
-    resources:
-        mem_mb=1024 * 2,
-    message:
-        "Generating sci-dashboard report ({wildcards.sequencing_name})."
-    shell:
-        """
-        # Generate the sci-dashboard report.
-        cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
-
-        # Combine the sample-specific QC and STARSolo metrics.
-        python3.10 {workflow.basedir}/scripts/demux_dash.py \
-        --path_out {output.dash_json} \
-        --path_pickle {input.qc} \
-        --path_star {wildcards.sequencing_name}/alignment/ \
-        --path_hashing {output.metrics_hashing}
-
-        # Remove all empty (leftover) folders.
-        find . -empty -type d -delete
-        """

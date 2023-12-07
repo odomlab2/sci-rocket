@@ -205,7 +205,8 @@ def sanity_samples(log, samples, barcodes, config):
     if config["hashing"]:
         # Open the hashing sheets (.tsv) and check if hash_name and barcode columns are present.
         for experiment in config["hashing"]:
-            x = pd.read_csv(config["hashing"][experiment], sep="\t", header=0)
+            hashing_sheet = config["hashing"][experiment]
+            x = pd.read_csv(hashing_sheet, sep="\t", header=0)
             required_columns = set(["hash_name", "barcode"])
 
             if not required_columns.issubset(x.columns):
