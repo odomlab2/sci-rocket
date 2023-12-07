@@ -19,7 +19,7 @@ rule split_R1:
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 10,
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R1_{i}-of-"
@@ -33,7 +33,7 @@ rule split_R1:
         "Generating multiple evenly-sized R1 chunks ({wildcards.sequencing_name})."
     shell:
         """
-        fastqsplitter -i {input} {params.out} -t 1
+        fastqsplitter -i {input} {params.out} -t 1 -c 1
         """
 
 
@@ -48,7 +48,7 @@ rule split_R2:
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 10,
     params:
         out=lambda w: [
             f"-o {w.sequencing_name}/raw_reads/R2_{i}-of-"
