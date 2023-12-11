@@ -3,6 +3,8 @@ import sys
 import os
 import pickle
 
+from collections import defaultdict
+
 
 def combine_pickle(pickle_dict, combined_dict):
     """
@@ -16,29 +18,32 @@ def combine_pickle(pickle_dict, combined_dict):
         combined_dict (dict): Combined dictionary.
     """
     for key in pickle_dict:
-        if key in ["sequencing_name", "version"]:
+        if key in ["experiment_name", "version"]:
             continue
 
         if key == "hashing":
-            # Merge the hashing metrics.
-            for hash_barcode in pickle_dict["hashing"]:
-                
-                if hash_barcode not in combined_dict["hashing"]:
-                    combined_dict["hashing"][hash_barcode] = pickle_dict["hashing"][hash_barcode]
+            for hash_sample in pickle_dict["hashing"]:
+                if hash_sample not in combined_dict["hashing"]:
+                    combined_dict["hashing"][hash_sample] = pickle_dict["hashing"][hash_sample]
                 else:
-                    
-                    # Combine the n_correct and n_corrected per hash.
-                    combined_dict["hashing"][hash_barcode]["n_correct"] += pickle_dict["hashing"][hash_barcode]["n_correct"]
-                    combined_dict["hashing"][hash_barcode]["n_corrected"] += pickle_dict["hashing"][hash_barcode]["n_corrected"]
-                    combined_dict["hashing"][hash_barcode]["n_correct_upstream"] += pickle_dict["hashing"][hash_barcode]["n_correct_upstream"]
-               
-                    # Combine the hash_counts per cell.
-                    for cell_barcode in pickle_dict["hashing"][hash_barcode]["counts"]:
-                        if cell_barcode not in combined_dict["hashing"][hash_barcode]["counts"]:
-                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode] = pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]
+                    # Merge the hashing metrics.
+                    for hash_barcode in pickle_dict["hashing"][hash_sample]:
+                        if hash_barcode not in combined_dict["hashing"][hash_sample]:
+                            combined_dict["hashing"][hash_sample][hash_barcode] = pickle_dict["hashing"][hash_sample][hash_barcode]
                         else:
-                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"] += pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"]
-                            combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"].update(pickle_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"])
+                            
+                            # Combine the n_correct and n_corrected per hash.
+                            combined_dict["hashing"][hash_sample][hash_barcode]["n_correct"] += pickle_dict["hashing"][hash_sample][hash_barcode]["n_correct"]
+                            combined_dict["hashing"][hash_sample][hash_barcode]["n_corrected"] += pickle_dict["hashing"][hash_sample][hash_barcode]["n_corrected"]
+                            combined_dict["hashing"][hash_sample][hash_barcode]["n_correct_upstream"] += pickle_dict["hashing"][hash_sample][hash_barcode]["n_correct_upstream"]
+                    
+                            # Combine the hash_counts per cell.
+                            for cell_barcode in pickle_dict["hashing"][hash_sample][hash_barcode]["counts"]:
+                                if cell_barcode not in combined_dict["hashing"][hash_barcode]["counts"]:
+                                    combined_dict["hashing"][hash_barcode]["counts"][cell_barcode] = pickle_dict["hashing"][hash_sample][hash_barcode]["counts"][cell_barcode]
+                                else:
+                                    combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"] += pickle_dict["hashing"][hash_sample][hash_barcode]["counts"][cell_barcode]["count"]
+                                    combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"].update(pickle_dict["hashing"][hash_sample][hash_barcode]["counts"][cell_barcode]["umi"])
 
         # Merge everything else.
         else:

@@ -3,7 +3,7 @@
 **sci-rocket** requires a sample sheet (.tsv) with at least the following required columns:
 
 - **path_bcl**: Path to folder containing the BCL files.
-- **sequencing_name**: Sequencing name (e.g., run123), used to store sequencing-specific files.
+- **experiment_name**: Experiment name (e.g., experimentXYZ), used to associate all downstream files and underlying samples.
 - **p5**: PCR (p5) index (e.g. A01:H01, or **column(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
 - **p7**: PCR (p7) index (e.g. G01:G12, or **rows(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
 - **rt**: RT barcode (e.g. P01-A01) used to identify the sample during demultiplexing.
@@ -33,20 +33,12 @@ The workflow requires a file (.tsv) containing the barcodes used in the experime
 
 ## Hashing sheet
 
-The hashing workflow requires a separate file (.tsv) containing the hashing schematics used in the experiment with at least the following required columns:
+The hashing workflow requires a separate file (.tsv) containing the hashing schematics used in the sample with at least the following required columns:
 
 - hash_name: Name of the hashing experiment (e.g. hash_exp1).
 - barcode: Sequence of the respective hashing barcode (e.g. GGTTGGCGAC).
 
-To specify which samples are to be hashed (and using which hashing-sheet), fill each sample with the respective path to the hashing sheet in the config.yaml file.
-E.g, for two hashing experiments which use the same hashing sheet:
-
-```yaml
-# ---- 3. Hashing parameters -----#
-hashing:
-  hash_exp1: "workflow/examples/example_hashing_sheet.tsv"
-  hash_exp2: "workflow/examples/example_hashing_sheet.tsv"
-```
+To specify which samples are to be hashed (and using which hashing-sheet), add an additional column (`hashing`) in the sample-sheet to each each sample with the respective path to the hashing sheet.
 
 ## Haplotyping (optional; _Mus musculus_ cross-experiments only)
 

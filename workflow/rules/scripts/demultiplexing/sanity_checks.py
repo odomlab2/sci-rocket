@@ -1,28 +1,27 @@
-import pandas as pd
 import logging
-from rich.console import Console
-from rich.logging import RichHandler
+import pandas as pd
 
-
-def init_logger(verbose: bool = False):
+def init_logger():
     """
-    Initial a Logger with rich handler.
+    Initializes the logger.
+
+    Parameters:
+        None
 
     Returns:
-        logging.Logger: logger
+        log (logging.Logger): Logger object.
     """
     log = logging.getLogger(__name__)
+    time_format = "%Y-%m-%d %H:%M:%S"
+    formatter = logging.Formatter(fmt='%(asctime)s - (sci-rocket) %(levelname)s: %(message)s', datefmt=time_format)
+
+    # Add a stream handler.
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    log.addHandler(stream_handler)
+
+    # Set the verbosity level.
     log.setLevel(logging.INFO)
-
-    console = Console(force_terminal=True)
-    ch = RichHandler(show_path=False, console=console, show_time=True)
-    formatter = logging.Formatter("sci-rocket: %(message)s")
-    ch.setFormatter(formatter)
-    log.addHandler(ch)
-    log.propagate = False
-
-    if verbose:
-        log.setLevel(logging.DEBUG)
 
     return log
 
@@ -153,7 +152,7 @@ def sanity_samples(log, samples, barcodes, config):
         return False
 
     # Check if the sample sheet contains the required columns.
-    required_columns = set(["path_bcl", "sequencing_name", "p5", "p7", "rt", "sample_name", "species", "n_expected_cells"])
+    required_columns = set(["path_bcl", "experiment_name", "p5", "p7", "rt", "sample_name", "species", "n_expected_cells"])
     if not required_columns.issubset(samples.columns):
         log.error("Sanity check (Sample sheet) - Missing required column(s): {}".format(", ".join(required_columns.difference(samples.columns))))
         return False
@@ -201,24 +200,21 @@ def sanity_samples(log, samples, barcodes, config):
 
     # region Sanity of hash heets -------------------------------------------------------------------
 
-    # For experiments which have a designated hash sheet, check sanity of hashing sheet.
-    if config["hashing"]:
-        # Open the hashing sheets (.tsv) and check if hash_name and barcode columns are present.
-        for experiment in config["hashing"]:
-            hashing_sheet = config["hashing"][experiment]
-            x = pd.read_csv(hashing_sheet, sep="\t", header=0)
+    # For samples which have a designated hashing sheet, check sanity of hashing sheet.
+    if "hashing" in samples.columns:
+        for hash_sheet in samples[~samples['hashing'].isna()].hashing.unique():
+            # Open the hashing sheets (.tsv) and check if hash_name and barcode columns are present.
+            x = pd.read_csv(hash_sheet, sep="\t", header=0)
             required_columns = set(["hash_name", "barcode"])
 
             if not required_columns.issubset(x.columns):
-                log.error("Sanity check (Sample sheet) - Hashing sheet {} is missing required column(s): {}".format(hashing_sheet, ", ".join(required_columns.difference(x.columns))))
+                log.error("Sanity check (Sample sheet) - Hashing sheet {} is missing required column(s): {}".format(hash_sheet, ", ".join(required_columns.difference(x.columns))))
                 return False
 
-            # Check if the hashing sheet contains duplicate barcodes for different samples.
-            if x.groupby("barcode")["hash_name"].apply(lambda x: len(x.unique()) > 1).any():
-                # Check which barcodes are duplicated.
-                duplicated_barcodes = x.groupby("barcode")["hash_name"].apply(lambda x: ", ".join(x.unique())).reset_index()
-
-                log.error("Sanity check (Sample sheet) - Hashing sheet {} contains duplicate barcodes for different samples:\n{}".format(hashing_sheet, duplicated_barcodes))
+            # Check if the hashing sheet contains duplicate barcodes names.
+            if x["barcode"].duplicated().any():
+                duplicated_barcodes = x["barcode"].duplicated()
+                log.error("Sanity check (Sample sheet) - Hashing sheet {} contains duplicate barcodes: {}".format(hash_sheet, ", ".join(x.loc[duplicated_barcodes, "barcode"])))
                 return False
 
     # endregion ---------------------------------------------------------------------------------------
