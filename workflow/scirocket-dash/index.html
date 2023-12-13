@@ -36,7 +36,7 @@
               <div class="col">
                 <!-- Page pre-title -->
                 <div class="page-pretitle">Overview</div>
-                <h2 class="page-title">Dashboard - <span id="sequencing_run">N/A</span></h2>
+                <h2 class="page-title">Dashboard - <span id="experiment_name">N/A</span></h2>
               </div>
             </div>
           </div>
@@ -190,10 +190,7 @@
                   <div class="card-header">
                     <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
                       <li class="nav-item">
-                        <a href="#tabs-starsolo" class="nav-link active" data-bs-toggle="tab">Alignment (Cells)</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#tabs-alignment" class="nav-link" data-bs-toggle="tab">Alignment (Reads)</a>
+                        <a href="#tabs-starsolo" class="nav-link active" data-bs-toggle="tab">Alignment (STARSolo)</a>
                       </li>
                       <li class="nav-item">
                         <a href="#tabs-pcr" class="nav-link" data-bs-toggle="tab">Counts - PCR Indexes</a>
@@ -438,16 +435,21 @@
         </div>
       </div>
     </div>
-    <!-- Tabler Core -->
+    
+    <!--Import tabler from cdnjs-->
     <script src="./js/tabler.min.js"></script>
-    <script src="./js/list.js"></script>
-    <!-- Libs JS -->
-    <script src="./js/index.js"></script>
-    <script src="./js/xy.js"></script>
-    <script src="./js/Animated.js"></script>
-    <script src="./js/flow.js"></script>
-    <script src="./js/percent.js"></script>
-    <script src="./js/exporting.js"></script>
+
+    <!-- Import tablesorter from cdnjs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.min.js"></script>
+    
+    <!-- Import am5charts from cdnjs -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/plugins/exporting.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/flow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
 
     <!--Import charts and data.-->
     <script src="./js/qc_data.js"></script>

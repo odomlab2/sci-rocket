@@ -1,8 +1,9 @@
-import pysam
-import functools
 import sys
+
+import functools
+import pysam
 from frozendict import frozendict
-from rapidfuzz import process, distance
+from rapidfuzz import distance, process
 
 
 # This will allow us to add additional sci-seq related attributes.
@@ -240,9 +241,10 @@ class sciRecord:
             self.p5_name = p5_barcodes[self.p5_sequence]
             self.p5_status = "Correct"
         except KeyError:
-            self.p5_sequence, self.p5_name = self.__find_closest_match(self.p5_sequence, p5_barcodes)
+            p5_sequence, self.p5_name = self.__find_closest_match(self.p5_sequence, p5_barcodes)
             if self.p5_name != None:
                 self.p5_status = "Corrected"
+                self.p5_sequence = p5_sequence 
 
     def determine_p7(self, p7_barcodes):
         """
@@ -260,9 +262,10 @@ class sciRecord:
             self.p7_name = p7_barcodes[self.p7_sequence]
             self.p7_status = "Correct"
         except KeyError:
-            self.p7_sequence, self.p7_name = self.__find_closest_match(self.p7_sequence, p7_barcodes)
+            p7_sequence, self.p7_name = self.__find_closest_match(self.p7_sequence, p7_barcodes)
             if self.p7_name != None:
                 self.p7_status = "Corrected"
+                self.p7_sequence = p7_sequence
 
     def determine_ligation(self, ligation_barcodes):
         """
@@ -279,6 +282,7 @@ class sciRecord:
         """
         sequence_ligation_9nt = self.read1.sequence[0:9]
         sequence_ligation_10nt = self.read1.sequence[0:10]
+        self.ligation_sequence = sequence_ligation_10nt
 
         # First try exact match 10nt.
         try:
@@ -293,13 +297,15 @@ class sciRecord:
                 self.ligation_sequence = sequence_ligation_9nt
             except KeyError:
                 # If no exact match, try hamming distance of 1.
-                self.ligation_sequence, self.ligation_name = self.__find_closest_match(sequence_ligation_10nt, ligation_barcodes["ligation_10nt"])
+                ligation_sequence, self.ligation_name = self.__find_closest_match(sequence_ligation_10nt, ligation_barcodes["ligation_10nt"])
                 if self.ligation_name != None:
                     self.ligation_status = "Corrected"
+                    self.ligation_sequence = ligation_sequence
                 else:
-                    self.ligation_sequence, self.ligation_name = self.__find_closest_match(sequence_ligation_9nt, ligation_barcodes["ligation_9nt"])
+                    ligation_sequence, self.ligation_name = self.__find_closest_match(sequence_ligation_9nt, ligation_barcodes["ligation_9nt"])
                     if self.ligation_name != None:
                         self.ligation_status = "Corrected"
+                        self.ligation_sequence = ligation_sequence
 
     def determine_rt(self, rt_barcodes):
         """
@@ -326,9 +332,10 @@ class sciRecord:
             self.rt_name = rt_barcodes[self.rt_sequence]
             self.rt_status = "Correct"
         except KeyError:
-            self.rt_sequence, self.rt_name = self.__find_closest_match(self.rt_sequence, rt_barcodes)
+            rt_sequence, self.rt_name = self.__find_closest_match(self.rt_sequence, rt_barcodes)
             if self.rt_name != None:
                 self.rt_status = "Corrected"
+                self.rt_sequence = rt_sequence
 
     def determine_umi(self):
         """
@@ -359,7 +366,7 @@ class sciRecord:
             cellular_sequence (str): Sequence of the cellular barcode.
             cellular_barcode (str): Cellular barcode.
         """
-        if self.p5_name != None and self.p7_name != None and self.rt_name != None:
+        if self.p5_name != None and self.p7_name != None and self.rt_name != None and self.ligation_name != None:
             try:
                 self.sample_name = dict_samples[self.p5_name + "_" + self.p7_name + "_" + self.rt_name]
             except KeyError:

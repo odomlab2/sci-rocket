@@ -27,10 +27,12 @@ rule sci_dash:
     output:
         dash_folder=directory("{experiment_name}/sci-dash/"),
         dash_json="{experiment_name}/sci-dash/js/qc_data.js",
-        metrics_hashing="{experiment_name}/hashing/{experiment_name}_hashing_metrics.tsv"
     threads: 1
     resources:
         mem_mb=1024 * 2,
+    params:
+        # Optional hashing output. 
+        metrics_hashing="{experiment_name}/hashing/{experiment_name}_hashing_metrics.tsv"
     conda:
         "envs/sci-rocket.yaml",
     message:
@@ -41,11 +43,11 @@ rule sci_dash:
         cp -R {workflow.basedir}/scirocket-dash/* {output.dash_folder}
 
         # Combine the sample-specific QC and STARSolo metrics.
-        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/demux_dash.py \
+        python3 {workflow.basedir}/rules/scripts/demultiplexing/demux_dash.py \
         --path_out {output.dash_json} \
         --path_pickle {input.qc} \
         --path_star {wildcards.experiment_name}/alignment/ \
-        --path_hashing {output.metrics_hashing}
+        --path_hashing {params.metrics_hashing}
 
         # Remove all empty (leftover) folders.
         find . -empty -type d -delete

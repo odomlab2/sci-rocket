@@ -5,7 +5,6 @@ import pickle
 
 from collections import defaultdict
 
-
 def combine_pickle(pickle_dict, combined_dict):
     """
     Combines two pickled dictionaries.
@@ -18,33 +17,40 @@ def combine_pickle(pickle_dict, combined_dict):
         combined_dict (dict): Combined dictionary.
     """
     for key in pickle_dict:
+        # Skip the experiment_name and version as these are already defined and identical.
         if key in ["experiment_name", "version"]:
             continue
 
+        # Merge the hashing metrics (if applicable)
         if key == "hashing":
-            for hash_sample in pickle_dict["hashing"]:
-                if hash_sample not in combined_dict["hashing"]:
-                    combined_dict["hashing"][hash_sample] = pickle_dict["hashing"][hash_sample]
+            for hashing_sample in pickle_dict["hashing"]:
+                if hashing_sample not in combined_dict["hashing"]:
+                    combined_dict["hashing"][hashing_sample] = pickle_dict["hashing"][hashing_sample]
                 else:
-                    # Merge the hashing metrics.
-                    for hash_barcode in pickle_dict["hashing"][hash_sample]:
-                        if hash_barcode not in combined_dict["hashing"][hash_sample]:
-                            combined_dict["hashing"][hash_sample][hash_barcode] = pickle_dict["hashing"][hash_sample][hash_barcode]
-                        else:
-                            
-                            # Combine the n_correct and n_corrected per hash.
-                            combined_dict["hashing"][hash_sample][hash_barcode]["n_correct"] += pickle_dict["hashing"][hash_sample][hash_barcode]["n_correct"]
-                            combined_dict["hashing"][hash_sample][hash_barcode]["n_corrected"] += pickle_dict["hashing"][hash_sample][hash_barcode]["n_corrected"]
-                            combined_dict["hashing"][hash_sample][hash_barcode]["n_correct_upstream"] += pickle_dict["hashing"][hash_sample][hash_barcode]["n_correct_upstream"]
-                    
-                            # Combine the hash_counts per cell.
-                            for cell_barcode in pickle_dict["hashing"][hash_sample][hash_barcode]["counts"]:
-                                if cell_barcode not in combined_dict["hashing"][hash_barcode]["counts"]:
-                                    combined_dict["hashing"][hash_barcode]["counts"][cell_barcode] = pickle_dict["hashing"][hash_sample][hash_barcode]["counts"][cell_barcode]
-                                else:
-                                    combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["count"] += pickle_dict["hashing"][hash_sample][hash_barcode]["counts"][cell_barcode]["count"]
-                                    combined_dict["hashing"][hash_barcode]["counts"][cell_barcode]["umi"].update(pickle_dict["hashing"][hash_sample][hash_barcode]["counts"][cell_barcode]["umi"])
+                    # Merge the overall hashing metrics.
+                    combined_dict["hashing"][hashing_sample]["n_correct"] += pickle_dict["hashing"][hashing_sample]["n_correct"]
+                    combined_dict["hashing"][hashing_sample]["n_corrected"] += pickle_dict["hashing"][hashing_sample]["n_corrected"]
+                    combined_dict["hashing"][hashing_sample]["n_correct_upstream"] += pickle_dict["hashing"][hashing_sample]["n_correct_upstream"]
 
+                    # Merge the hashing metrics per hashing_name.
+                    for hashing_name in pickle_dict["hashing"][hashing_sample]["counts"]:
+                        if hashing_name not in combined_dict["hashing"][hashing_sample]["counts"]:
+                            combined_dict["hashing"][hashing_sample]["counts"][hashing_name] = pickle_dict["hashing"][hashing_sample]["counts"][hashing_name]
+                        else:
+                            for cellular_barcode in pickle_dict["hashing"][hashing_sample]["counts"][hashing_name]:
+                                if cellular_barcode not in combined_dict["hashing"][hashing_sample]["counts"][hashing_name]:
+                                    combined_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode] = pickle_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]
+                                else:
+                                    combined_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["umi"].update(pickle_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["umi"])
+                                    combined_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["count"] += pickle_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["count"]
+                                    
+        elif key == "sample_succes":
+            for sample in pickle_dict["sample_succes"]:
+                if sample not in combined_dict["sample_succes"]:
+                    combined_dict["sample_succes"][sample] = pickle_dict["sample_succes"][sample]
+                else:
+                    combined_dict["sample_succes"][sample]["n_pairs_success"] += pickle_dict["sample_succes"][sample]["n_pairs_success"]
+        
         # Merge everything else.
         else:
             if isinstance(pickle_dict[key], dict):
@@ -87,7 +93,6 @@ def combine_scattered(path_demux_scatter, path_out):
 
     # region Combine the qc.pickle files from the scattered run. (qc, sample_dict) --------------------------------------
     qc = None
-    sample_dict = None
 
     # Load the pickled dictionary
     for path_pickle in paths_pickle:
@@ -103,20 +108,10 @@ def combine_scattered(path_demux_scatter, path_out):
             else:
                 qc = combine_pickle(qc_pickle, qc)
 
-            # Combine the sample_dict dictionaries.
-            sample_dict_pickle = pickle.load(handle)
-
-            if sample_dict is None:
-                sample_dict = sample_dict_pickle
-            else:
-                sample_dict = combine_pickle(sample_dict_pickle, sample_dict)
-
     # endregion
 
     # Combined pickles.
-    with open(path_out, "wb") as fh:
-        pickle.dump(qc, fh)
-        pickle.dump(sample_dict, fh)
+    pickle.dump(qc, open(path_out, "wb"))
 
 
 def main(arguments):

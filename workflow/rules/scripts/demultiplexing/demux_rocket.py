@@ -124,11 +124,12 @@ def init_qc(experiment_name: str, dict_barcodes: dict, samples: pd.DataFrame, di
     qc["n_corrected_p7"] = 0  # Total number of read-pairs with 1bp mismatch in p7.
     qc["n_corrected_ligation"] = 0  # Total number of read-pairs with 1bp mismatch in ligation.
     qc["n_corrected_rt"] = 0  # Total number of read-pairs with 1bp mismatch in RT.
+    qc["n_corrected_hashing"] = 0  # Total number of read-pairs with 1bp mismatch in hashing barcode.
 
     # For all (succesfull) reads, keep track of the number of times each index/barcode.
     qc["p5_index_counts"] = {k: 0 for k in dict_barcodes["p5"].values()}
     qc["p7_index_counts"] = {k: 0 for k in dict_barcodes["p7"].values()}
-    qc["rt_barcode_counts"] = {k: 0 for k in dict_barcodes["rt"].values()}
+    qc["rt_barcode_counts"] = {}
 
     # Combine the ligation barcodes (9nt and 10nt) into one dictionary.
     qc["ligation_barcode_counts"] = {**{k: 0 for k in dict_barcodes["ligation"]["ligation_9nt"].values()}, **{k: 0 for k in dict_barcodes["ligation"]["ligation_10nt"].values()}}
@@ -163,10 +164,12 @@ def init_qc(experiment_name: str, dict_barcodes: dict, samples: pd.DataFrame, di
     # Hash-specific qc metrics and regex (per sample).
     if dict_hashing:
         qc["hashing"] = {}
-        for hash_sample in hashing:
+        for hashing_sample in dict_hashing:
             # Total number of read-pairs with correct(ed) hashing barcode.
             # For all (succesfull) reads, keep track of the number of times each hashing/UMI combination is seen per cellular barcode.
-            qc["hashing"][hash_sample] = {k: {"n_correct": 0, "n_corrected": 0, "n_correct_upstream": 0, "counts": {}} for k in hashing[hash_sample]["sheet"].values()}
+            # The counts contain the number of times a hashing barcode is seen per cell + distinct UMI's per cell.
+            # qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode] = {"umi": set(), "count": 0}
+            qc["hashing"][hashing_sample] = {k: {"n_correct": 0, "n_corrected": 0, "n_correct_upstream": 0, "counts": {}} for k in dict_hashing[hashing_sample]["sheet"].values()}
 
     # Return the QC dictionary.
     return qc
@@ -197,16 +200,16 @@ def update_qc(qc:dict, x:sciRecord):
         qc["sample_succes"][x.sample_name]["n_pairs_success"] += 1
 
         # Count the number of corrected barcodes.
-        qc["n_corrected_p7"] += 1 if x.p7_status == "corrected" else 0
-        qc["n_corrected_p5"] += 1 if x.p5_status == "corrected" else 0
-        qc["n_corrected_ligation"] += 1 if x.ligation_status == "corrected" else 0
-        qc["n_corrected_rt"] += 1 if x.rt_status == "corrected" else 0
+        qc["n_corrected_p7"] += 1 if x.p7_status == "Corrected" else 0
+        qc["n_corrected_p5"] += 1 if x.p5_status == "Corrected" else 0
+        qc["n_corrected_ligation"] += 1 if x.ligation_status == "Corrected" else 0
+        qc["n_corrected_rt"] += 1 if x.rt_status == "Corrected" else 0
+        qc["n_corrected_hashing"] += 1 if x.hashing_status == "Corrected" else 0
 
         # For all (succesfull) reads, keep track of the number of times each index/barcode.
         qc["p5_index_counts"][x.p5_name] += 1
         qc["p7_index_counts"][x.p7_name] += 1
         qc["ligation_barcode_counts"][x.ligation_name] += 1
-        qc["rt_barcode_counts"][x.rt_name] += 1
 
         # Keep track of correct read-pairs per sample.
         qc["sample_succes"][x.sample_name]["n_pairs_success"] += 1
@@ -217,26 +220,29 @@ def update_qc(qc:dict, x:sciRecord):
         qc["ligation_barcode_counts"][x.ligation_name] += 1
 
         # Count the occurence of the RT barcodes (per plate).
-        name_rt_split = x.rt_name.split("-")
+        plate_well, plate_index = x.rt_name.split("-")
 
-        if name_rt_split[0] not in qc["rt_barcode_counts"]:
-            qc["rt_barcode_counts"][name_rt_split[0]] = {}
-            qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] = 1
+        if plate_well not in qc["rt_barcode_counts"]:
+            qc["rt_barcode_counts"][plate_well] = {}
+            qc["rt_barcode_counts"][plate_well][plate_index] = 1
         else:
-            if name_rt_split[1] not in qc["rt_barcode_counts"][name_rt_split[0]]:
-                qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] = 1
+            if plate_index not in qc["rt_barcode_counts"][plate_well]:
+                qc["rt_barcode_counts"][plate_well][plate_index] = 1
             else:
-                qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] += 1
+                qc["rt_barcode_counts"][plate_well][plate_index] += 1
 
         # Update hashing metrics (if applicable and if found).
         if x.hashing_name:
-            if x.cellular_barcode not in qc["hashing"][x.sample_name][x.hashing_name]["counts"]:
-                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_barcode] = {}
-                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_barcode]["umi"] = set([x.umi_sequence])
-                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_barcode]["count"] = 1
+            if x.cellular_barcode not in qc["hashing"][x.sample_name]["counts"][x.hashing_name]:
+                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode] = {"umi": set([x.umi_sequence]), "count": 1}
             else:
-                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_barcode]["umi"].add(x.umi_sequence)
-                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_barcode]["count"] += 1
+                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode]["umi"].add(x.umi_sequence)
+                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode]["count"] += 1
+
+            # Update the number of correct/corrected/upstream hashing barcodes.
+            qc["hashing"][x.hashing_sample][x.hashing_name]["n_correct"] += 1 if x.hashing_status == "Correct" else 0
+            qc["hashing"][x.hashing_sample][x.hashing_name]["n_corrected"] += 1 if x.hashing_status == "Corrected" else 0
+            qc["hashing"][x.hashing_sample][x.hashing_name]["n_correct_upstream"] += 1 if x.hashing_status == "Corrected upstream" else 0
 
     else:
         # Count as a failed read-pair.
@@ -259,6 +265,14 @@ def update_qc(qc:dict, x:sciRecord):
         qc["uncorrectable_ligation"][x.ligation_sequence] += 1 if x.ligation_status == None else 0
         qc["uncorrectable_rt"][x.rt_sequence] += 1 if x.rt_status == None else 0
 
+    # Per 1M read-pairs, only keep the top 50 most frequent uncorrectable barcode sequences.
+    # This reduces the size of the pickle file and we only display the top 15 in the QC report.
+    if qc["n_pairs"] % 1000000 == 0:
+        qc["uncorrectable_p7"] = {k: v for k, v in sorted(qc["uncorrectable_p7"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        qc["uncorrectable_p5"] = {k: v for k, v in sorted(qc["uncorrectable_p5"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        qc["uncorrectable_ligation"] = {k: v for k, v in sorted(qc["uncorrectable_ligation"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        qc["uncorrectable_rt"] = {k: v for k, v in sorted(qc["uncorrectable_rt"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        
     # Return the updated QC dictionary.
     return qc
 
@@ -278,7 +292,7 @@ def open_file_handlers(samples: pd.DataFrame, experiment_name: str, path_r1: str
         dict_fh (dict): Dictionary of file handlers.
     """
     
-    dict_fh = {k: {} for k in set(samples.sample_name)}
+    dict_fh = {}
     
     # Input R1 / R2.
     try:
@@ -311,21 +325,25 @@ def open_file_handlers(samples: pd.DataFrame, experiment_name: str, path_r1: str
         sys.exit(1)
 
     # Sample-specific R1 / R2 output.
-    for sample in dict_fh:
+    for sample in set(samples.sample_name):
+        # Initialize the sample dictionary.
+        dict_fh[sample] = {}
+
         # Generate the output paths.
         path_r1_out = os.path.join(path_out, sample + "_R1.fastq.gz")
         path_r2_out = os.path.join(path_out, sample + "_R2.fastq.gz")
 
         try:
             # Open file handlers for output R1 and R2 files.
-            dict_fh[sample]["R1"] = gzip.open(path_r1_out, "wt", compresslevel=2)
-            dict_fh[sample]["R2"] = gzip.open(path_r2_out, "wt", compresslevel=2)
+            dict_fh[sample]["r1"] = gzip.open(path_r1_out, "wt", compresslevel=2)
+            dict_fh[sample]["r2"] = gzip.open(path_r2_out, "wt", compresslevel=2)
 
         except OSError:
             log.error("Could not generate sample-based demultiplexed files, please check the paths:\n(R1) %s\n(R2) %s", path_r1_out, path_r2_out)
             sys.exit(1)
 
-        return dict_fh
+    # Return the dictionary of file handlers.
+    return dict_fh
     
 
 def retrieve_hashing_sheets(samples: pd.DataFrame):
@@ -345,18 +363,19 @@ def retrieve_hashing_sheets(samples: pd.DataFrame):
     hashing = {}
 
     # For each sample that has a hashing sheet attached, import the sheet and compile the regex for matching upstream hashing barcodes.
-    for hash_sample in samples[~samples["hashing"].isna()].sample_name.unique():
-        path_hash = samples.query("sample_name == @hash_sample")["hashing"].iloc[0]
-        x = pd.read_csv(path_hash, sep="\t", header=0)
+    if "hashing" in samples.columns:
+        for hashing_sample in samples[~samples["hashing"].isna()].sample_name.unique():
+            path_hash = samples.query("sample_name == @hashing_sample")["hashing"].iloc[0]
+            x = pd.read_csv(path_hash, sep="\t", header=0)
 
-        # Generate a dictionary with the hashing barcodes as keys and the sample names as values.
-        hashing[hash_sample] = {}
-        hashing[hash_sample]["sheet"] = frozendict(dict(zip(x["barcode"], x["hash_name"])))
+            # Generate a dictionary with the hashing barcodes as keys and the sample names as values.
+            hashing[hashing_sample] = {}
+            hashing[hashing_sample]["sheet"] = frozendict(dict(zip(x["barcode"], x["hash_name"])))
 
-        # Generate hashing regex for matching upstream.
-        hash_match = "|".join(hashing[hash_sample]["sheet"].keys())
-        hash_regex = re.compile(hash_match)
-        hashing[hash_sample]["regex"] = hash_regex
+            # Generate hashing regex for matching upstream.
+            hash_match = "|".join(hashing[hashing_sample]["sheet"].keys())
+            hash_regex = re.compile(hash_match)
+            hashing[hashing_sample]["regex"] = hash_regex
 
     return hashing
 
@@ -431,9 +450,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
         # Determine the hash barcode in R2 (if applicable).
         x.determine_hash(dict_hashing)
 
-        if x.p5_name != None and x.p7_name != None and x.ligation_name != None and x.rt_name != None:
-            break
-
         # endregion --------------------------------------------------------------------------------------------------------------------------------
         
         # region Writing output files -----------------------------------------------------------------------------------------------------------
@@ -449,10 +465,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
             dict_fh["discarded_log"].write(
                 "\t".join(
                     (
-                        str(x.read1.name or "?"),
-                        str(x.p5_name or x.p5_sequence),
-                        str(x.p7_name or x.p7_sequence),
-                        str(x.ligation_name or x.ligation_sequence),
+                        str(x.read1.name),
+                        str(x.p5_name or x.p5_sequence or "?"),
+                        str(x.p7_name or x.p7_sequence or "?"),
+                        str(x.ligation_name or x.ligation_sequence or "?"),
                         str(x.rt_name or x.rt_sequence or "?"),
                         x.umi_sequence,
                         str(x.sample_name or "?")
@@ -467,8 +483,8 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
             x.convert_R1andR2()
 
             # Write R1 and R2 to sample-specific files.
-            dict_fh[sample]["R1"].write(str(x.read1) + "\n")
-            dict_fh[sample]["R2"].write(str(x.read2) + "\n")
+            dict_fh[x.sample_name]["r1"].write(str(x.read1) + "\n")
+            dict_fh[x.sample_name]["r2"].write(str(x.read2) + "\n")
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -479,6 +495,7 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
 
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
+            break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -493,28 +510,19 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
         for sequence, barcode in dict_barcodes["p7"].items():
             fh.write(sequence + "\n")
 
+    # Combine the ligation barcodes (9nt and 10nt) into one dictionary.
     with open(os.path.join(path_out, experiment_name + "_whitelist_ligation.txt"), "w") as fh:
-        for sequence, barcode in dict_barcodes["ligation"].items():
-            if len(sequence) == 10:
-                fh.write(sequence + "\n")
-            else:
-                fh.write(sequence + "G" + "\n")
+        for sequence, barcode in dict_barcodes["ligation"]["ligation_10nt"].items():
+            fh.write(sequence + "\n")
+        for sequence, barcode in dict_barcodes["ligation"]["ligation_9nt"].items():
+            fh.write(sequence + "G" + "\n")
 
     with open(os.path.join(path_out, experiment_name + "_whitelist_rt.txt"), "w") as fh:
         for sequence, barcode in dict_barcodes["rt"].items():
             fh.write(sequence + "\n")
 
-    # Close the IO handlers.
-    for sample in dict_fh:
-        dict_fh[sample]["R1"].close()
-        dict_fh[sample]["R2"].close()
-
-    for k in dict_fh:
-        dict_fh[k].close()
-
     # Save QC to pickle file.
-    with open(os.path.join(path_out, "qc.pickle"), "wb") as fh:
-        pickle.dump(qc, fh)
+    pickle.dump(qc, open(os.path.join(path_out, experiment_name) + "_qc.pickle", "wb"))
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -619,13 +627,13 @@ if __name__ == "__main__":
 # args = parser.parse_args(
 #     [
 #         "--r1",
-#         "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_fcg/raw_reads/Undetermined_S0_R1_001.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/raw_reads_split/R1_34-of-50.fastq.gz",
 #         "--r2",
-#         "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_fcg/raw_reads/Undetermined_S0_R2_001.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/raw_reads_split/R2_34-of-50.fastq.gz",
 #         "--experiment_name",
-#         "test_haplotyping",
+#         "sx42b",
 #         "--samples",
-#         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/testing/testing_samplesheet.tsv",
+#         "/omics/groups/OE0538/internal/projects/liver_fcg/metadata/sx42b_samplesheet.tsv",
 #         "--barcodes",
 #         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv",
 #         "--out",

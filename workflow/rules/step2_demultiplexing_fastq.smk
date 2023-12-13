@@ -14,15 +14,15 @@ rule split_R1:
     output:
         temp(
             scatter.fastq_split(
-                "{{experiment_name}}/raw_reads/R1_{scatteritem}.fastq.gz"
+                "{{experiment_name}}/raw_reads_split/R1_{scatteritem}.fastq.gz"
             )
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 10,
+        mem_mb=1024 * 20,
     params:
         out=lambda w: [
-            f"-o {w.experiment_name}/raw_reads/R1_{i}-of-"
+            f"-o {w.experiment_name}/raw_reads_split/R1_{i}-of-"
             + str(workflow._scatter["fastq_split"])
             + ".fastq.gz"
             for i in range(1, workflow._scatter["fastq_split"] + 1)
@@ -43,15 +43,15 @@ rule split_R2:
     output:
         temp(
             scatter.fastq_split(
-                "{{experiment_name}}/raw_reads/R2_{scatteritem}.fastq.gz"
+                "{{experiment_name}}/raw_reads_split/R2_{scatteritem}.fastq.gz"
             )
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 10,
+        mem_mb=1024 * 20,
     params:
         out=lambda w: [
-            f"-o {w.experiment_name}/raw_reads/R2_{i}-of-"
+            f"-o {w.experiment_name}/raw_reads_split/R2_{i}-of-"
             + str(workflow._scatter["fastq_split"])
             + ".fastq.gz"
             for i in range(1, workflow._scatter["fastq_split"] + 1)
@@ -65,20 +65,22 @@ rule split_R2:
         fastqsplitter -i {input} {params.out} -t 1 -c 1
         """
 
-
 # ---- Demultiplex each splitted R1 and R2 file to generate sample-specific fastq.gz files. ----
        
 rule demultiplex_fastq_split:
     input:
-        R1="{experiment_name}/raw_reads/R1_{scatteritem}.fastq.gz",
-        R2="{experiment_name}/raw_reads/R2_{scatteritem}.fastq.gz",
+        R1="{experiment_name}/raw_reads_split/R1_{scatteritem}.fastq.gz",
+        R2="{experiment_name}/raw_reads_split/R2_{scatteritem}.fastq.gz",
     output:
-        temp(directory("{experiment_name}/demux_reads_scatter/{scatteritem}/")),
+        out_dir=temp(directory("{experiment_name}/demux_reads_scatter/{scatteritem}/")),
+        discard_R1=temp("{experiment_name}/demux_reads_scatter/{scatteritem}/{experiment_name}_R1_discarded.fastq.gz"),
+        discard_R2=temp("{experiment_name}/demux_reads_scatter/{scatteritem}/{experiment_name}_R2_discarded.fastq.gz"),
+        discard_log=temp("{experiment_name}/demux_reads_scatter/{scatteritem}/log_{experiment_name}_discarded_reads.tsv.gz"),
     log:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{experiment_name}_{scatteritem}.log",
     threads: 1
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 5,
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -88,12 +90,12 @@ rule demultiplex_fastq_split:
         "Demultiplexing the scattered .fastq.gz files ({wildcards.experiment_name})."
     shell:
         """
-        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/demux_rocket.py \
+        python3 {workflow.basedir}/rules/scripts/demultiplexing/demux_rocket.py \
         --experiment_name {wildcards.experiment_name} \
         --samples {params.path_samples} \
         --barcodes {params.path_barcodes} \
         --r1 {input[0]} --r2 {input[1]} \
-        --out {output} &> {log}
+        --out {output.out_dir} &> {log}
         """
 
 
@@ -123,7 +125,7 @@ rule gather_demultiplexed_sequencing:
     shell:
         """
         # Combine pickles.
-        python3.10 {workflow.basedir}/rules/scripts/demultiplexing//demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
+        python3 {workflow.basedir}/rules/scripts/demultiplexing/demux_gather.py --path_demux_scatter {params.path_demux_scatter} --path_out {output.qc}
 
         # Combine the sequencing-specific R1/R2 discarded reads and logs.
         find ./{wildcards.experiment_name}/demux_reads_scatter/ -maxdepth 2 -type f -name {wildcards.experiment_name}_R1_discarded.fastq.gz -print0 | xargs -0 cat > {wildcards.experiment_name}/demux_reads/{wildcards.experiment_name}_R1_discarded.fastq.gz

@@ -87,10 +87,10 @@ rule starSolo_align:
         dir_solo=directory(
             "{experiment_name}/alignment/{sample_name}_{species}_Solo.out/"
         ),
-        barcodes_raw="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/raw/barcodes.tsv",
-        barcodes_raw_converted="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/raw/barcodes_converted.tsv",
-        barcodes_filtered="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/filtered/barcodes.tsv",
-        barcodes_filtered_converted="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/filtered/barcodes_converted.tsv",
+        barcodes_raw="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/raw/barcodes.tsv",
+        barcodes_raw_converted="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/raw/barcodes_converted.tsv",
+        barcodes_filtered="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/filtered/barcodes.tsv",
+        barcodes_filtered_converted="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/filtered/barcodes_converted.tsv",
     log:
         "logs/step3_alignment/star_align_{experiment_name}_{sample_name}_{species}.log",
     threads: 30
@@ -116,8 +116,8 @@ rule starSolo_align:
         --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.sampleName} >& {log}
 
         # Convert the barcodes to the barcode naming scheme.
-        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
-        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
+        python3 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
+        python3 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
         """
 
 
@@ -137,4 +137,3 @@ rule sambamba_index:
         "Indexing BAM ({wildcards.sample_name})."
     shell:
         "sambamba index -t {threads} {input} {output} >& {log}"
-

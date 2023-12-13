@@ -34,7 +34,7 @@ rule bcl2fastq:
         dStats=temp(directory("{experiment_name}/raw_reads/{sequencing_name}/Stats")),
     log:
         "logs/step1_bcl2fastq/bcl2fastq_{experiment_name}_{sequencing_name}.log",
-    threads: 25
+    threads: 40
     resources:
         mem_mb=1024 * 40,
     params:
@@ -50,9 +50,9 @@ rule bcl2fastq:
         -R {input.path_bcl} \
         --sample-sheet {input.fake_sample_sheet} \
         --output-dir {params.path_out} \
-        --loading-threads {threads} \
-        --processing-threads {threads}   \
-        --writing-threads {threads} &> {log}
+        --loading-threads 8 \
+        --processing-threads 30 \
+        --writing-threads 2 &> {log}
         """
 
 def get_sequencing_runs(experiment_name):
@@ -66,6 +66,9 @@ rule merge_sequencing_runs:
     output:
         R1="{experiment_name}/raw_reads/Undetermined_S0_R1_001.fastq.gz",
         R2="{experiment_name}/raw_reads/Undetermined_S0_R2_001.fastq.gz",
+    threads: 1
+    resources:
+        mem_mb=1024 * 2,
     params:
         total_sequencing_runs=lambda w: len(get_sequencing_runs(w.experiment_name)),
     message: "Merge sequencing runs ({wildcards.experiment_name})."
