@@ -187,14 +187,14 @@ rule filter_repeatmasker:
 
 rule run_haplotag:
     input:
-        bam="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.bam",
+        bam="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.bam",
         vcf="resources/MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz",
         idx="resources/MGP/{strain1}_{strain2}_hybrid_norm_SNPs_norepeats.vcf.gz.tbi",
     output:
-        bam="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
-        bai="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
+        bam="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
+        bai="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
     log:
-        "logs/haplotyping/haplotag_{sequencing_name}_{sample_name}_{strain1}_{strain2}.log",
+        "logs/haplotyping/haplotag_{experiment_name}_{sample_name}_{strain1}_{strain2}.log",
     threads: 10
     resources:
         mem_mb=1024 * 40,
@@ -216,11 +216,11 @@ rule run_haplotag:
 
 rule haplotype_split_h1:
     input:
-        bam="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
-        bai="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
+        bam="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
+        bai="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
     output:
-        bam=temp("{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h1.bam"),
-        bai=temp("{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h1.bam.bai"),
+        bam=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h1.bam"),
+        bai=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h1.bam.bai"),
     threads: 10
     resources:
         mem_mb=1024 * 10,
@@ -235,11 +235,11 @@ rule haplotype_split_h1:
 
 rule haplotype_split_h2:
     input:
-        bam="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
-        bai="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
+        bam="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
+        bai="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
     output:
-        bam=temp("{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h2.bam"),
-        bai=temp("{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h2.bam.bai"),
+        bam=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h2.bam"),
+        bai=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_h2.bam.bai"),
     threads: 10
     resources:
         mem_mb=1024 * 10,
@@ -254,11 +254,11 @@ rule haplotype_split_h2:
 
 rule haplotype_split_ua:
     input:
-        bam="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
-        bai="{sequencing_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
+        bam="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam",
+        bai="{experiment_name}/alignment/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX.bam.bai",
     output:
-        bam=temp("{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_ua.bam"),
-        bai=temp("{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_ua.bam.bai"),
+        bam=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_ua.bam"),
+        bai=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_ua.bam.bai"),
     threads: 10
     resources:
         mem_mb=1024 * 10,
@@ -273,12 +273,12 @@ rule haplotype_split_ua:
 
 rule count_haplotagged_reads:
     input:
-        bam="{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam",
-        bai="{sequencing_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam.bai"
+        bam="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam",
+        bai="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam.bai"
     output:
-        counts=temp("{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_{type}.txt"),
+        counts=temp("{experiment_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_{type}.txt"),
     log:
-        "logs/haplotyping/count_haplotagged_reads_{sequencing_name}_{sample_name}_{strain1}_{strain2}_{type}.log",
+        "logs/haplotyping/count_haplotagged_reads_{experiment_name}_{sample_name}_{strain1}_{strain2}_{type}.log",
     threads: 2
     resources:
         mem_mb=1024 * 10,
@@ -294,13 +294,13 @@ rule count_haplotagged_reads:
 
 rule join_counts:
     input:
-        counts_h1="{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_h1.txt",
-        counts_h2="{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_h2.txt",
-        counts_ua="{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_ua.txt",
+        counts_h1="{experiment_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_h1.txt",
+        counts_h2="{experiment_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_h2.txt",
+        counts_ua="{experiment_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_ua.txt",
     output:
-        counts="{sequencing_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts.txt",
+        counts="{experiment_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts.txt",
     log:
-        "logs/haplotyping/retrieve_counts_{sequencing_name}_{sample_name}_{strain1}_{strain2}.log",
+        "logs/haplotyping/retrieve_counts_{experiment_name}_{sample_name}_{strain1}_{strain2}.log",
     threads: 1
     resources:
         mem_mb=1024 * 20,

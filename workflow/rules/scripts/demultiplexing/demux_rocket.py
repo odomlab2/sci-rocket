@@ -1,203 +1,121 @@
-__version__ = "0.4"
+__version__ = "0.5"
 
 # Import modules.
 import argparse
 import gzip
 import logging
 import os
-import pandas as pd
 import pickle
-import pysam
-import sys
 import re
-from rapidfuzz import process, distance
-from sanity_checks import retrieve_p5_barcodes, retrieve_p7_barcodes
+import sys
+from collections import defaultdict
 
-# Logging modules.
-from rich.console import Console
-from rich.logging import RichHandler
+import pandas as pd
+import pysam
 
-# Memoization
-import functools
 from frozendict import frozendict
+from sanity_checks import retrieve_p5_barcodes, retrieve_p7_barcodes
+from sciClasses import sciRecord
 
 
-@functools.cache
-def find_closest_match(sequence, comparison):
+def init_barcode_dict(barcodes: pd.DataFrame, samples: pd.DataFrame, experiment_name: str):
     """
-    Find the closest match between a sequence and a dictionary of sequences.
-    If there is only one match with a hamming distance of 1, return the name and sequence.
-    If there are multiple matches with a hamming distance of 1, return None.
+    Generate the barcode dictionaries.
+    These are used for fast lookup of the barcodes.
 
     Parameters:
-        sequence (str): Sequence to compare.
-        comparison (dict): Dictionary of sequences to compare to.
-
-    Returns:
-        str: Sequence of the closest match.
-        str: Name of the closest match.
-    """
-
-    # Calculate the hamming distance between sequence and all keys in dict.
-    # Only keep the keys with a hamming distance of 1.
-    distances = process.extract(sequence, comparison.keys(), scorer=distance.Hamming.distance, score_cutoff=1, limit=2)
-
-    # If there is only one key with a distance of 1, return the name and sequence.
-    if len(distances) == 1:
-        sequence = distances[0][0]
-        return sequence, comparison[sequence]
-    else:
-        return None, None
-
-
-def add_uncorrectable_sequence(sequence, dict_sequence):
-    """Add an uncorrectable sequence to the dictionary of uncorrectable sequences.
-    If the sequence is not in the dictionary, add it with a count of 1.
-
-    Parameters:
-        sequence (str): Sequence to add.
-        dict_sequence (dict): Dictionary of uncorrectable sequences.
-
-    Returns:
-        None
-    """
-
-    if sequence not in dict_sequence:
-        dict_sequence[sequence] = 1
-    else:
-        dict_sequence[sequence] += 1
-
-
-def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, hashing: dict, path_r1: str, path_r2: str, path_out: str):
-    """
-    Performs demultiplexing of the raw fastq files based on the PCR indexes (p5, p7) and RT barcode to produce sample-specific R1 and R2 files.
-    The ligation barcode can be either 9nt or 10nt long and this can affect the location of the UMI and RT barcodes.
-
-    Read-pairs are discarded if:
-        - The R1 read is empty.
-        - The R1 read is shorter than 34nt.
-        - The R1 read is longer than 34nt.
-        - One of the barcodes (p5, p7, ligation and/or RT) is not found within R1.
-
-    When a experiment/sample has a hashing sheet attached, the hashing barcode is retrieved from the R2 sequence and added to the read-name of R2.
-    Additional metrics are generated for hashing experiments to keep track of the hashing barcodes per cellular barcode.
-
-    Parameters:
-        log (logging.Logger): Logger.
-        sequencing_name (str): Sequencing sample.
-        samples (pd.DataFrame): Sample sheet of the samples in the sequencing run.
         barcodes (pd.DataFrame): Barcode sheet.
-        hashing (dict): Dictionary of hashing barcodes.
-        path_r1 (str): Path to R1 fastq file.
-        path_r2 (str): Path to R2 fastq file.
-        path_out (str): Path to output directory.
+        samples (pd.DataFrame): Sample sheet.
+        experiment_name (str): Experiment name.
 
     Returns:
-        None
+        dict_barcodes (dict): Dictionary of barcodes (frozendict).
     """
-
-    log.info("Starting sample-based demultiplexing of %s:\n(R1) %s\n(R2) %s", sequencing_name, path_r1, path_r2)
-    if hashing:
-        log.info("Hashing sheet detected for this experiment, hashing subroutines are enabled. After counting, hash-reads are discarded.")
-
-    # region Open file handlers --------------------------------------------------------------------------------------------------------------------------------
-
-    # Open file handlers for input R1 and R2 files.
-    try:
-        fh_r1 = pysam.FastxFile(path_r1)
-        fh_r2 = pysam.FastxFile(path_r2)
-    except OSError:
-        log.error("Could not find the R1 and R2 .fastq files, please check the paths:\n(R1) %s\n(R2) %s", path_r1, path_r2)
-        sys.exit(1)
-
-    # Open file handlers for discarded R1 and R2 files.
-    path_r1_discarded = os.path.join(path_out, sequencing_name + "_R1_discarded.fastq.gz")
-    path_r2_discarded = os.path.join(path_out, sequencing_name + "_R2_discarded.fastq.gz")
-
-    try:
-        fh_discarded_r1 = gzip.open(path_r1_discarded, "wt", compresslevel=2)
-        fh_discarded_r2 = gzip.open(path_r2_discarded, "wt", compresslevel=2)
-    except OSError:
-        log.error(
-            "Could not generate the discarded output files, please check the paths:\n(R1 discarded) %s\n(R2 discarded) %s",
-            path_r1_discarded,
-            path_r2_discarded,
-        )
-        sys.exit(1)
-
-    # Get the unique RT barcode and samples contained in the sequencing run.
-    # Generate a dictionary with the RT barcodes as keys and the sample names as values.
-    dict_rt_barcodes = dict(zip(samples["rt"], samples["sample_name"]))
-
-    # Open file handlers for all sample-specific output files.
-    dict_fh_out = {k: {} for k in set(samples.sample_name)}
-
-    for sample in dict_fh_out:
-        # Generate the output paths.
-        path_r1_out = os.path.join(path_out, sample + "_R1.fastq.gz")
-        path_r2_out = os.path.join(path_out, sample + "_R2.fastq.gz")
-
-        try:
-            # Open file handlers for output R1 and R2 files.
-            dict_fh_out[sample]["R1"] = gzip.open(path_r1_out, "wt", compresslevel=2)
-            dict_fh_out[sample]["R2"] = gzip.open(path_r2_out, "wt", compresslevel=2)
-
-        except OSError:
-            log.error("Could not generate the sample-specific demultiplexed output files, please check the paths:\n(R1) %s\n(R2) %s", path_r1_out, path_r2_out)
-            sys.exit(1)
-
-    # Open a file handler for the discarded reads log (gzip).
-    path_log_discarded = os.path.join(path_out, "log_" + sequencing_name + "_discarded_reads.tsv.gz")
-
-    try:
-        fh_discarded_log = gzip.open(path_log_discarded, "wt", compresslevel=2)
-    except OSError:
-        log.error("Could not generate the discarded reads log file, please check the path:\n%s", path_log_discarded)
-        sys.exit(1)
-
-    # Header of discard log.
-    fh_discarded_log.write("read_name\tp5\tp7\tligation\trt\tumi\n")
-
-    # endregion --------------------------------------------------------------------------------------------------------------------------------
-
-    # region Generate barcode lookup tables --------------------------------------------------------------------------------------------------------------------------------
-
-    # Retrieve the ligation barcodes.
 
     # Determine length of sequences in the ligation barcodes.
     barcodes.loc[:, "length"] = barcodes["sequence"].str.len()
-    barcodes_ligation_10nt = barcodes.query("type == 'ligation' & length == 10")
-    barcodes_ligation_9nt = barcodes.query("type == 'ligation' & length == 9")
+
+    # Initialize the barcode dictionary.
+    dict_barcodes = {}
+
+    # Generate k;v of ligation barcodes.
+    dict_barcodes["ligation"] = {}
+    dict_barcodes["ligation"]["ligation_10nt"] = dict(zip(barcodes.query("type == 'ligation' & length == 10")["sequence"], barcodes.query("type == 'ligation' & length == 10")["barcode"]))
+    dict_barcodes["ligation"]["ligation_9nt"] = dict(zip(barcodes.query("type == 'ligation' & length == 9")["sequence"], barcodes.query("type == 'ligation' & length == 9")["barcode"]))
 
     # Get the possible list of unique RT barcodes contained in the sequencing run.
-    rt_barcodes_sequencing = samples.query("sequencing_name == @sequencing_name")["rt"].unique()
-    barcodes_rt = barcodes.query("type == 'rt' & barcode in @rt_barcodes_sequencing")
+    rt_barcodes_sequencing = samples.query("experiment_name == @experiment_name")["rt"].unique()
+    dict_barcodes["rt"] = dict(zip(barcodes.query("type == 'rt' & barcode in @rt_barcodes_sequencing")["sequence"], barcodes.query("type == 'rt' & barcode in @rt_barcodes_sequencing")["barcode"]))
 
-    # Retrieve the p5 and p7 barcodes used in this sequencing run.
-    indexes_p5 = retrieve_p5_barcodes(log, samples["p5"].unique(), barcodes.query("type == 'p5'")["barcode"].unique())
-    barcodes_p5 = barcodes.query("type == 'p5' & barcode in @indexes_p5")
+    # Retrieve the p5 barcodes used in this sequencing run.
+    indexes_p5 = retrieve_p5_barcodes(None, samples["p5"].unique(), barcodes.query("type == 'p5'")["barcode"].unique())
+    barcodes_p5 = dict(zip(barcodes.query("type == 'p5' & barcode in @indexes_p5")["sequence"], barcodes.query("type == 'p5' & barcode in @indexes_p5")["barcode"]))
 
-    indexes_p7 = retrieve_p7_barcodes(log, samples["p7"].unique(), barcodes.query("type == 'p7'")["barcode"].unique())
-    barcodes_p7 = barcodes.query("type == 'p7' & barcode in @indexes_p7")
+    # Reverse complement the p5 barcodes.
+    dict_barcodes["p5"] = {k[::-1].translate(str.maketrans("ATCG", "TAGC")): v for k, v in barcodes_p5.items()}
 
-    # Generate dicts for fast lookup.
-    dict_rt = frozendict(zip(barcodes_rt["sequence"], barcodes_rt["barcode"]))
-    dict_p5 = frozendict(zip(barcodes_p5["sequence"], barcodes_p5["barcode"]))
-    dict_p7 = frozendict(zip(barcodes_p7["sequence"], barcodes_p7["barcode"]))
-    dict_ligation_10nt = frozendict(zip(barcodes_ligation_10nt["sequence"], barcodes_ligation_10nt["barcode"]))
-    dict_ligation_9nt = frozendict(zip(barcodes_ligation_9nt["sequence"], barcodes_ligation_9nt["barcode"]))
-    dict_ligation = frozendict({**dict_ligation_10nt, **dict_ligation_9nt})
+    # Retrieve the p7 barcodes used in this sequencing run.
+    indexes_p7 = retrieve_p7_barcodes(None, samples["p7"].unique(), barcodes.query("type == 'p7'")["barcode"].unique())
+    dict_barcodes["p7"] = dict(zip(barcodes.query("type == 'p7' & barcode in @indexes_p7")["sequence"], barcodes.query("type == 'p7' & barcode in @indexes_p7")["barcode"]))
 
-    # The p5 index needs to be reverse complemented.
-    dict_p5 = frozendict({k[::-1].translate(str.maketrans("ATCG", "TAGC")): v for k, v in dict_p5.items()})
+    # Convert the barcode dictionaries to frozendict.
+    dict_barcodes["p5"] = frozendict(dict_barcodes["p5"])
+    dict_barcodes["p7"] = frozendict(dict_barcodes["p7"])
+    dict_barcodes["ligation"]["ligation_10nt"] = frozendict(dict_barcodes["ligation"]["ligation_10nt"])
+    dict_barcodes["ligation"]["ligation_9nt"] = frozendict(dict_barcodes["ligation"]["ligation_9nt"])
+    dict_barcodes["rt"] = frozendict(dict_barcodes["rt"])
 
-    # endregion --------------------------------------------------------------------------------------------------------------------------------
+    # Return the barcode dictionary.
+    return dict_barcodes
 
-    # region Metrics for sci-dash --------------------------------------------------------------------------------------------------------------
+def generate_sample_dict(samples: pd.DataFrame, barcodes: pd.DataFrame):
+    """
+    Generates a dictionary of the samples and their respective barcodes.
+    The dictionary is used for fast lookup of the barcodes.
+
+    Parameters:
+        samples (pd.DataFrame): Sample sheet.
+        barcodes (pd.DataFrame): Barcode sheet.
+
+    Returns:
+        dict_samples (dict): Dictionary of samples and barcodes (frozendict).
+    """
+
+    # Expand p5 and p7 barcodes (A01:G12) to individual barcodes (A01, A02, A03, ..., G12).
+    samples = samples.to_dict(orient="index")    
+    barcodes_p5 = barcodes.query("type == 'p5'")["barcode"].unique()
+    barcodes_p7 = barcodes.query("type == 'p7'")["barcode"].unique()
+
+    sample_dict = {}
+
+    for sample in samples:
+        sample_p5 = retrieve_p5_barcodes(None, list([samples[sample]["p5"]]), barcodes_p5)
+        sample_p7 = retrieve_p7_barcodes(None, list([samples[sample]["p7"]]), barcodes_p7)
+
+        for p5 in sample_p5:
+            for p7 in sample_p7:
+                sample_dict["{}_{}_{}".format(p5, p7, samples[sample]["rt"])] = samples[sample]["sample_name"]
+
+    return frozendict(sample_dict)
+
+
+def init_qc(experiment_name: str, dict_barcodes: dict, samples: pd.DataFrame, dict_hashing: str = None):
+    """
+    Generates the QC dictionary.
+
+    Parameters:
+        experiment_name (str): Experiment name.
+        dict_barcodes (dict): Dictionary of barcodes (frozendict).
+        samples (pd.DataFrame): Sample sheet.
+        dict_hashing (dict): Dictionary of hashing sheets.
+
+    Returns:
+        qc (dict): Dictionary of QC metrics.
+    """
 
     qc = {}
     qc["version"] = __version__
-    qc["sequencing_name"] = sequencing_name
+    qc["experiment_name"] = experiment_name
     qc["n_pairs"] = 0  # Total number of initial read-pairs.
     qc["n_pairs_success"] = 0  # Total number of read-pairs with correct RT, p5, p7 and ligation barcodes.
     qc["n_pairs_failure"] = 0  # Total number of discarded read-pairs due to various reason.
@@ -206,12 +124,15 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
     qc["n_corrected_p7"] = 0  # Total number of read-pairs with 1bp mismatch in p7.
     qc["n_corrected_ligation"] = 0  # Total number of read-pairs with 1bp mismatch in ligation.
     qc["n_corrected_rt"] = 0  # Total number of read-pairs with 1bp mismatch in RT.
+    qc["n_corrected_hashing"] = 0  # Total number of read-pairs with 1bp mismatch in hashing barcode.
 
     # For all (succesfull) reads, keep track of the number of times each index/barcode.
-    qc["p5_index_counts"] = {k: 0 for k in dict_p5.values()}
-    qc["p7_index_counts"] = {k: 0 for k in dict_p7.values()}
-    qc["ligation_barcode_counts"] = {k: 0 for k in dict_ligation.values()}
+    qc["p5_index_counts"] = {k: 0 for k in dict_barcodes["p5"].values()}
+    qc["p7_index_counts"] = {k: 0 for k in dict_barcodes["p7"].values()}
     qc["rt_barcode_counts"] = {}
+
+    # Combine the ligation barcodes (9nt and 10nt) into one dictionary.
+    qc["ligation_barcode_counts"] = {**{k: 0 for k in dict_barcodes["ligation"]["ligation_9nt"].values()}, **{k: 0 for k in dict_barcodes["ligation"]["ligation_10nt"].values()}}
 
     # Keep track of uncorrectable barcode(s) schemes within each R1.
     # Structure: ["p5", "p7", "ligation", "rt"]
@@ -232,336 +153,378 @@ def sciseq_sample_demultiplexing(log: logging.Logger, sequencing_name: str, samp
 
     # Keep track of the sequence of p5, p7, ligation and RT barcodes that are not found in the respective lookup tables.
     # Structure: qc["uncorrectable_p5"]["ATCG"] = 10
-    qc["uncorrectable_p5"] = {}
-    qc["uncorrectable_p7"] = {}
-    qc["uncorrectable_ligation"] = {}
-    qc["uncorrectable_rt"] = {}
+    qc["uncorrectable_p5"] = defaultdict(int)
+    qc["uncorrectable_p7"] = defaultdict(int)
+    qc["uncorrectable_ligation"] = defaultdict(int)
+    qc["uncorrectable_rt"] = defaultdict(int)
 
-    # Sample-specific dictionary to store (key: sample_name):
-    # - No. of (succesfull) read-pairs (has p5+p7+ligation+RT)
-    samples_dict = {k: {"n_pairs_success": 0} for k in samples["sample_name"].unique()}
+    # Keep track of the number of succesfull read-pairs per sample.
+    qc["sample_succes"] = {k: {"n_pairs_success": 0} for k in samples["sample_name"].unique()}
 
-    # Hash-specific qc metrics and regex.
-    if hashing:
-        # Total number of read-pairs with correct(ed) hashing barcode.
-        # For all (succesfull) reads, keep track of the number of times each hashing/UMI combination is seen per cellular barcode.
-        qc["hashing"] = {k: {"n_correct": 0, "n_corrected": 0, "n_correct_upstream": 0, "counts": {}} for k in hashing.values()}
+    # Hash-specific qc metrics and regex (per sample).
+    if dict_hashing:
+        qc["hashing"] = {}
+        for hashing_sample in dict_hashing:
+            # Total number of read-pairs with correct(ed) hashing barcode.
+            # For all (succesfull) reads, keep track of the number of times each hashing/UMI combination is seen per cellular barcode.
+            # The counts contain the number of times a hashing barcode is seen per cell + distinct UMI's per cell.
+            # qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode] = {"umi": set(), "count": 0}
+            qc["hashing"][hashing_sample] = {k: {"n_correct": 0, "n_corrected": 0, "n_correct_upstream": 0, "counts": {}} for k in dict_hashing[hashing_sample]["sheet"].values()}
 
-        hash_match = "|".join(hashing.keys())
-        hash_regex = re.compile(hash_match)
+    # Return the QC dictionary.
+    return qc
 
-    # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-    # Iterate over the read-pairs and search for the indexes within R1.
-    # If not any index is not found, try to correct that index with 1bp mismatch and search again in respective dictionary.
-    # If any of the indexes (p5, p7, LIG or RT) are not found, discard the read-pair and report status.
-    for read1, read2 in zip(fh_r1, fh_r2):
-        # Increase the number of read-pairs read.
-        qc["n_pairs"] += 1
-        name_p5, name_p7, name_ligation, name_rt = None, None, None, None
+def update_qc(qc:dict, x:sciRecord):
+    """
+    Update the QC dictionary.
 
-        if not read1.comment:
-            log.error("R1 is empty for read-pair %s and %s", read1.name, read2.name)
-            sys.exit(1)
+    Parameters:
+        qc (dict): Dictionary of QC metrics.
+        x (sciRecord): sciRecord object.
 
-        if not read1.sequence:
-            log.error("R1 is empty for read-pair %s and %s", read1.name, read2.name)
-            sys.exit(1)
+    Returns:
+        qc (dict): Updated dictionary of QC metrics.    
+    """
 
-        # region Perform sanity checks on R1 and R2 read-pairs. --------------------------------------------------------------------------------
+    # Update the total number of read-pairs processed.
+    qc["n_pairs"] += 1
 
-        # Check if R1 and R2 have the same name (correctly paired) and correct length for the first 5.000 reads.
-        # Do not check for the entire file as this is too time-consuming.
-        if qc["n_pairs"] <= 5000:
-            if read1.name != read2.name:
-                log.error("Raw R1 and R2 .fastq files are not correctly paired, read-names should be identical, exception:\n(R1) %s\n(R2) %s", read1.name, read2.name)
-                sys.exit(1)
+    # Update the number of read-pairs with correct barcodes.
+    # Also count the hashing reads for this.
+    if x.sample_name != None:
+        # Count as a successful read-pair.
+        qc["n_pairs_success"] += 1
 
-            # Check if R1 is empty.
-            if not read1.sequence:
-                log.error("R1 is empty for read-pair %s and %s", read1.name, read2.name)
-                sys.exit(1)
+        # Keep track of the number of succesfull read-pairs per sample.
+        qc["sample_succes"][x.sample_name]["n_pairs_success"] += 1
 
-            # Check if R1 is shorter than expected 34nt.
-            if len(read1.sequence) != 34:
-                log.error("(Read #%d) - R1 is not expected read length (34) read-pair %s (read %d)", qc["n_pairs"], read1.name, qc["n_pairs"] + 1)
-                sys.exit(1)
+        # Count the number of corrected barcodes.
+        qc["n_corrected_p7"] += 1 if x.p7_status == "Corrected" else 0
+        qc["n_corrected_p5"] += 1 if x.p5_status == "Corrected" else 0
+        qc["n_corrected_ligation"] += 1 if x.ligation_status == "Corrected" else 0
+        qc["n_corrected_rt"] += 1 if x.rt_status == "Corrected" else 0
+        qc["n_corrected_hashing"] += 1 if x.hashing_status == "Corrected" else 0
 
-        # endregion --------------------------------------------------------------------------------------------------------------------------------
+        # For all (succesfull) reads, keep track of the number of times each index/barcode.
+        qc["p5_index_counts"][x.p5_name] += 1
+        qc["p7_index_counts"][x.p7_name] += 1
+        qc["ligation_barcode_counts"][x.ligation_name] += 1
 
-        # region Retrieve the p5 and p7 indexes -------------------------------------------------------------------------------------------------
+        # Keep track of correct read-pairs per sample.
+        qc["sample_succes"][x.sample_name]["n_pairs_success"] += 1
 
-        sequence_p7_raw, sequence_p5_raw = read1.comment.split(":")[-1].split("+")
+        # Count the occurence of the barcodes.
+        qc["p5_index_counts"][x.p5_name] += 1
+        qc["p7_index_counts"][x.p7_name] += 1
+        qc["ligation_barcode_counts"][x.ligation_name] += 1
 
-        try:
-            name_p5 = dict_p5[sequence_p5_raw]
-            sequence_p5 = sequence_p5_raw
-        except KeyError:
-            sequence_p5, name_p5 = find_closest_match(sequence_p5_raw, dict_p5)
-            if name_p5 != None:
-                qc["n_corrected_p5"] += 1
-                qc["p5_index_counts"][name_p5] += 1
-            else:
-                qc["n_uncorrectable_p5"] += 1
-                add_uncorrectable_sequence(sequence_p5_raw, qc["uncorrectable_p5"])
+        # Count the occurence of the RT barcodes (per plate).
+        plate_well, plate_index = x.rt_name.split("-")
 
-        try:
-            name_p7 = dict_p7[sequence_p7_raw]
-            sequence_p7 = sequence_p7_raw
-        except KeyError:
-            sequence_p7, name_p7 = find_closest_match(sequence_p7_raw, dict_p7)
-            if name_p7 != None:
-                qc["n_corrected_p7"] += 1
-            else:
-                qc["n_uncorrectable_p7"] += 1
-                add_uncorrectable_sequence(sequence_p7_raw, qc["uncorrectable_p7"])
-
-        # endregion --------------------------------------------------------------------------------------------------------------------------------
-
-        # region Retrieve the ligation barcode ---------------------------------------------------------------------------------------------------
-
-        # Retrieve the ligation barcode from R1.
-        # This ligation barcode varies in length from 9 to 10nt.. So check for both.
-        sequence_ligation = ""
-        sequence_ligation_9nt = read1.sequence[0:9]
-        sequence_ligation_10nt = read1.sequence[0:10]
-
-        # First try exact match 10nt.
-        try:
-            name_ligation = dict_ligation_10nt[sequence_ligation_10nt]
-            sequence_ligation = sequence_ligation_10nt
-        except KeyError:
-            try:
-                # Next, try exact match 9nt.
-                name_ligation = dict_ligation_9nt[sequence_ligation_9nt]
-                sequence_ligation = sequence_ligation_9nt
-            except KeyError:
-                # Next, try closest 10nt.
-                sequence_ligation, name_ligation = find_closest_match(sequence_ligation_10nt, dict_ligation_10nt)
-                if name_ligation != None:
-                    qc["n_corrected_ligation"] += 1
-                # Next, try closest 9nt.
-                else:
-                    sequence_ligation, name_ligation = find_closest_match(sequence_ligation_9nt, dict_ligation_9nt)
-                    if name_ligation != None:
-                        qc["n_corrected_ligation"] += 1
-                    else:
-                        sequence_ligation = sequence_ligation_10nt
-                        qc["n_uncorrectable_ligation"] += 1
-                        add_uncorrectable_sequence(sequence_ligation, qc["uncorrectable_ligation"])
-
-        length_ligation = len(sequence_ligation)
-
-        # endregion --------------------------------------------------------------------------------------------------------------------------------
-
-        # region Retrieve the RT and UMI barcodes -----------------------------------------------------------------------------------------------
-
-        # Check length of the ligation barcode to determine the location of the other barcodes.
-        if length_ligation == 10:
-            # Retrieve the RT barcode from R1 (last 10 bp).
-            sequence_rt_raw = read1.sequence[-10:]
-
-            # Retrieve the UMI from R1 (next 8 bp after the primer sequence of 6nt).
-            sequence_umi = read1.sequence[16:24]
+        if plate_well not in qc["rt_barcode_counts"]:
+            qc["rt_barcode_counts"][plate_well] = {}
+            qc["rt_barcode_counts"][plate_well][plate_index] = 1
         else:
-            # Retrieve the RT barcode from R1 (last 10 bp, minus one).
-            sequence_rt_raw = read1.sequence[-11:-1]
+            if plate_index not in qc["rt_barcode_counts"][plate_well]:
+                qc["rt_barcode_counts"][plate_well][plate_index] = 1
+            else:
+                qc["rt_barcode_counts"][plate_well][plate_index] += 1
 
-            # Retrieve the UMI from R1 (next 8 bp after the primer sequence of 6nt).
-            sequence_umi = read1.sequence[15:23]
+        # Update hashing metrics (if applicable and if found).
+        if x.hashing_name:
+            if x.cellular_barcode not in qc["hashing"][x.sample_name]["counts"][x.hashing_name]:
+                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode] = {"umi": set([x.umi_sequence]), "count": 1}
+            else:
+                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode]["umi"].add(x.umi_sequence)
+                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode]["count"] += 1
 
-        # endregion --------------------------------------------------------------------------------------------------------------------------------
+            # Update the number of correct/corrected/upstream hashing barcodes.
+            qc["hashing"][x.hashing_sample][x.hashing_name]["n_correct"] += 1 if x.hashing_status == "Correct" else 0
+            qc["hashing"][x.hashing_sample][x.hashing_name]["n_corrected"] += 1 if x.hashing_status == "Corrected" else 0
+            qc["hashing"][x.hashing_sample][x.hashing_name]["n_correct_upstream"] += 1 if x.hashing_status == "Corrected upstream" else 0
 
-        # region Lookup the RT barcode ----------------------------------------------------------------------------------------------------------
+    else:
+        # Count as a failed read-pair.
+        qc["n_pairs_failure"] += 1
+
+        # Keep track which barcode fails.
+        sankey_index = [x.p5_name, x.p7_name, x.ligation_name, x.rt_name]
+        sankey_index = [True if x != None else False for x in sankey_index]
+        qc["uncorrectables_sankey"][tuple(sankey_index)] += 1
+
+        # Count the number of uncorrectable barcodes.
+        qc["n_uncorrectable_p7"] += 1 if x.p7_status == None else 0
+        qc["n_uncorrectable_p5"] += 1 if x.p5_status == None else 0
+        qc["n_uncorrectable_ligation"] += 1 if x.ligation_status == None else 0
+        qc["n_uncorrectable_rt"] += 1 if x.rt_status == None else 0
+
+        # Keep track of the uncorrectable barcode sequences.
+        qc["uncorrectable_p7"][x.p7_sequence] += 1 if x.p7_status == None else 0
+        qc["uncorrectable_p5"][x.p5_sequence] += 1 if x.p5_status == None else 0
+        qc["uncorrectable_ligation"][x.ligation_sequence] += 1 if x.ligation_status == None else 0
+        qc["uncorrectable_rt"][x.rt_sequence] += 1 if x.rt_status == None else 0
+
+    # Per 1M read-pairs, only keep the top 50 most frequent uncorrectable barcode sequences.
+    # This reduces the size of the pickle file and we only display the top 15 in the QC report.
+    if qc["n_pairs"] % 1000000 == 0:
+        qc["uncorrectable_p7"] = {k: v for k, v in sorted(qc["uncorrectable_p7"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        qc["uncorrectable_p5"] = {k: v for k, v in sorted(qc["uncorrectable_p5"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        qc["uncorrectable_ligation"] = {k: v for k, v in sorted(qc["uncorrectable_ligation"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        qc["uncorrectable_rt"] = {k: v for k, v in sorted(qc["uncorrectable_rt"].items(), key=lambda item: item[1], reverse=True)[:50]}
+        
+    # Return the updated QC dictionary.
+    return qc
+
+def open_file_handlers(samples: pd.DataFrame, experiment_name: str, path_r1: str, path_r2: str, path_out: str, log: logging.Logger):
+    """
+    Open file handlers for all experiment and sample-specific output files.
+
+    Parameters:
+        samples (pd.DataFrame): Sample sheet.
+        experiment_name (str): Experiment name.
+        path_r1 (str): Path to R1 fastq file.
+        path_r2 (str): Path to R2 fastq file.
+        path_out (str): Path to output directory.
+        log (logging.Logger): Logger.
+
+    Returns:
+        dict_fh (dict): Dictionary of file handlers.
+    """
+    
+    dict_fh = {}
+    
+    # Input R1 / R2.
+    try:
+        dict_fh["r1"] = pysam.FastxFile(path_r1)
+        dict_fh["r2"] = pysam.FastxFile(path_r2)
+    except OSError:
+        log.error("Could not find experiment-based R1 and R2 .fq.gz files, please check the paths:\n(R1) %s\n(R2) %s", path_r1, path_r2)
+        sys.exit(1)
+
+    # Discarded R1 / R2.
+    path_r1_discarded = os.path.join(path_out, experiment_name + "_R1_discarded.fastq.gz")
+    path_r2_discarded = os.path.join(path_out, experiment_name + "_R2_discarded.fastq.gz")
+    path_log_discarded = os.path.join(path_out, "log_" + experiment_name + "_discarded_reads.tsv.gz")
+
+    try:
+        dict_fh["r1_discarded"] = gzip.open(path_r1_discarded, "wt", compresslevel=2)
+        dict_fh["r2_discarded"] = gzip.open(path_r2_discarded, "wt", compresslevel=2)
+        dict_fh["discarded_log"] = gzip.open(path_log_discarded, "wt", compresslevel=2)
+
+        # Header of discard log.
+        dict_fh["discarded_log"].write("read_name\tp5\tp7\tligation\trt\tumi\tsample_name\n")
+
+    except OSError:
+        log.error(
+            "Could not generate experiment-based discard files: Please check the paths:\n(R1 discarded) %s\n(R2 discarded) %s\n(log discarded) %s",
+            path_r1_discarded,
+            path_r2_discarded,
+            path_log_discarded
+        )
+        sys.exit(1)
+
+    # Sample-specific R1 / R2 output.
+    for sample in set(samples.sample_name):
+        # Initialize the sample dictionary.
+        dict_fh[sample] = {}
+
+        # Generate the output paths.
+        path_r1_out = os.path.join(path_out, sample + "_R1.fastq.gz")
+        path_r2_out = os.path.join(path_out, sample + "_R2.fastq.gz")
 
         try:
-            name_rt = dict_rt[sequence_rt_raw]
-            sequence_rt = sequence_rt_raw
-        except KeyError:
-            sequence_rt, name_rt = find_closest_match(sequence_rt_raw, dict_rt)
-            if name_rt != None:
-                qc["n_corrected_rt"] += 1
-            else:
-                qc["n_uncorrectable_rt"] += 1
-                add_uncorrectable_sequence(sequence_rt_raw, qc["uncorrectable_rt"])
+            # Open file handlers for output R1 and R2 files.
+            dict_fh[sample]["r1"] = gzip.open(path_r1_out, "wt", compresslevel=2)
+            dict_fh[sample]["r2"] = gzip.open(path_r2_out, "wt", compresslevel=2)
+
+        except OSError:
+            log.error("Could not generate sample-based demultiplexed files, please check the paths:\n(R1) %s\n(R2) %s", path_r1_out, path_r2_out)
+            sys.exit(1)
+
+    # Return the dictionary of file handlers.
+    return dict_fh
+    
+
+def retrieve_hashing_sheets(samples: pd.DataFrame):
+    """
+    Import the hashing barcodes for samples that have a hashing sheet attached.
+
+    Parameters:
+        samples (pd.DataFrame): Sample sheet.
+
+    Returns:
+        hashing (dict): Dictionary of hashing sheets:
+            - hashing[sample_name]["sheet"] = frozendict of hashing barcodes.
+            - hashing[sample_name]["regex"] = pre-compiled regex of hashing barcodes.
+    """
+
+    # Initialize the hashing dictionary.
+    hashing = {}
+
+    # For each sample that has a hashing sheet attached, import the sheet and compile the regex for matching upstream hashing barcodes.
+    if "hashing" in samples.columns:
+        for hashing_sample in samples[~samples["hashing"].isna()].sample_name.unique():
+            path_hash = samples.query("sample_name == @hashing_sample")["hashing"].iloc[0]
+            x = pd.read_csv(path_hash, sep="\t", header=0)
+
+            # Generate a dictionary with the hashing barcodes as keys and the sample names as values.
+            hashing[hashing_sample] = {}
+            hashing[hashing_sample]["sheet"] = frozendict(dict(zip(x["barcode"], x["hash_name"])))
+
+            # Generate hashing regex for matching upstream.
+            hash_match = "|".join(hashing[hashing_sample]["sheet"].keys())
+            hash_regex = re.compile(hash_match)
+            hashing[hashing_sample]["regex"] = hash_regex
+
+    return hashing
+
+
+def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samples: pd.DataFrame, barcodes: pd.DataFrame, path_r1: str, path_r2: str, path_out: str):
+    """
+    Performs demultiplexing of the raw fastq files based on the PCR indexes (p5, p7) and RT barcode to produce sample-specific R1 and R2 files.
+    The ligation barcode can be either 9nt or 10nt long and this can affect the location of the UMI and RT barcodes.
+
+    Read-pairs are discarded if:
+        - The R1 read is empty.
+        - The R1 read is shorter than 34nt.
+        - The R1 read is longer than 34nt.
+        - One of the barcodes (p5, p7, ligation and/or RT) is not found within R1.
+
+    When a experiment/sample has a hashing sheet attached, the hashing barcode is retrieved from the R2 sequence and added to the read-name of R2.
+    Additional metrics are generated for hashing experiments to keep track of the hashing barcodes per cellular barcode.
+
+    Parameters:
+        log (logging.Logger): Logger.
+        experiment_name (str): Experiment name.
+        samples (pd.DataFrame): Sample sheet of the samples in the experiment.
+        barcodes (pd.DataFrame): Barcode sheet.
+        path_r1 (str): Path to R1 fastq file.
+        path_r2 (str): Path to R2 fastq file.
+        path_out (str): Path to output directory.
+
+    Returns:
+        None
+    """
+
+    log.info("Starting sample-based demultiplexing of %s:\n(R1) %s\n(R2) %s", experiment_name, path_r1, path_r2)
+
+    # Open the IO handlers.
+    dict_fh = open_file_handlers(samples, experiment_name, path_r1, path_r2, path_out, log)
+
+    # Generate the barcode dictionaries.
+    dict_barcodes = init_barcode_dict(barcodes, samples, experiment_name)
+
+    # Generate the sample dictionary.
+    dict_samples = generate_sample_dict(samples, barcodes)
+
+    # Import hashing information (if applicable)
+    dict_hashing = retrieve_hashing_sheets(samples)
+
+    if dict_hashing:
+        log.info("Hashing sample(s) detected in this experiment, hashing subroutines are enabled for these samples. After counting, hash-reads are discarded.")
+
+    # Initialize the QC dictionary.
+    qc = init_qc(experiment_name, dict_barcodes, samples, dict_hashing)
+
+    # Iterate over the read-pairs and search for the barcodes within R1.
+    # If any barcode is not found, try to rescue a respective barcode sequence with 1bp mismatch.
+    # If even one barcode is not found (p5, p7, ligation or RT), discard the read-pair and report status.
+    for read1, read2 in zip(dict_fh["r1"], dict_fh["r2"]):
+
+        # Create a sciRecord object using the read-pair.
+        x = sciRecord(read1, read2)
+
+        # region Retrieve the sci-seq barcodes from R1 -------------------------------------------------------------------------------------------------
+        
+        # Retrieve the sci-seq barcodes from R1.
+        x.determine_p5(dict_barcodes["p5"])
+        x.determine_p7(dict_barcodes["p7"])
+        x.determine_ligation(dict_barcodes["ligation"])
+        x.determine_rt(dict_barcodes["rt"])
+        x.determine_umi()
+
+        # Determine sample and set cellular barcode.
+        x.determine_sample(dict_samples)
+
+        # Determine the hash barcode in R2 (if applicable).
+        x.determine_hash(dict_hashing)
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
-
-        # region Hashing ------------------------------------------------------------------------------------------------------------------------
-
-        # Check for the presence of a polyA.
-        # Next, check if the 10nt hash + rescue (1 hamming) is directly upstream of polyA (-1nt spacer).
-        # If not, check for a perfect match of any hash-barcode in R2 (pre-compiled regex) prior to polyA.
-        # After counting, these hash read-pairs are discarded.
-        name_hash = None
-        if hashing:
-            # Check for polyA in R2.
-            start_poly = str.find(read2.sequence, "AAAA")
-
-            if start_poly != -1:
-                # Check hash-barcode upstream of polyA - 1nt.
-                if start_poly - 11 < 0:
-                    sequence_hash_raw = read2.sequence[0 : start_poly - 1]
-                else:
-                    sequence_hash_raw = read2.sequence[start_poly - 11 : start_poly - 1]
-
-                try:
-                    name_hash = hashing[sequence_hash_raw]
-                    sequence_hash = sequence_hash_raw
-                    qc["hashing"][name_hash]["n_correct"] += 1
-                except KeyError:
-                    # Rescue the sequence directly prior to polyA.
-                    sequence_hash, name_hash = find_closest_match(sequence_hash_raw, hashing)
-
-                    if name_hash != None:
-                        qc["hashing"][name_hash]["n_corrected"] += 1
-                    else:
-                        # Check for the presence of any hash in the entire R2 sequence prior to poly-A.
-                        result = hash_regex.findall(read2.sequence[:start_poly])
-
-                        if len(result) == 1:
-                            sequence_hash = result[0]
-                            name_hash = hashing[sequence_hash]
-                            qc["hashing"][name_hash]["n_correct_upstream"] += 1
-
-        # endregion --------------------------------------------------------------------------------------------------------------------------------
-
+        
         # region Writing output files -----------------------------------------------------------------------------------------------------------
 
-        # If p5, p7, ligation or RT barcode could not be found, discard the read-pair.
-        if name_p5 == None or name_p7 == None or name_ligation == None or name_rt == None:
-            fh_discarded_log.write(
+        # If any barcode (or corresponding sample) is not found, discard the read-pair.
+        if x.sample_name == None:
+
+            # Write to discarded fq.gz files.
+            dict_fh["r1_discarded"].write(str(read1) + "\n")
+            dict_fh["r2_discarded"].write(str(read2) + "\n")
+
+            # Write to log (.tsv.gz) to keep track of missing barcodes.
+            dict_fh["discarded_log"].write(
                 "\t".join(
                     (
-                        str(read1.name or "?"),
-                        str(name_p5 or sequence_p5_raw),
-                        str(name_p7 or sequence_p7_raw),
-                        str(name_ligation or sequence_ligation_10nt),
-                        str(name_rt or sequence_rt_raw),
-                        sequence_umi,
+                        str(x.read1.name),
+                        str(x.p5_name or x.p5_sequence or "?"),
+                        str(x.p7_name or x.p7_sequence or "?"),
+                        str(x.ligation_name or x.ligation_sequence or "?"),
+                        str(x.rt_name or x.rt_sequence or "?"),
+                        x.umi_sequence,
+                        str(x.sample_name or "?")
                     )
                 )
                 + "\n"
             )
-            fh_discarded_r1.write(str(read1) + "\n")
-            fh_discarded_r2.write(str(read2) + "\n")
 
-            qc["n_pairs_failure"] += 1
+        # If all barcodes are found (except hashing barcode), write the read-pair to the correct sample file.
+        if x.sample_name != None and x.hashing_name == None:
+            # Convert the read-pair to the correct format.
+            x.convert_R1andR2()
 
-            # Add the uncorrectable scheme to the uncorrectable dict.
-            sankey_index = [name_p5, name_p7, name_ligation, name_rt]
-            sankey_index = [True if x != None else False for x in sankey_index]
-            qc["uncorrectables_sankey"][tuple(sankey_index)] += 1
-
-        else:
-            # Retrieve the matching sample_name from dict_rt_barcodes.
-            sample = dict_rt_barcodes[name_rt]
-
-            # Set the sequence of R1 to the cellular barcode.
-            if length_ligation == 10:
-                cell_barcode = sequence_p7 + sequence_p5 + sequence_ligation + sequence_rt
-                read1.sequence = cell_barcode + sequence_umi
-            else:
-                cell_barcode = sequence_p7 + sequence_p5 + sequence_ligation + "G" + sequence_rt
-                read1.sequence = cell_barcode + sequence_umi
-
-            # Set the quality of R1 to random good quality.
-            read1.quality = "F" * len(read1.sequence)
-
-            # Set the read-name of R1 and R2 to include the various barcodes.
-            # P5<i>-P7<i>|R2|LIG|RT_UMI
-            # VH00211:236:AACK2KFM5:1:1101:28873:1000|P5A01-P7D10|LIGN|P01-D04_GCGAGCGT
-            read1.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read1.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
-            read2.set_name("{}|P5{}-P7{}|{}|{}_{}".format(read2.name, name_p5, name_p7, name_ligation, name_rt, sequence_umi))
-
-            # Count as a successful read-pair.
-            qc["n_pairs_success"] += 1
-
-            # Keep track of correct read-pairs per sample.
-            samples_dict[sample]["n_pairs_success"] += 1
-
-            # Count the occurence of the barcodes.
-            qc["p5_index_counts"][name_p5] += 1
-            qc["p7_index_counts"][name_p7] += 1
-            qc["ligation_barcode_counts"][name_ligation] += 1
-
-            # Split up RT based on plate and well.
-            name_rt_split = name_rt.split("-")
-
-            if name_rt_split[0] not in qc["rt_barcode_counts"]:
-                qc["rt_barcode_counts"][name_rt_split[0]] = {}
-                qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] = 1
-            else:
-                if name_rt_split[1] not in qc["rt_barcode_counts"][name_rt_split[0]]:
-                    qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] = 1
-                else:
-                    qc["rt_barcode_counts"][name_rt_split[0]][name_rt_split[1]] += 1
-
-            # Hashing metrics (if applicable and if found).
-            if hashing and name_hash:
-                # Add the UMI/hash combination to the hash_name-specific dictionary.
-                cell_barcode2 = "_".join([name_p5, name_p7, name_ligation, name_rt])
-                if cell_barcode2 not in qc["hashing"][name_hash]["counts"]:
-                    qc["hashing"][name_hash]["counts"][cell_barcode2] = {}
-                    qc["hashing"][name_hash]["counts"][cell_barcode2]["umi"] = set([sequence_umi])
-                    qc["hashing"][name_hash]["counts"][cell_barcode2]["count"] = 1
-                else:
-                    qc["hashing"][name_hash]["counts"][cell_barcode2]["umi"].add(sequence_umi)
-                    qc["hashing"][name_hash]["counts"][cell_barcode2]["count"] += 1
-
-            else:
-                # Write the read-pair to the correct sample file.
-                # Hashing read-pairs are discarded.
-                dict_fh_out[sample]["R1"].write(str(read1) + "\n")
-                dict_fh_out[sample]["R2"].write(str(read2) + "\n")
+            # Write R1 and R2 to sample-specific files.
+            dict_fh[x.sample_name]["r1"].write(str(x.read1) + "\n")
+            dict_fh[x.sample_name]["r2"].write(str(x.read2) + "\n")
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-        # region Logging -------------------------------------------------------------------------------------------------------------------------
+        # region QC and Logging --------------------------------------------------------------------------------------------------------------------
 
-        # Print running statistics.
+        # Update the QC dictionary.
+        qc = update_qc(qc, x)
+
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
+            break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-    # Write the barcodes to whitelist files.
-    with open(os.path.join(path_out, sequencing_name + "_whitelist_p5.txt"), "w") as fh:
-        for sequence, barcode in dict_p5.items():
+    # region Write final files ---------------------------------------------------------------------------------------------------------------------
+
+    # STARSolo requires the barcodes in separate whitelist files.
+    with open(os.path.join(path_out, experiment_name + "_whitelist_p5.txt"), "w") as fh:
+        for sequence, barcode in dict_barcodes["p5"].items():
             fh.write(sequence + "\n")
 
-    with open(os.path.join(path_out, sequencing_name + "_whitelist_p7.txt"), "w") as fh:
-        for sequence, barcode in dict_p7.items():
+    with open(os.path.join(path_out, experiment_name + "_whitelist_p7.txt"), "w") as fh:
+        for sequence, barcode in dict_barcodes["p7"].items():
             fh.write(sequence + "\n")
 
-    with open(os.path.join(path_out, sequencing_name + "_whitelist_ligation.txt"), "w") as fh:
-        for sequence, barcode in dict_ligation.items():
-            if len(sequence) == 10:
-                fh.write(sequence + "\n")
-            else:
-                fh.write(sequence + "G" + "\n")
-
-    with open(os.path.join(path_out, sequencing_name + "_whitelist_rt.txt"), "w") as fh:
-        for sequence, barcode in dict_rt.items():
+    # Combine the ligation barcodes (9nt and 10nt) into one dictionary.
+    with open(os.path.join(path_out, experiment_name + "_whitelist_ligation.txt"), "w") as fh:
+        for sequence, barcode in dict_barcodes["ligation"]["ligation_10nt"].items():
             fh.write(sequence + "\n")
+        for sequence, barcode in dict_barcodes["ligation"]["ligation_9nt"].items():
+            fh.write(sequence + "G" + "\n")
 
-    # Close the input file handlers.
-    fh_r1.close()
-    fh_r2.close()
-
-    # Close the output file handlers.
-    fh_discarded_r1.close()
-    fh_discarded_r2.close()
-    fh_discarded_log.close()
-
-    for sample in dict_fh_out:
-        for fh in dict_fh_out[sample].values():
-            fh.close()
+    with open(os.path.join(path_out, experiment_name + "_whitelist_rt.txt"), "w") as fh:
+        for sequence, barcode in dict_barcodes["rt"].items():
+            fh.write(sequence + "\n")
 
     # Save QC to pickle file.
-    with open(os.path.join(path_out, "qc.pickle"), "wb") as fh:
-        pickle.dump(qc, fh)
-        pickle.dump(samples_dict, fh)
+    pickle.dump(qc, open(os.path.join(path_out, experiment_name) + "_qc.pickle", "wb"))
+
+    # endregion --------------------------------------------------------------------------------------------------------------------------------
 
     log.info("Done: %d read-pairs processed (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
 
@@ -577,12 +540,13 @@ def init_logger():
         log (logging.Logger): Logger object.
     """
     log = logging.getLogger(__name__)
+    time_format = "%Y-%m-%d %H:%M:%S"
+    formatter = logging.Formatter(fmt='%(asctime)s - (sci-rocket) %(levelname)s: %(message)s', datefmt=time_format)
 
-    ch = RichHandler(show_path=False, console=Console(width=255), show_time=True)
-    formatter = logging.Formatter("sci-rocket: %(message)s")
-    ch.setFormatter(formatter)
-    log.addHandler(ch)
-    log.propagate = False
+    # Add a stream handler.
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    log.addHandler(stream_handler)
 
     # Set the verbosity level.
     log.setLevel(logging.INFO)
@@ -627,10 +591,9 @@ def main(arguments):
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter, add_help=False)
     parser.add_argument("--r1", required=True, type=str, help="(.fq) Input fastq (R1).")
     parser.add_argument("--r2", required=True, type=str, help="(.fq) Input fastq (R2).")
-    parser.add_argument("--sequencing_name", required=True, type=str, help="(str) Sequencing sample name.")
+    parser.add_argument("--experiment_name", required=True, type=str, help="(str) Experiment name.")
     parser.add_argument("--samples", required=True, type=str, help="(str) Path to sample-sheet.")
     parser.add_argument("--barcodes", required=True, type=str, help="(str) Path to barcodes file.")
-    parser.add_argument("--hashing", required=False, type=str, help="(str) Path to hashing sheet.")
     parser.add_argument("--out", required=True, type=str, help="(str) Path to output directory.")
 
     parser.add_argument("-h", "--help", action="help", default=argparse.SUPPRESS, help="Display help and exit.")
@@ -644,25 +607,36 @@ def main(arguments):
 
     # Open sample-sheet.
     samples = pd.read_csv(args.samples, sep="\t", dtype=str)
-    samples = samples.query("sequencing_name == @args.sequencing_name")
+    samples = samples.query("experiment_name == @args.experiment_name")
 
     # Open barcode-sheet.
     barcodes = pd.read_csv(args.barcodes, sep="\t", dtype=str)
-
-    # Import hashing sheet (if any).
-    hashing = {}
-    if args.hashing:
-        x = pd.read_csv(args.hashing, sep="\t", header=0)
-        hashing = {**hashing, **dict(zip(x["barcode"], x["hash_name"]))}
 
     # Generate output directory if not exists.
     if not os.path.exists(args.out):
         os.makedirs(args.out)
 
     # Run the program.
-    sciseq_sample_demultiplexing(log=log, sequencing_name=args.sequencing_name, samples=samples, barcodes=barcodes, hashing=hashing, path_r1=args.r1, path_r2=args.r2, path_out=args.out)
+    sciseq_sample_demultiplexing(log=log, experiment_name=args.experiment_name, samples=samples, barcodes=barcodes, path_r1=args.r1, path_r2=args.r2, path_out=args.out)
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+# args = parser.parse_args(
+#     [
+#         "--r1",
+#         "/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/raw_reads_split/R1_34-of-50.fastq.gz",
+#         "--r2",
+#         "/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/raw_reads_split/R2_34-of-50.fastq.gz",
+#         "--experiment_name",
+#         "sx42b",
+#         "--samples",
+#         "/omics/groups/OE0538/internal/projects/liver_fcg/metadata/sx42b_samplesheet.tsv",
+#         "--barcodes",
+#         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv",
+#         "--out",
+#         "/home/j103t/test/",
+#     ]
+# )

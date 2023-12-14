@@ -1,47 +1,45 @@
 import argparse
-import sys
-import os
-import pickle
 import glob
 import json
+import os
 import pandas as pd
+import pickle
+import sys
 
-
-def write_cell_hashing_table(data_demux, out):
+def write_cell_hashing_table(qc, out):
     """
     Write the following cell-based metrics:
         - Total no. of hash reads.
         - Total no. of distinct UMI  per hashing barcode.
 
     Parameters:
-        data_demux (dict): Dictionary containing the QC, incl. hashing metrics.
+        qc (dict): Dictionary containing the QC, incl. hashing metrics.
         out (str): Path to output hashing metrics.
 
     Returns:
-        data_demux (dict): Dictionary containing the QC, excl. hashing metrics.
+        (dict): Dictionary of the hashing metrics.
     """
 
     # Create a list of dictionaries.
     array_hashing = []
-
-    if "hashing" in data_demux:
-        for hash_barcode in data_demux["hashing"]:
-            for cell_barcode in data_demux["hashing"][hash_barcode]["counts"]:
+    
+    # qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode] = {"umi": set(), "count": 0}
+    for hashing_sample in qc["hashing"]:
+        for hashing_name in qc["hashing"][hashing_sample]["counts"]:
+            for cellular_barcode in qc["hashing"][hashing_sample]["counts"][hashing_name]:
                 array_hashing.append(
                     {
-                        "sequencing_name": data_demux["sequencing_name"],
-                        "hash_barcode": hash_barcode,
-                        "cell_barcode": cell_barcode,
-                        "count": data_demux["hashing"][hash_barcode]["counts"][cell_barcode]["count"],
-                        "n_umi": len(data_demux["hashing"][hash_barcode]["counts"][cell_barcode]["umi"]),
+                        "experiment_name": qc["experiment_name"],
+                        "hashing_sample": hashing_sample,
+                        "hashing_barcode": hashing_name,
+                        "cell_barcode": cellular_barcode,
+                        "count": qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["count"],
+                        "n_umi": len(qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["umi"])
                     }
                 )
 
-            # Remove the counts to save space.
-            del data_demux["hashing"][hash_barcode]["counts"]
-
     # Convert to pandas dataframe.
-    df_hashing = pd.DataFrame(columns=["sequencing_name", "hash_barcode", "cell_barcode", "count", "n_umi"], data=array_hashing)
+    df_hashing = pd.DataFrame(columns=["experiment_name", "hashing_sample", "hash_barcode", "cell_barcode", "count", "n_umi"], data=array_hashing)
 
     # Order on total hash count.
     df_hashing = df_hashing.sort_values(by=["count"], ascending=False)
@@ -53,9 +51,16 @@ def write_cell_hashing_table(data_demux, out):
     # Write to file.
     df_hashing.to_csv(out, sep="\t", index=False, header=True, encoding="utf-8", mode="w")
 
-    # Return metrics.
-    return data_demux
+    # Transform df_hashing into a dictionary with the hashing_sample column as key.
+    dict_hashing = df_hashing.to_dict(orient="index")
 
+    # Add the hashing_sample metrics
+    for hashing_sample in qc["hashing"]:
+        dict_hashing[hashing_sample]["n_correct"] = qc["hashing"][hashing_sample]["n_correct"]
+        dict_hashing[hashing_sample]["n_corrected"] = qc["hashing"][hashing_sample]["n_corrected"]
+        dict_hashing[hashing_sample]["n_correct_upstream"] = qc["hashing"][hashing_sample]["n_correct_upstream"]
+
+    return dict_hashing
 
 def combine_logs(path_pickle, path_star, path_hashing):
     """
@@ -64,130 +69,126 @@ def combine_logs(path_pickle, path_star, path_hashing):
     Parameters:
         path_pickle (str): Path to the pickled dictionaries.
         path_star (str): Path to the STAR output folder.
-        path_hashing (str): Path to the hashing metrics.
+        path_hashing (str): Path to store the hashing metrics.
 
     Returns:
-        data_demux (dict): Dictionary containing the demuxxing statistics.
+        qc (dict): Dictionary containing the demuxxing statistics (in JSON format).
     """
 
     # region Import demuxxing statistics. ---------------------------------------------------------------------------------
-    data_demux = None
-    data_samples = None
+    qc_json = {}
 
     # Load the pickled dictionary
     with open(path_pickle, "rb") as handle:
-        data_demux = pickle.load(handle)
-        data_samples = pickle.load(handle)
+        qc = pickle.load(handle)
 
     # endregion
 
     # region Calculate summary statistics. --------------------------------------------------------------------------------
-    if data_demux != None and data_samples != None:
+    if qc != None:
+
+        # Take over all the keys from the pickle which are not nested.
+        for key in qc:
+            if not isinstance(qc[key], dict):
+                qc_json[key] = qc[key]
+
         # Determine the top recurrent uncorrectable barcodes.
-        data_demux["top_uncorrectables"] = {}
+        qc_json["top_uncorrectables"] = {}
         top_n = 15
-        data_demux["top_uncorrectables"]["p5"] = sorted(data_demux["uncorrectable_p5"].items(), key=lambda x: x[1], reverse=True)[:top_n]
-        data_demux["top_uncorrectables"]["p7"] = sorted(data_demux["uncorrectable_p7"].items(), key=lambda x: x[1], reverse=True)[:top_n]
-        data_demux["top_uncorrectables"]["ligation"] = sorted(data_demux["uncorrectable_ligation"].items(), key=lambda x: x[1], reverse=True)[:top_n]
-        data_demux["top_uncorrectables"]["rt"] = sorted(data_demux["uncorrectable_rt"].items(), key=lambda x: x[1], reverse=True)[:top_n]
+        qc_json["top_uncorrectables"]["p5"] = sorted(qc["uncorrectable_p5"].items(), key=lambda x: x[1], reverse=True)[:top_n]
+        qc_json["top_uncorrectables"]["p7"] = sorted(qc["uncorrectable_p7"].items(), key=lambda x: x[1], reverse=True)[:top_n]
+        qc_json["top_uncorrectables"]["ligation"] = sorted(qc["uncorrectable_ligation"].items(), key=lambda x: x[1], reverse=True)[:top_n]
+        qc_json["top_uncorrectables"]["rt"] = sorted(qc["uncorrectable_rt"].items(), key=lambda x: x[1], reverse=True)[:top_n]
 
         # Name the key/value pairs in the top_uncorrectables dictionary.
-        for key in data_demux["top_uncorrectables"]:
-            data_demux["top_uncorrectables"][key] = [{"barcode": barcode, "frequency": frequency} for barcode, frequency in data_demux["top_uncorrectables"][key]]
+        for key in qc_json["top_uncorrectables"]:
+            qc_json["top_uncorrectables"][key] = [{"barcode": barcode, "frequency": frequency} for barcode, frequency in qc_json["top_uncorrectables"][key]]
 
         # Name the key/value pairs in the plate counts. Split up the key in row and col.
         def transform_plate_counts(dict):
             return [{"row": key[0], "col": key[1:].lstrip("0"), "frequency": dict[key]} for key in dict]
 
-        data_demux["p5_index_counts"] = transform_plate_counts(data_demux["p5_index_counts"])
-        data_demux["p7_index_counts"] = transform_plate_counts(data_demux["p7_index_counts"])
+        qc_json["p5_index_counts"] = transform_plate_counts(qc["p5_index_counts"])
+        qc_json["p7_index_counts"] = transform_plate_counts(qc["p7_index_counts"])
 
-        for key in data_demux["rt_barcode_counts"]:
-            data_demux["rt_barcode_counts"][key] = transform_plate_counts(data_demux["rt_barcode_counts"][key])
+        # Transform the rt_barcode_counts dictionary to a list of dictionaries.
+        qc_json["rt_barcode_counts"] = {}
+
+        for key in qc["rt_barcode_counts"]:
+            qc_json["rt_barcode_counts"][key] = transform_plate_counts(qc["rt_barcode_counts"][key])
 
         # Transform the ligation_barcode_counts dictionary to a list of dictionaries.
-        data_demux["ligation_barcode_counts"] = [{"barcode": barcode, "frequency": data_demux["ligation_barcode_counts"][barcode]} for barcode in data_demux["ligation_barcode_counts"]]
+        qc_json["ligation_barcode_counts"] = [{"barcode": barcode, "frequency": qc["ligation_barcode_counts"][barcode]} for barcode in qc["ligation_barcode_counts"]]
 
         # Remove all unnecessary data. ------------------------------------------------------------------------------------
 
-        del data_demux["uncorrectable_p5"]
-        del data_demux["uncorrectable_p7"]
-        del data_demux["uncorrectable_ligation"]
-        del data_demux["uncorrectable_rt"]
-
         # Remove the ligation_barcode_counts with zero counts.
-        data_demux["ligation_barcode_counts"] = [barcode for barcode in data_demux["ligation_barcode_counts"] if barcode["frequency"] > 0]
+        qc_json["ligation_barcode_counts"] = [barcode for barcode in qc_json["ligation_barcode_counts"] if barcode["frequency"] > 0]
 
         # Convert the uncorrectables_sankey.
-        data_demux["uncorrectables_sankey"] = [{"source": str(key), "value": data_demux["uncorrectables_sankey"][key]} for key in data_demux["uncorrectables_sankey"]]
+        qc_json["uncorrectables_sankey"] = [{"source": str(key), "value": qc["uncorrectables_sankey"][key]} for key in qc["uncorrectables_sankey"]]
 
     # endregion ----------------------------------------------------------------------------------------------------------
 
     # region Import STAR statistics. -------------------------------------------------------------------------------------
 
     # Per sample, load the STAR Log.final.out and STARSolo GeneFull summaries.
-    for sample in data_samples:
-        # Find the STAR log that matches the sample name.
-        path_log = glob.glob(path_star + sample + "_*Log.final.out")[0]
+    qc_json["sample_succes"] = qc["sample_succes"]
+    for sample in qc_json["sample_succes"]:
 
         # Find the STARsolo GeneFull summary that matches the sample name.
         path_solo = glob.glob(path_star + sample + "_*/*/Summary.csv", recursive=True)
-
-        # Load the STAR Log.final.out file and extract several statistics.
-        with open(path_log, "r") as handle:
-            for line in handle:
-                line = line.lstrip().split("|")
-
-                if line[0].startswith("Number of input reads"):
-                    data_samples[sample]["total_reads"] = int(line[1].strip())
-                elif line[0].startswith("Uniquely mapped reads number"):
-                    data_samples[sample]["uniq_reads"] = int(line[1].strip())
-                elif line[0].startswith("Number of reads mapped to multiple loci"):
-                    data_samples[sample]["multimapped_reads"] = int(line[1].strip())
-                elif line[0].startswith("Number of reads mapped to too many loci"):
-                    data_samples[sample]["filtered_reads"] = int(line[1].strip())
-                elif line[0].startswith("Number of reads unmapped"):
-                    data_samples[sample]["filtered_reads"] += int(line[1].strip())
-                elif line[0].startswith("Number of chimeric reads"):
-                    data_samples[sample]["chimeric_reads"] = int(line[1].strip())
 
         # Load the STARsolo GeneFull summary file and extract several statistics.
         with open(path_solo[0], "r") as handle:
             for line in handle:
                 line = line.split(",")
                 if line[0] == "Sequencing Saturation":
-                    data_samples[sample]["solo_sequencing_saturation"] = float(line[1].strip())
-                elif line[0] == "Reads Mapped to GeneFull: Unique GeneFull":
-                    data_samples[sample]["solo_uniq_gene_reads"] = data_samples[sample]["uniq_reads"] * float(line[1].strip())
+                    qc_json["sample_succes"][sample]["sequencing_saturation"] = float(line[1].strip())
                 elif line[0] == "Estimated Number of Cells":
-                    data_samples[sample]["solo_estimated_cells"] = int(line[1].strip())
-                elif line[0] == "Unique Reads in Cells Mapped to GeneFull":
-                    data_samples[sample]["solo_uniq_gene_reads_in_cells"] = int(line[1].strip())
-                elif line[0] == "Mean Reads per Cell":
-                    data_samples[sample]["solo_mean_reads_per_cell"] = int(line[1].strip())
-                elif line[0] == "Mean UMI per Cell":
-                    data_samples[sample]["solo_mean_umi_per_cell"] = int(line[1].strip())
-                elif line[0] == "Mean GeneFull per Cell":
-                    data_samples[sample]["solo_mean_gene_per_cell"] = int(line[1].strip())
+                    qc_json["sample_succes"][sample]["estimated_cells"] = int(line[1].strip())
+
+        # Load the CellReads.stats file and extract several sample-wise statistics.
+        path_cellreads = glob.glob(path_star + sample + "_*/*/CellReads.stats", recursive=True)
+        df_cellreads = pd.read_csv(path_cellreads[0], sep="\t", header=0, index_col=0)
+
+        # Summarize all cells.
+        df_cellreads_summed = df_cellreads.sum(axis=0)
+        df_cellreads_mean = df_cellreads.mean(axis=0)
+
+        # Add the sample-wise statistics to the dictionary.
+        qc_json["sample_succes"][sample]["total_mapped_reads"] = int(df_cellreads_summed.genomeU + df_cellreads_summed.genomeM)
+        qc_json["sample_succes"][sample]["total_unique_reads"] = int(df_cellreads_summed.genomeU)
+        qc_json["sample_succes"][sample]["total_multimapped_reads"] = int(df_cellreads_summed.genomeM)
+        qc_json["sample_succes"][sample]["total_correct_reads_genes"] = int(df_cellreads_summed.countedU + df_cellreads_summed.countedM)
+        qc_json["sample_succes"][sample]["total_exonic_reads"] = int(df_cellreads_summed.exonic)
+        qc_json["sample_succes"][sample]["total_intronic_reads"] = int(df_cellreads_summed.intronic)
+        qc_json["sample_succes"][sample]["total_intergenic_reads"] = int(df_cellreads_summed.genomeU + df_cellreads_summed.genomeM - df_cellreads_summed.exonic - df_cellreads_summed.intronic)
+        qc_json["sample_succes"][sample]["total_mitochondrial_reads"] = int(df_cellreads_summed.mito)
+        qc_json["sample_succes"][sample]["total_exonicAS_reads"] = int(df_cellreads_summed.exonicAS)
+        qc_json["sample_succes"][sample]["total_intronicAS_reads"] = int(df_cellreads_summed.intronicAS)
+        qc_json["sample_succes"][sample]["mean_reads_per_cell"] = int(df_cellreads_mean.genomeU + df_cellreads_mean.genomeM)
+        qc_json["sample_succes"][sample]["mean_genes_per_cell"] = int(df_cellreads_mean.nGenesUnique)
+        qc_json["sample_succes"][sample]["mean_umis_per_cell"] = int(df_cellreads_mean.nUMIunique)
 
     # endregion ----------------------------------------------------------------------------------------------------------
 
-    # region Export hashing statistics. ----------------------------------------------------------------------------------
-
-    data_demux = write_cell_hashing_table(data_demux, path_hashing)
-
+    # region Write / import hashing statistics. --------------------------------------------------------------------------
+    if "hashing" in qc:
+        df_hashing = write_cell_hashing_table(qc, path_hashing)
+        qc_json["hashing"] = df_hashing
+    else:
+        qc_json["hashing"] = {}
     # endregion ----------------------------------------------------------------------------------------------------------
-    # Convert to JSON structure and write to file.
-    if data_demux != None and data_samples != None:
-        data_demux["samples_qc"] = data_samples
 
-    return data_demux
+    # Return JSON-structured dict.
+    return qc_json
 
 
 def main(arguments):
     # Setup argument parser.
     parser = argparse.ArgumentParser(description="Combine the scattered demultiplexing files into a JSON structure for the sci-dash.", add_help=False)
-    parser.add_argument("--path_pickle", required=True, type=str, help="(str) Path to demultiplixing qc pickle.")
+    parser.add_argument("--path_pickle", required=True, type=str, help="(str) Path to demultiplexing qc pickle.")
     parser.add_argument("--path_star", required=True, type=str, help="(str) Path to the star alignment folder.")
     parser.add_argument("--path_out", required=True, type=str, help="(str) Path to store JSON structure.")
     parser.add_argument("--path_hashing", required=True, type=str, help="(str) Path to store hashing metrics (if applicable).")
@@ -198,7 +199,7 @@ def main(arguments):
     args = parser.parse_args()
 
     # Combine the demuxxing logs with the STAR logs for the sci-dash.
-    data_demux = combine_logs(args.path_pickle, args.path_star, args.path_hashing)
+    qc_json = combine_logs(args.path_pickle, args.path_star, args.path_hashing)
 
     # Write the JSON structure to file.
     if not os.path.exists(os.path.dirname(args.path_out)):
@@ -206,7 +207,7 @@ def main(arguments):
 
     with open(args.path_out, "w") as handle:
         handle.write("var data = ")
-        json.dump(data_demux, handle, indent=4)
+        json.dump(qc_json, handle, indent=4)
 
     # Close the file
     handle.close()
@@ -216,15 +217,6 @@ if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
 
-args = parser.parse_args(
-    [
-        "--path_out",
-        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/sci-dash/js/qc_data.js",
-        "--path_pickle",
-        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/demux_reads/e3_zhash_qc.pickle",
-        "--path_star",
-        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/alignment/",
-        "--path_hashing",
-        "/omics/groups/OE0538/internal/users/l375s/hash_testing/runJob/e3_zhash/hashing/e3_zhash_hashing_metrics.tsv",
-    ]
-)
+# path_pickle='/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/demux_reads/sx42b_qc.pickle'
+# path_hashing='/home/j103t/test/sx42b_hashing.tsv'
+# path_star='/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/alignment/'

@@ -6,6 +6,7 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
 
 1. Check for sanity of provided barcodes and sample-sheet.
 2. Converts BCL files to paired-end .fq.gz files with PCR indexes in header (**bcl2fastq**).
+   - Merges multiple sequencing runs (`path_bcl`) into one experiment-based file (`experiment_name`).
 3. Splits paired-end .fq.fz files into smaller (evenly-sized) chunks for parallelization (**fastqsplitter**).
 4. Demultiplexing using the supplied sample-specific barcodes (**sci-rocket**).
    - Finds exact or nearest match for PCR Index #1 (p5), PCR Index #1 (p7), ligation and/or RT barcode (single match with ≤1 hamming distance).
@@ -20,7 +21,7 @@ See [here](https://teichlab.github.io/scg_lib_structs/methods_html/sci-RNA-seq3.
 7. Generate demultiplexing/alignment overview. (**sci-dash**)
    - Generates a HTML report with demultiplexing and alignment statistics.
 
-> Parallization is performed per sequencing run and split chunk.
+> Parallization is performed per experiment_name and split chunk.
 
 ### Optional steps
 

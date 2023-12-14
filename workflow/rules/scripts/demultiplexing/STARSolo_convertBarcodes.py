@@ -70,3 +70,7 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+# path_starsolo_barcodes="/home/j103t/odomLab/liver_fcg/data/sci-rocket/sx42b/alignment/sx42_15_mouse_Solo.out/GeneFull/raw/barcodes.tsv"
+# path_barcodes="/home/j103t/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv"
+# path_out="~/test/barcodes_converted.tsv"

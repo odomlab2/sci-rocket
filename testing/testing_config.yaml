@@ -4,8 +4,7 @@
 # Table of contents:
 # 1. Required parameters
 # 2. Custom tool settings (optional)
-# 3. Hashing parameters (optional)
-# 4. Haplotyping parameters (optional)
+# 3. Haplotyping parameters (optional)
 #################################################################
 
 ###################################
@@ -42,7 +41,7 @@ species:
 # Important: (star_index): For example, if R2 is 84bp long, then --sjdbOverhang should be set to 83.
 settings:
   # Number of splitted .fastq.gz files to generate per sequencing run to parallize the demultiplexing.
-  scatter_fastq_split: 30
+  scatter_fastq_split: 10
   # Custom settings for bcl2fastq.
   bcl2fastq: "--barcode-mismatches 1 --ignore-missing-positions --ignore-missing-controls --ignore-missing-filter --ignore-missing-bcls --no-lane-splitting --minimum-trimmed-read-length 15 --mask-short-adapter-reads 15"
   # Custom settings for fastp.
@@ -54,21 +53,7 @@ settings:
 
 
 ###################################
-# ---- 3. Hashing parameters -----#
-# * If no hashing is needed, remove this section or leave it empty as-is. *
-
-# Sequencing/experiment runs on which additional hashing barcodes have been added can be specified here.
-# The identifier should be matching with the 'sequencing_name' column in the sample sheet.
-# The hashing sheet should contain the following columns:
-# - hash_name: Name of the hashing experiment.
-# - barcode: Sequence of the hashing barcode (searched for in R2).
-
-hashing:
-  test_hashing: "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/workflow/examples/example_hashing.tsv"
-
-
-###################################
-# -- 4. Haplotyping parameters ---#
+# -- 3. Haplotyping parameters ---#
 # * Haplotyping currently only works for mouse samples. * 
 
 # Path to a pre-downloaded chr-prefixed MGP (SNPs and InDels) file.

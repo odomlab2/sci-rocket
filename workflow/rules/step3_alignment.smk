@@ -9,15 +9,15 @@
 
 rule trim_fastp:
     input:
-        R1="{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz",
-        R2="{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz",
+        R1="{experiment_name}/demux_reads/{sample_name}_R1.fastq.gz",
+        R2="{experiment_name}/demux_reads/{sample_name}_R2.fastq.gz",
     output:
-        R1=temp("{sequencing_name}/fastp/{sample_name}_R1.fastq.gz"),
-        R2=temp("{sequencing_name}/fastp/{sample_name}_R2.fastq.gz"),
-        html="{sequencing_name}/fastp/{sample_name}.html",
-        json="{sequencing_name}/fastp/{sample_name}.json",
+        R1=temp("{experiment_name}/fastp/{sample_name}_R1.fastq.gz"),
+        R2=temp("{experiment_name}/fastp/{sample_name}_R2.fastq.gz"),
+        html="{experiment_name}/fastp/{sample_name}.html",
+        json="{experiment_name}/fastp/{sample_name}.json",
     log:
-        "logs/step3_alignment/fastp_{sequencing_name}_{sample_name}.log",
+        "logs/step3_alignment/fastp_{experiment_name}_{sample_name}.log",
     threads: 10
     resources:
         mem_mb=1024 * 4,
@@ -66,38 +66,38 @@ rule generate_index_STAR:
 
 rule starSolo_align:
     input:
-        R1="{sequencing_name}/fastp/{sample_name}_R1.fastq.gz",
-        R2="{sequencing_name}/fastp/{sample_name}_R2.fastq.gz",
+        R1="{experiment_name}/fastp/{sample_name}_R1.fastq.gz",
+        R2="{experiment_name}/fastp/{sample_name}_R2.fastq.gz",
         index="resources/index_star/{species}/",
-        whitelist_p7="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p7.txt",
-        whitelist_p5="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_p5.txt",
-        whitelist_ligation="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_ligation.txt",
-        whitelist_rt="{sequencing_name}/demux_reads/{sequencing_name}_whitelist_rt.txt",
+        whitelist_p7="{experiment_name}/demux_reads/{experiment_name}_whitelist_p7.txt",
+        whitelist_p5="{experiment_name}/demux_reads/{experiment_name}_whitelist_p5.txt",
+        whitelist_ligation="{experiment_name}/demux_reads/{experiment_name}_whitelist_ligation.txt",
+        whitelist_rt="{experiment_name}/demux_reads/{experiment_name}_whitelist_rt.txt",
     output:
-        bam="{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
-        sj="{sequencing_name}/alignment/{sample_name}_{species}_SJ.out.tab",
-        log1="{sequencing_name}/alignment/{sample_name}_{species}_Log.final.out",
-        log2=temp("{sequencing_name}/alignment/{sample_name}_{species}_Log.out"),
+        bam="{experiment_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
+        sj="{experiment_name}/alignment/{sample_name}_{species}_SJ.out.tab",
+        log1="{experiment_name}/alignment/{sample_name}_{species}_Log.final.out",
+        log2=temp("{experiment_name}/alignment/{sample_name}_{species}_Log.out"),
         log3=temp(
-            "{sequencing_name}/alignment/{sample_name}_{species}_Log.progress.out"
+            "{experiment_name}/alignment/{sample_name}_{species}_Log.progress.out"
         ),
         dir_tmp=temp(
-            directory("{sequencing_name}/alignment/{sample_name}_{species}__STARtmp/")
+            directory("{experiment_name}/alignment/{sample_name}_{species}__STARtmp/")
         ),
         dir_solo=directory(
-            "{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/"
+            "{experiment_name}/alignment/{sample_name}_{species}_Solo.out/"
         ),
-        barcodes_raw="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/raw/barcodes.tsv",
-        barcodes_raw_converted="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/raw/barcodes_converted.tsv",
-        barcodes_filtered="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/filtered/barcodes.tsv",
-        barcodes_filtered_converted="{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull/filtered/barcodes_converted.tsv",
+        barcodes_raw="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/raw/barcodes.tsv",
+        barcodes_raw_converted="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/raw/barcodes_converted.tsv",
+        barcodes_filtered="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/filtered/barcodes.tsv",
+        barcodes_filtered_converted="{experiment_name}/alignment/{sample_name}_{species}_Solo.out/GeneFull_Ex50pAS/filtered/barcodes_converted.tsv",
     log:
-        "logs/step3_alignment/star_align_{sequencing_name}_{sample_name}_{species}.log",
+        "logs/step3_alignment/star_align_{experiment_name}_{sample_name}_{species}.log",
     threads: 30
     resources:
         mem_mb=1024 * 60,
     params:
-        sampleName="{sequencing_name}/alignment/{sample_name}_{species}_",
+        sampleName="{experiment_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
         path_barcodes=config["path_barcodes"],
         n_expected_cells=lambda w: get_expected_cells(w),
@@ -116,18 +116,18 @@ rule starSolo_align:
         --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.sampleName} >& {log}
 
         # Convert the barcodes to the barcode naming scheme.
-        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
-        python3.10 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
+        python3 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_raw} --barcodes {params.path_barcodes} --out {output.barcodes_raw_converted}
+        python3 {workflow.basedir}/rules/scripts/demultiplexing/STARSolo_convertBarcodes.py --starsolo_barcodes {output.barcodes_filtered} --barcodes {params.path_barcodes} --out {output.barcodes_filtered_converted}
         """
 
 
 rule sambamba_index:
     input:
-        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
+        "{experiment_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam",
     output:
-        "{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam.bai",
+        "{experiment_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam.bai",
     log:
-        "logs/step3_alignment/sambamba_index_{sequencing_name}_{sample_name}_{species}.log",
+        "logs/step3_alignment/sambamba_index_{experiment_name}_{sample_name}_{species}.log",
     threads: 8
     resources:
         mem_mb=1024 * 2,
@@ -137,4 +137,3 @@ rule sambamba_index:
         "Indexing BAM ({wildcards.sample_name})."
     shell:
         "sambamba index -t {threads} {input} {output} >& {log}"
-
