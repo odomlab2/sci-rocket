@@ -292,10 +292,10 @@ function generate_starsolo_table(data) {
             Total mitochondrial reads
           </th>
           <th style="text-align:center">
-          Total exonicAS reads
+          Total exonic antisense reads
           </th>
           <th style="text-align:center">
-            Total intronicAS reads
+            Total intronic antisense reads
           </th>
           <th style="text-align:center">
           Mean reads per cell
