@@ -848,11 +848,10 @@ var data_sankey_barcodes = [
 ];
 
 document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-sankey_barcodes").innerHTML = ''
+  document.getElementById("chart-sankey").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
-    var root = am5.Root.new("chart-sankey_barcodes");
-    root._logo.dispose();
+    var root = am5.Root.new("chart-sankey");
     root.setThemes([am5themes_Animated.new(root)]);
 
     // Create series.
