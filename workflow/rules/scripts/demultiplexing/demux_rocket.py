@@ -495,7 +495,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
 
         if qc["n_pairs"] % 1000000 == 0:
             log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
-            break
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
