@@ -268,11 +268,11 @@ def update_qc(qc:dict, x:sciRecord):
     # Per 1M read-pairs, only keep the top 50 most frequent uncorrectable barcode sequences.
     # This reduces the size of the pickle file and we only display the top 15 in the QC report.
     if qc["n_pairs"] % 1000000 == 0:
-        qc["uncorrectable_p7"] = {k: v for k, v in sorted(qc["uncorrectable_p7"].items(), key=lambda item: item[1], reverse=True)[:50]}
-        qc["uncorrectable_p5"] = {k: v for k, v in sorted(qc["uncorrectable_p5"].items(), key=lambda item: item[1], reverse=True)[:50]}
-        qc["uncorrectable_ligation"] = {k: v for k, v in sorted(qc["uncorrectable_ligation"].items(), key=lambda item: item[1], reverse=True)[:50]}
-        qc["uncorrectable_rt"] = {k: v for k, v in sorted(qc["uncorrectable_rt"].items(), key=lambda item: item[1], reverse=True)[:50]}
-        
+        qc["uncorrectable_p7"] = defaultdict(int, {k: v for k, v in sorted(qc["uncorrectable_p7"].items(), key=lambda item: item[1], reverse=True)[:50]})
+        qc["uncorrectable_p5"] = defaultdict(int, {k: v for k, v in sorted(qc["uncorrectable_p5"].items(), key=lambda item: item[1], reverse=True)[:50]})
+        qc["uncorrectable_ligation"] = defaultdict(int, {k: v for k, v in sorted(qc["uncorrectable_ligation"].items(), key=lambda item: item[1], reverse=True)[:50]})
+        qc["uncorrectable_rt"] = defaultdict(int, {k: v for k, v in sorted(qc["uncorrectable_rt"].items(), key=lambda item: item[1], reverse=True)[:50]})
+       
     # Return the updated QC dictionary.
     return qc
 
