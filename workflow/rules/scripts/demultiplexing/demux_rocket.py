@@ -14,7 +14,7 @@ import pandas as pd
 import pysam
 
 from frozendict import frozendict
-from sanity_checks import retrieve_p5_barcodes, retrieve_p7_barcodes
+from sanity_checks import retrieve_barcodes
 from sciClasses import sciRecord
 
 
@@ -24,6 +24,7 @@ def init_barcode_dict(barcodes: pd.DataFrame, samples: pd.DataFrame, experiment_
     These are used for fast lookup of the barcodes.
 
     Parameters:
+    \»
         barcodes (pd.DataFrame): Barcode sheet.
         samples (pd.DataFrame): Sample sheet.
         experiment_name (str): Experiment name.
@@ -38,24 +39,27 @@ def init_barcode_dict(barcodes: pd.DataFrame, samples: pd.DataFrame, experiment_
     # Initialize the barcode dictionary.
     dict_barcodes = {}
 
+    # Get the samples used in this sequencing run.
+    samples_exp = samples.query("experiment_name == @experiment_name")
+
     # Generate k;v of ligation barcodes.
     dict_barcodes["ligation"] = {}
     dict_barcodes["ligation"]["ligation_10nt"] = dict(zip(barcodes.query("type == 'ligation' & length == 10")["sequence"], barcodes.query("type == 'ligation' & length == 10")["barcode"]))
     dict_barcodes["ligation"]["ligation_9nt"] = dict(zip(barcodes.query("type == 'ligation' & length == 9")["sequence"], barcodes.query("type == 'ligation' & length == 9")["barcode"]))
 
     # Get the possible list of unique RT barcodes contained in the sequencing run.
-    rt_barcodes_sequencing = samples.query("experiment_name == @experiment_name")["rt"].unique()
+    rt_barcodes_sequencing = retrieve_barcodes(None, samples_exp["rt"].unique(), barcodes, "rt")
     dict_barcodes["rt"] = dict(zip(barcodes.query("type == 'rt' & barcode in @rt_barcodes_sequencing")["sequence"], barcodes.query("type == 'rt' & barcode in @rt_barcodes_sequencing")["barcode"]))
 
     # Retrieve the p5 barcodes used in this sequencing run.
-    indexes_p5 = retrieve_p5_barcodes(None, samples["p5"].unique(), barcodes.query("type == 'p5'")["barcode"].unique())
+    indexes_p5 = retrieve_barcodes(None, samples_exp["p5"].unique(), barcodes, "p5")
     barcodes_p5 = dict(zip(barcodes.query("type == 'p5' & barcode in @indexes_p5")["sequence"], barcodes.query("type == 'p5' & barcode in @indexes_p5")["barcode"]))
 
     # Reverse complement the p5 barcodes.
     dict_barcodes["p5"] = {k[::-1].translate(str.maketrans("ATCG", "TAGC")): v for k, v in barcodes_p5.items()}
 
     # Retrieve the p7 barcodes used in this sequencing run.
-    indexes_p7 = retrieve_p7_barcodes(None, samples["p7"].unique(), barcodes.query("type == 'p7'")["barcode"].unique())
+    indexes_p7 = retrieve_barcodes(None, samples_exp["p7"].unique(), barcodes, "p7")
     dict_barcodes["p7"] = dict(zip(barcodes.query("type == 'p7' & barcode in @indexes_p7")["sequence"], barcodes.query("type == 'p7' & barcode in @indexes_p7")["barcode"]))
 
     # Convert the barcode dictionaries to frozendict.
@@ -83,18 +87,17 @@ def generate_sample_dict(samples: pd.DataFrame, barcodes: pd.DataFrame):
 
     # Expand p5 and p7 barcodes (A01:G12) to individual barcodes (A01, A02, A03, ..., G12).
     samples = samples.to_dict(orient="index")    
-    barcodes_p5 = barcodes.query("type == 'p5'")["barcode"].unique()
-    barcodes_p7 = barcodes.query("type == 'p7'")["barcode"].unique()
-
     sample_dict = {}
 
     for sample in samples:
-        sample_p5 = retrieve_p5_barcodes(None, list([samples[sample]["p5"]]), barcodes_p5)
-        sample_p7 = retrieve_p7_barcodes(None, list([samples[sample]["p7"]]), barcodes_p7)
+        sample_p5 = retrieve_barcodes(None, list([samples[sample]["p5"]]), barcodes, "p5")
+        sample_p7 = retrieve_barcodes(None, list([samples[sample]["p7"]]), barcodes, "p7")
+        sample_rt = retrieve_barcodes(None, list([samples[sample]["rt"]]), barcodes, "rt")
 
         for p5 in sample_p5:
             for p7 in sample_p7:
-                sample_dict["{}_{}_{}".format(p5, p7, samples[sample]["rt"])] = samples[sample]["sample_name"]
+                for rt in sample_rt:
+                    sample_dict["{}_{}_{}".format(p5, p7, rt)] = samples[sample]["sample_name"]
 
     return frozendict(sample_dict)
 
@@ -129,8 +132,8 @@ def init_qc(experiment_name: str, dict_barcodes: dict, samples: pd.DataFrame, di
     # For all (succesfull) reads, keep track of the number of times each index/barcode.
     qc["p5_index_counts"] = {k: 0 for k in dict_barcodes["p5"].values()}
     qc["p7_index_counts"] = {k: 0 for k in dict_barcodes["p7"].values()}
-    qc["rt_barcode_counts"] = {}
-
+    qc["rt_barcode_counts"] = {}  # Keep track of the number of times each RT barcode is seen per plate.
+    
     # Combine the ligation barcodes (9nt and 10nt) into one dictionary.
     qc["ligation_barcode_counts"] = {**{k: 0 for k in dict_barcodes["ligation"]["ligation_9nt"].values()}, **{k: 0 for k in dict_barcodes["ligation"]["ligation_10nt"].values()}}
 

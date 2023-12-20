@@ -80,7 +80,7 @@ rule demultiplex_fastq_split:
         "logs/step2_demultiplexing_reads/demultiplex_fastq_split_{experiment_name}_{scatteritem}.log",
     threads: 1
     resources:
-        mem_mb=1024 * 8,
+        mem_mb=1024 * 5,
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -113,7 +113,7 @@ rule gather_demultiplexed_sequencing:
         whitelist_rt="{experiment_name}/demux_reads/{experiment_name}_whitelist_rt.txt",
     threads: 1
     resources:
-        mem_mb=1024 * 4,
+        mem_mb=1024 * 10,
     params:
         path_demux_scatter=lambda w: "{experiment_name}/demux_reads_scatter/".format(
             experiment_name=w.experiment_name
@@ -147,7 +147,7 @@ rule gather_demultiplexed_samples:
         R2="{experiment_name}/demux_reads/{sample_name}_R2.fastq.gz",
     threads: 1
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 10,
     message:
         "Combining the sample-specific fastq.fz files ({wildcards.experiment_name})."
     shell:

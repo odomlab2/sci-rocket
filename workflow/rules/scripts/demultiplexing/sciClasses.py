@@ -447,7 +447,7 @@ class sciRecord:
     # Define hidden methods. ---------------------------------------------------
 
     @staticmethod
-    @functools.cache()
+    @functools.lru_cache(maxsize=None)
     def __find_closest_match(sequence: str, comparison: frozendict):
         """
         Find the closest match between a sequence and a dictionary of sequences.
