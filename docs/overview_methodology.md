@@ -101,13 +101,13 @@ This will download (or symlink) the [MGP](http://www.sanger.ac.uk/science/data/m
 The major output files are the following:
 
 1. **Sequence and sample-specific fastq file(s)**:
-   - `{sequencing_name}/demux_reads/{sample_name}_R1.fastq.gz`
-   - `{sequencing_name}/demux_reads/{sample_name}_R2.fastq.gz`
-   - `{sequencing_name}/demux_reads/{sequencing_name}_R1_discarded.fastq.gz`
-   - `{sequencing_name}/demux_reads/{sequencing_name}_R2_discarded.fastq.gz`
-   - `{sequencing_name}/demux_reads/log_{sequencing_name}_discarded_reads.tsv.gz`
+   - `{experiment_name}/demux_reads/{sample_name}_R1.fastq.gz`
+   - `{experiment_name}/demux_reads/{sample_name}_R2.fastq.gz`
+   - `{experiment_name}/demux_reads/{sample_name}_R1_discarded.fastq.gz`
+   - `{experiment_name}/demux_reads/{sample_name}_R2_discarded.fastq.gz`
+   - `{experiment_name}/demux_reads/log_{sample_name}_discarded_reads.tsv.gz`
 2. **Alignment files**:
-   - `{sequencing_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam/bai`
-   - `{sequencing_name}/alignment/{sample_name}_{species}_Solo.out/`
+   - `{experiment_name}/alignment/{sample_name}_{species}_Aligned.sortedByCoord.out.bam/bai`
+   - `{experiment_name}/alignment/{sample_name}_{species}_Solo.out/`
 3. **Demultiplexing/alignment overview**:
-   - `{sequencing_name}/sci-dash/`
+   - `{experiment_name}/sci-dash/`
