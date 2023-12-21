@@ -7,7 +7,7 @@
     <title>sci-dash</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <!-- CSS files -->
-    <link rel="stylesheet" href="./css/tabler.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
   </head>
 
   <body>
@@ -36,7 +36,7 @@
               <div class="col">
                 <!-- Page pre-title -->
                 <div class="page-pretitle">Overview</div>
-                <h2 class="page-title">Dashboard - <span id="sequencing_run">N/A</span></h2>
+                <h2 class="page-title">Dashboard - <span id="experiment_name">N/A</span></h2>
               </div>
             </div>
           </div>
@@ -106,7 +106,7 @@
                       <div class="subheader">No. of corrections (R1): <span style="color: #d63939" id="n_total_corrections">N/A</span></div>
                       <div class="ms-auto lh-1"></div>
                     </div>
-                    <div id="chart-n_corrections" class="chart-sm" style="height: 100px"></div>
+                    <div style="height: 100px"><canvas id='chart-rescues'> </canvas></div>
                     <!--Start - Sample counter-->
                     <div class="d-flex align-items-center">
                       <div class="subheader">Total demultiplexed samples</div>
@@ -180,7 +180,7 @@
                       Succesfull read-pairs per sample <br />
                       <sub>p5+p7+ligation+RT</sub>
                     </div>
-                    <div id="chart-n_pairs_sample" class="chart-sm" style="min-height: 325px"></div>
+                    <div class="chart-sm" style="min-height: 325px"><canvas id='chart-n_pairs_sample'> </canvas></div>
                   </div>
                 </div>
               </div>
@@ -190,10 +190,7 @@
                   <div class="card-header">
                     <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
                       <li class="nav-item">
-                        <a href="#tabs-starsolo" class="nav-link active" data-bs-toggle="tab">Alignment (Cells)</a>
-                      </li>
-                      <li class="nav-item">
-                        <a href="#tabs-alignment" class="nav-link" data-bs-toggle="tab">Alignment (Reads)</a>
+                        <a href="#tabs-starsolo" class="nav-link active" data-bs-toggle="tab">Alignment (STARSolo)</a>
                       </li>
                       <li class="nav-item">
                         <a href="#tabs-pcr" class="nav-link" data-bs-toggle="tab">Counts - PCR Indexes</a>
@@ -206,6 +203,9 @@
                       </li>
                       <li class="nav-item">
                         <a href="#tabs-uncorrectables" class="nav-link" data-bs-toggle="tab">Uncorrectable barcodes</a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="#tabs-data" class="nav-link" data-bs-toggle="tab">Sci-dash data (JSON)</a>
                       </li>
                     </ul>
                   </div>
@@ -235,7 +235,7 @@
                             <div class="card">
                               <div class="card-body">
                                 <div id="table-default" class="table-responsive">
-                                  <table class="table" id="sample-alignment-table">
+                                  <table class="table card-table table-vcenter text-nowrap datatable" id="sample-alignment-table">
                                   </table>
                                 </div>
                               </div>
@@ -243,7 +243,7 @@
                           </div>
                         </div>
                       </div>
-                      <!--End Tab: Cells-->
+                      <!--End Tab: Alignment-->
                       <!--Tab: PCR Indexes-->
                       <div class="tab-pane show" id="tabs-pcr">
                         <h4>Counts - PCR Indexes</h4>
@@ -254,7 +254,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Counts - p5 index</div>
-                                  <div id="chart-well-p5" class="chart-lg"></div>
+                                  <div class="chart-lg"><canvas id="chart-well-p5"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -264,7 +264,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Counts - p7 index</div>
-                                  <div id="chart-well-p7" class="chart-lg"></div>
+                                  <div class="chart-lg"><canvas id="chart-well-p7"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -277,7 +277,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Ligation</div>
-                                  <div id="chart-ligation" class="chart-lg"></div>
+                                  <div class="chart-lg"><canvas id="chart-ligation"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -296,7 +296,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Counts - RT (Plate 1)</div>
-                                  <div id="chart-rt_plate_01" class="chart-lg"></div>
+                                  <div class="chart-lg" id="rt_plate_01"><canvas id="chart-rt_plate_01"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -306,7 +306,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Counts - RT (Plate 2)</div>
-                                  <div id="chart-rt_plate_02" class="chart-lg"></div>
+                                  <div class="chart-lg" id="rt_plate_02"><canvas id="chart-rt_plate_02"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -319,7 +319,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Counts - RT (Plate 3)</div>
-                                  <div id="chart-rt_plate_03" class="chart-lg"></div>
+                                  <div class="chart-lg" id="rt_plate_03"><canvas id="chart-rt_plate_03"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -329,7 +329,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Counts - RT (Plate 4)</div>
-                                  <div id="chart-rt_plate_04" class="chart-lg"></div>
+                                  <div class="chart-lg" id="rt_plate_04"><canvas id="chart-rt_plate_04"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -338,7 +338,7 @@
                         </div>
                       </div>
                       <!--End - Tab: RT plate usage-->
-                      <!--Tab: Alignment-->
+                      <!--Tab: Hashing-->
                       <div class="tab-pane" id="tabs-hashing">
                         <div class="container">
                           <div class="row">
@@ -353,7 +353,8 @@
                           </div>
                         </div>
                       </div>
-                      <!--End Tab: Cells-->
+                      <!--End Tab: Hashing-->
+                      <!--Tab: Uncorrectable barcodes-->
                       <div class="tab-pane" id="tabs-uncorrectables">
                         <h4>Uncorrectable barcodes</h4>
                         <div class="container">
@@ -363,7 +364,7 @@
                               <div class="card">
                                 <div class="card-body">
                                   <div class="subheader">Sankey: Combinations of uncorrectable barcodes</div>
-                                  <div id="chart-sankey_barcodes" class="chart-lg"></div>
+                                  <div id="chart-sankey" class="chart-lg"></div>
                                 </div>
                               </div>
                             </div>
@@ -380,7 +381,7 @@
                                     Uncorrectables: p5 index <br />
                                     <sub>(Top 15)</sub>
                                   </div>
-                                  <div id="chart-top_uncorrectables_p5" class="chart-lg" style="min-height: 400px"></div>
+                                  <div class="chart-lg" style="min-height: 400px"><canvas id="chart-top_uncorrectables_p5"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -393,7 +394,7 @@
                                     Uncorrectables: p7 index <br />
                                     <sub>(Top 15)</sub>
                                   </div>
-                                  <div id="chart-top_uncorrectables_p7" class="chart-lg" style="min-height: 400px"></div>
+                                  <div class="chart-lg" style="min-height: 400px"><canvas id="chart-top_uncorrectables_p7"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -406,7 +407,7 @@
                                     Uncorrectables: Ligation <br />
                                     <sub>(Top 15)</sub>
                                   </div>
-                                  <div id="chart-top_uncorrectables_ligation" class="chart-lg" style="min-height: 400px"></div>
+                                  <div class="chart-lg" style="min-height: 400px"><canvas id="chart-top_uncorrectables_lig"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -419,7 +420,7 @@
                                     Uncorrectables: RT <br />
                                     <sub>(Top 15)</sub>
                                   </div>
-                                  <div id="chart-top_uncorrectables_rt" class="chart-lg" style="min-height: 400px"></div>
+                                  <div class="chart-lg" style="min-height: 400px"><canvas id="chart-top_uncorrectables_rt"></canvas></div>
                                 </div>
                               </div>
                             </div>
@@ -429,6 +430,20 @@
                         </div>
                       </div>
                       <!--End - Tab: Uncorrectable barcodes-->
+                      <!--Tab: Data-->
+                      <div class="tab-pane" id="tabs-data">
+                        <div class="container">
+                          <div class="row">
+                            <div class="card">
+                              <div class="card-body">
+                                <pre id="json-data"></pre> 
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!--End Tab: Alignment-->
                     </div>
                   </div>
                 </div>
@@ -438,16 +453,23 @@
         </div>
       </div>
     </div>
-    <!-- Tabler Core -->
-    <script src="./js/tabler.min.js"></script>
-    <script src="./js/list.js"></script>
-    <!-- Libs JS -->
-    <script src="./js/index.js"></script>
-    <script src="./js/xy.js"></script>
-    <script src="./js/Animated.js"></script>
-    <script src="./js/flow.js"></script>
-    <script src="./js/percent.js"></script>
-    <script src="./js/exporting.js"></script>
+    
+    <!--Import tabler from CDN-->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+
+    <!-- Import tablesorter from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.min.js"></script>
+    
+    <!-- Import chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1"></script>
+
+    <!-- Import anychart from CDN -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/flow.js"></script>
+
 
     <!--Import charts and data.-->
     <script src="./js/qc_data.js"></script>

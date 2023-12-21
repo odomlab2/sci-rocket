@@ -4,8 +4,7 @@
 # Table of contents:
 # 1. Required parameters
 # 2. Custom tool settings (optional)
-# 3. Hashing parameters (optional)
-# 4. Haplotyping parameters (optional)
+# 3. Haplotyping parameters (optional)
 #################################################################
 
 ###################################
@@ -50,25 +49,11 @@ settings:
   # Custom settings for STAR genome preparation.
   star_index: "--sjdbOverhang 83"
   # Custom settings for STARSolo alignment.
-  star: "--soloFeatures GeneFull --soloCellReadStats Standard --soloMultiMappers EM --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outSAMunmapped Within --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM"
+  star: "--soloFeatures GeneFull_Ex50pAS --soloCellReadStats Standard --soloMultiMappers EM --outSAMmultNmax 1 --outSAMstrandField intronMotif --outFilterScoreMinOverLread 0.33 --outFilterMatchNminOverLread 0.33 --outSAMunmapped Within --outSAMattributes NH HI AS nM NM MD jM jI MC ch XS CR UR GX GN sM"
 
 
 ###################################
-# ---- 3. Hashing parameters -----#
-# * If no hashing is needed, remove this section or leave it empty as-is. *
-
-# Sequencing/experiment runs on which additional hashing barcodes have been added can be specified here.
-# The identifier should be matching with the 'sequencing_name' column in the sample sheet.
-# The hashing sheet should contain the following columns:
-# - hash_name: Name of the hashing experiment.
-# - barcode: Sequence of the hashing barcode (searched for in R2).
-
-hashing:
-  sample1: "examples/example_hashing.tsv"
-
-
-###################################
-# -- 4. Haplotyping parameters ---#
+# -- 3. Haplotyping parameters ---#
 # * Haplotyping currently only works for mouse samples. * 
 
 # Path to a pre-downloaded chr-prefixed MGP (SNPs and InDels) file.

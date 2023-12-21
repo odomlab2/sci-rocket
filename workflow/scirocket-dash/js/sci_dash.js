@@ -4,146 +4,191 @@
 // Helper functions
 //--------------------------------------------
 
-function add_label(root, xAxis, yAxis, x_text, y_text) {
-  // Add labels to the axes
-  yAxis.children.unshift(
-    am5.Label.new(root, {
-      text: y_text,
-      fontSize: 10,
-      textAlign: "center",
-      y: am5.p50,
-      rotation: -90,
-      fontWeight: "bold",
-    })
-  );
+// Helper function to create an element with class and innerHTML
+const createElement = (type, className, innerHTML) => {
+  const element = document.createElement(type);
+  element.className = className;
+  if (innerHTML) element.innerHTML = innerHTML;
+  return element;
+  };
 
-  xAxis.children.push(
-    am5.Label.new(root, {
-      text: x_text,
-      fontSize: 10,
-      textAlign: "center",
-      x: am5.p50,
-      fontWeight: "bold",
-    })
-  );
+
+// Function to generate a matrix chart using heatmap.js
+function generateMatrixChart(data_chart, ctx, rgb_x, rgb_y, rgb_z) {
+
+    // Convert the data to a format that heatmap.js can read.
+    var data_index = [];
+
+    // Determine max frequency of data_chart
+    var max_frequency = 0;
+    for (var i = 0; i < data_chart.length; i++) {
+      if (data_chart[i].frequency > max_frequency) {
+        max_frequency = data_chart[i].frequency;
+      }
+    }
+
+    for (var i = 0; i < data_chart.length; i++) {
+      data_index.push({
+        x: data_chart[i].col,
+        y: data_chart[i].row,
+        v: data_chart[i].frequency,
+        v_perc: data_chart[i].frequency / max_frequency
+      });
+    }
+
+    new Chart(ctx, {
+      type: 'matrix',
+      data: {
+        datasets: [{
+          data: data_index,
+          // Color alpha based on frequency compared to max frequency
+          backgroundColor(context) {
+            var v_perc = context.dataset.data[context.dataIndex].v_perc;
+            return 'rgba(' + rgb_x + ', ' + rgb_y + ', ' + rgb_z + ', ' + v_perc + ')';
+          },
+          borderColor() {
+            return 'rgb(0, 0, 0)';
+          },
+          // Round the corners of the squares
+          borderRadius: 2,
+          borderWidth: .5,
+          width(context) {
+            const a = context.chart.chartArea;
+            if (!a) {
+              return 0;
+            }
+            return (a.right - a.left) / 12 - 2;
+          },
+          height(context) {
+            const a = context.chart.chartArea;
+            if (!a) {
+              return 0;
+            }
+            return (a.bottom - a.top) / 8 - 2;
+          }
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: false,
+          tooltip: {
+            callbacks: {
+              title() {
+                return '';
+              },
+              label(context) {
+                const v = context.dataset.data[context.dataIndex];
+                return [Intl.NumberFormat("en-US").format(v.v) + ' (' + v.y + v.x + ')'];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'category',
+            labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+            offset: true,
+            ticks: {
+              display: true
+            },
+            grid: {
+              display: false
+            },
+          },
+          y: {
+            type: 'category',
+            labels: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+            offset: true,
+            reverse: false,
+            ticks: {
+              display: true
+            },
+            grid: {
+              display: false
+            },
+          }
+        }
+      }
+    }
+    );
 }
 
 //--------------------------------------------
 // Insert data from qc_data.js
 //--------------------------------------------
 
-sample_names = Object.keys(data.samples_qc);
-
-function roundToOne(num) {
-  return +(Math.round(num + "e+1") + "e-1");
-}
+const sample_names = Object.keys(data.sample_succes);
+const roundToOne = num => +(Math.round(num + "e+1") + "e-1");
 
 // Count the total number of estimated cells over samples.
-var total_estimated_cells = 0;
-for (var i = 0; i < sample_names.length; i++) {
-  total_estimated_cells += data.samples_qc[sample_names[i]].solo_estimated_cells;
+let total_estimated_cells = 0;
+for (let i = 0; i < sample_names.length; i++) {
+  total_estimated_cells += data.sample_succes[sample_names[i]].estimated_cells;
 }
 
-
 // Update numbers
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("version").innerHTML = data.version;
-  document.getElementById("sequencing_run").innerHTML = data.sequencing_name;
+  document.getElementById("experiment_name").innerHTML = data.experiment_name;
   document.getElementById("n_totalsamples").innerHTML = Intl.NumberFormat("en-US").format(sample_names.length);
   document.getElementById("n_total_pairs").innerHTML = Intl.NumberFormat("en-US").format(data.n_pairs);
-  document.getElementById("n_total_pairs_success_perc").innerHTML = roundToOne((data.n_pairs_success / data.n_pairs) * 100) + "%";
-  document.getElementById("n_total_pairs_failure_perc").innerHTML = roundToOne((data.n_pairs_failure / data.n_pairs) * 100) + "%";
-  document.getElementById("n_total_corrections").innerHTML = Intl.NumberFormat("en-US").format(data.n_corrected_p5 + data.n_corrected_p7 + data.n_corrected_ligation + data.n_corrected_rt);
+  document.getElementById("n_total_pairs_success_perc").innerHTML = `${roundToOne((data.n_pairs_success / data.n_pairs) * 100)}%`;
+  document.getElementById("n_total_pairs_failure_perc").innerHTML = `${roundToOne((data.n_pairs_failure / data.n_pairs) * 100)}%`;
+  document.getElementById("n_total_corrections").innerHTML = Intl.NumberFormat("en-US").format(data.n_corrected_p5 + data.n_corrected_p7 + data.n_corrected_ligation + data.n_corrected_rt + data.n_corrected_hashing);
   document.getElementById("n_total_cells").innerHTML = Intl.NumberFormat("en-US").format(total_estimated_cells);
 
   // Set the n_total_pairs_success_perc_bar width
-  document.getElementById("n_total_pairs_success_perc_bar").style.width = (data.n_pairs_success / data.n_pairs) * 100 + "%";
+  document.getElementById("n_total_pairs_success_perc_bar").style.width = `${(data.n_pairs_success / data.n_pairs) * 100}%`;
 });
 
 //--------------------------------------------
-// Chart - No. of correctable barcodes.
+// Chart - Rescues overview (pie-chart)
 //--------------------------------------------
 
-data_correctable_barcodes = [
-  {
-    barcode: "p5",
-    frequency: data.n_corrected_p5,
-  },
-  {
-    barcode: "p7",
-    frequency: data.n_corrected_p7,
-  },
-  {
-    barcode: "ligation",
-    frequency: data.n_corrected_ligation,
-  },
-  {
-    barcode: "rt",
-    frequency: data.n_corrected_rt,
-  },
-];
+// Generate the data for the doughnut chart.
+const data_correctable_barcodes = {
+  labels: ["p5", "p7", "ligation", "RT", "hashing"],
+  datasets: [
+    {
+      data: [data.n_corrected_p5, data.n_corrected_p7, data.n_corrected_ligation, data.n_corrected_rt, data.n_corrected_hashing],
+      backgroundColor: ["#d63939", "#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd"],
+    },
+  ],
+};
 
+// Remove data which is 0
+for (let i = 0; i < data_correctable_barcodes.datasets[0].data.length; i++) {
+  if (data_correctable_barcodes.datasets[0].data[i] === 0) {
+    data_correctable_barcodes.datasets[0].data.splice(i, 1);
+    data_correctable_barcodes.labels.splice(i, 1);
+    data_correctable_barcodes.datasets[0].backgroundColor.splice(i, 1);
+  }
+}
+
+// Generate the doughnut chart.
 document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-n_corrections").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-n_corrections");
-    root._logo.dispose();
-
-    var chart = root.container.children.push(
-      am5percent.PieChart.new(root, {
-        layout: root.verticalLayout,
-      })
-    );
-
-    // Add and configure Series.
-    var series = chart.series.push(
-      am5percent.PieSeries.new(root, {
-        alignLabels: true,
-        calculateAggregates: false,
-        valueField: "frequency",
-        categoryField: "barcode",
-      })
-    );
-
-    // Set stroke of the slices.
-    series.slices.template.setAll({
-      strokeWidth: 2,
-      stroke: am5.color(0xffffff),
-      strokeOpacity: 1,
-      cornerRadius: 2.5,
-    });
-
-    // Set data.
-    series.data.setAll(data_correctable_barcodes);
-
-    // Change size of labels.
-    series.labels.template.setAll({
-      fontSize: 10,
-      text: "{barcode}:\n{frequency}",
-    });
-
-    // Set up adapters for variable slice radius
-    series.slices.template.adapters.add("radius", function (radius, target) {
-      var dataItem = target.dataItem;
-      var high = series.getPrivate("valueHigh");
-
-      if (dataItem) {
-        var value = target.dataItem.get("valueWorking", 0);
-        return (radius * value) / high;
-      }
-      return radius;
-    });
-
-    // Add export menu.
-    var exporting = am5plugins_exporting.Exporting.new(root, {
-      menu: am5plugins_exporting.ExportingMenu.new(root, {}),
-      dataSource: data_correctable_barcodes,
-    });
-
-    // Animation.
-    series.appear(1000);
-    chart.appear(1000, 100);
+  document.getElementById("chart-rescues").innerHTML = '';
+  var ctx = document.getElementById("chart-rescues").getContext("2d");
+  var chart = new Chart(ctx, {
+    type: "doughnut",
+    data: data_correctable_barcodes,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "right",
+          labels: {
+            boxWidth: 15,
+            font: {
+              size: 10,
+            },
+          },
+        },
+      },
+    },
   });
 });
 
@@ -155,7 +200,7 @@ var sample_n_pairs_success = [];
 for (var i = 0; i < sample_names.length; i++) {
   sample_n_pairs_success.push({
     sample_name: sample_names[i],
-    frequency: data.samples_qc[sample_names[i]].n_pairs_success,
+    frequency: data.sample_succes[sample_names[i]].n_pairs_success,
   });
 }
 
@@ -164,301 +209,133 @@ sample_n_pairs_success.sort(function (a, b) {
   return b.frequency - a.frequency;
 });
 
+
 document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("chart-n_pairs_sample").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-n_pairs_sample");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
+  var ctx = document.getElementById("chart-n_pairs_sample").getContext("2d");
 
-    // Add XY chart.
-    var chart = root.container.children.push(
-      am5xy.XYChart.new(root, {
-        panX: true,
-        panY: true,
-        wheelX: "panX",
-        wheelY: "zoomX",
-        pinchZoomX: true,
-      })
-    );
-
-    // Add cursor.
-    var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
-    cursor.lineY.set("visible", false);
-
-    // Create axes.
-    var xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 30 });
-    xRenderer.labels.template.setAll({
-      rotation: -45,
-      fontSize: 8,
-      centerY: am5.p50,
-      centerX: am5.p100,
-      paddingRight: 15,
-    });
-
-    var xAxis = chart.xAxes.push(
-      am5xy.CategoryAxis.new(root, {
-        maxDeviation: 0.3,
-        categoryField: "sample_name",
-        renderer: xRenderer,
-        tooltip: am5.Tooltip.new(root, {}),
-      })
-    );
-
-    var yAxis = chart.yAxes.push(
-      am5xy.ValueAxis.new(root, {
-        maxDeviation: 0.3,
-        renderer: am5xy.AxisRendererY.new(root, {
-          strokeOpacity: 0.1,
-        }),
-      })
-    );
-
-    // Create series.
-    var series = chart.series.push(
-      am5xy.ColumnSeries.new(root, {
-        name: "Series 1",
-        xAxis: xAxis,
-        yAxis: yAxis,
-        valueYField: "frequency",
-        sequencedInterpolation: true,
-        categoryXField: "sample_name",
-        tooltip: am5.Tooltip.new(root, {
-          labelText: "{valueY}",
-        }),
-      })
-    );
-
-    // Colors.
-    series.columns.template.setAll({ cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0.5, stroke: "black", strokeWidth: 0.8 });
-    series.columns.template.adapters.add("fill", function (fill, target) {
-      return chart.get("colors").getIndex(series.columns.indexOf(target));
-    });
-
-    // Set data.
-    xAxis.data.setAll(sample_n_pairs_success);
-    series.data.setAll(sample_n_pairs_success);
-
-    // Add labels.
-    add_label(root, xAxis, yAxis, "Sample name", "Frequency");
-
-    // Add export menu.
-    var exporting = am5plugins_exporting.Exporting.new(root, {
-      menu: am5plugins_exporting.ExportingMenu.new(root, {}),
-      dataSource: sample_n_pairs_success,
-    });
-
-    // Animation.
-    series.appear(1000);
-    chart.appear(1000, 100);
-  });
+  chart_n_pair = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sample_n_pairs_success.map(function (d) {
+        return d.sample_name;
+      }),
+      datasets: [
+        {
+          label: "No. of succesfull pairs",
+          data: sample_n_pairs_success.map(function (d) {
+            return d.frequency;
+          }),
+          backgroundColor: "#1f77b4",
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.9)',
+            'rgba(255, 159, 64, 0.9)',
+            'rgba(255, 205, 86, 0.9)',
+            'rgba(75, 192, 192, 0.9)',
+            'rgba(54, 162, 235, 0.9)',
+            'rgba(153, 102, 255, 0.9)',
+            'rgba(201, 203, 207, 0.9)'
+          ],
+          borderColor: [
+            'rgba(0, 0, 0)',
+          ],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            maxRotation: 90,
+            minRotation: 90,
+          }
+        },
+      }
+    },
+  }); 
 });
 
 //--------------------------------------------
-// Table - STARSolo summary.
+// Heatmaps - Index counts
 //--------------------------------------------
 
-// For each sample, generate a row in the table.
-// The row will contain the following information:
-// 1. Sample name
-// 2. Total input reads
-// 3. Total unique reads mapped to GeneFull
-// 4. Estimated number of cells
-// 5. Mean reads per cell
-// 6. Total unique reads mapped to GeneFull for all cells.
-// 7. Mean UMI per cell
-// 8. Mean gene per cell
-// 9. Sequencing saturation
-function generate_starsolo_table(data) {
-  document.getElementById("sample-starsolo-table").innerHTML = '<table class="table" id="sample-starsolo-table"> <thead> <tr> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreads">Total Reads</button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenes">Uniquely mapped<br><small>(genes)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalcellsfiltered">Cells<br><small>(filtered)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanreadscell">Mean reads<br><small>(per cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-totalreadsuniquegenescells">Uniquely mapped<br><small>(genes + cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meanumicell">Mean UMI<br><small>(per cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-meangenescell">Mean genes<br><small>(per cell)</small></button> </th> <th style="text-align:center"> <button class="table-sort" data-sort="sort-sequencingsaturation">Sequencing<br>saturation</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
-  
-  var table = document.getElementById("sample-starsolo-table");
-  for (var sample in data) {
-    var row = table.insertRow(-1);
-    row.insertCell(0).innerHTML = sample;
-    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
-    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_uniq_gene_reads);
-    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_estimated_cells);
-    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_mean_reads_per_cell);
-    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_uniq_gene_reads_in_cells);
-    row.insertCell(6).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_mean_umi_per_cell);
-    row.insertCell(7).innerHTML = Intl.NumberFormat("en-US").format(data[sample].solo_mean_gene_per_cell);
-
-    // Add a progress bar for the solo_sequencing_saturation
-    var cell = row.insertCell(8);
-    var progress = document.createElement("div");
-    progress.className = "row align-items-center";
-    var col1 = document.createElement("div");
-    col1.className = "col-12 col-lg-auto";
-    col1.innerHTML = Math.round(data[sample].solo_sequencing_saturation * 100) + "%";
-    var col2 = document.createElement("div");
-    col2.className = "col";
-    var progress_bar = document.createElement("div");
-    progress_bar.className = "progress";
-    progress_bar.style = "width: 3rem";
-    var progress_bar_inner = document.createElement("div");
-    progress_bar_inner.className = "progress-bar";
-    progress_bar_inner.style = "width: " + data[sample].solo_sequencing_saturation * 100 + "%";
-    progress_bar_inner.setAttribute("role", "progressbar");
-    progress_bar_inner.setAttribute("aria-valuenow", data[sample].solo_sequencing_saturation);
-    progress_bar_inner.setAttribute("aria-valuemin", "0");
-    progress_bar_inner.setAttribute("aria-valuemax", "100");
-    var span = document.createElement("span");
-    span.className = "visually-hidden";
-    span.innerHTML = data[sample].solo_sequencing_saturation + "%";
-    progress_bar_inner.appendChild(span);
-    progress_bar.appendChild(progress_bar_inner);
-    col2.appendChild(progress_bar);
-    progress.appendChild(col1);
-    progress.appendChild(col2);
-    cell.appendChild(progress);
-
-    // Set the sorting classes of td elements
-    row.cells[0].className = "sort-sample";
-    row.cells[1].className = "sort-totalreads";
-    row.cells[2].className = "sort-totalreadsuniquegenes";
-    row.cells[3].className = "sort-totalcellsfiltered";
-    row.cells[4].className = "sort-meanreadscell";
-    row.cells[5].className = "sort-totalreadsuniquegenescells";
-    row.cells[6].className = "sort-meanumicell";
-    row.cells[7].className = "sort-meangenescell";
-    row.cells[8].className = "sort-sequencingsaturation";
-
-  }
-}
+// Well - p5
 document.addEventListener("DOMContentLoaded", function () {
-
-  generate_starsolo_table(data.samples_qc);
-
-  const list = new List("sample-starsolo-table", {
-    sortClass: "table-sort",
-    listClass: "table-tbody",
-    valueNames: ["sort-sample", "sort-totalreads", "sort-totalreadsuniquegenes", "sort-totalcellsfiltered", "sort-meanreadscell", "sort-totalreadsuniquegenescells", "sort-meanumicell", "sort-meangenescell", "sort-sequencingsaturation"],
-  });
-
+  document.getElementById("chart-well-p5").innerHTML = ''
+  var ctx = document.getElementById("chart-well-p5").getContext("2d");
+  generateMatrixChart(data.p5_index_counts, ctx, 31, 119, 180);
 });
 
-
-
-//--------------------------------------------
-// Table - STAR summary.
-//--------------------------------------------
-
-// For each sample, generate a row in the table.
-// The row will contain the following information:
-// 1. Sample name
-// 2. Total input reads
-// 3. Total unique reads
-// 4. Total multimapping reads
-// 5. Total reads filtered out.
-// 6. Total chimeric reads
-function generate_star_table(data) {
-  document.getElementById("sample-alignment-table").innerHTML = '<table class="table" id="sample-alignment-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-sample">Sample</button> </th> <th> <button class="table-sort" data-sort="sort-totalreads">Total reads</button> </th> <th> <button class="table-sort" data-sort="sort-uniquereads">Uniquely mapped</button> </th> <th> <button class="table-sort" data-sort="sort-readmulti">Multimapping</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readfilter">Filtered</button> </th> <th style="color: #d63939"> <button class="table-sort" data-sort="sort-readchimeric">Chimeric reads</button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
-  
-  var table = document.getElementById("sample-alignment-table");
-  for (var sample in data) {
-    var row = table.insertRow(-1);
-    row.insertCell(0).innerHTML = sample;
-    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
-
-    // Add a progress bar for the uniq_reads
-    var cell = row.insertCell(2);
-    var progress = document.createElement("div");
-    progress.className = "row align-items-center";
-    var col1 = document.createElement("div");
-    col1.className = "col-12 col-lg-auto";
-    col1.innerHTML = Math.round((data[sample].uniq_reads / data[sample].total_reads) * 100) + "%";
-    var col2 = document.createElement("div");
-    col2.className = "col";
-    var progress_bar = document.createElement("div");
-    progress_bar.className = "progress";
-    progress_bar.style = "width: 3rem";
-    var progress_bar_inner = document.createElement("div");
-    progress_bar_inner.className = "progress-bar";
-    progress_bar_inner.style = "width: " + (data[sample].uniq_reads / data[sample].total_reads) * 100 + "%";
-    progress_bar_inner.setAttribute("role", "progressbar");
-    progress_bar_inner.setAttribute("aria-valuenow", data[sample].uniq_reads / data[sample].total_reads);
-    progress_bar_inner.setAttribute("aria-valuemin", "0");
-    progress_bar_inner.setAttribute("aria-valuemax", "100");
-    
-    var span = document.createElement("span");
-    span.className = "visually-hidden";
-    span.innerHTML = (data[sample].uniq_reads / data[sample].total_reads) * 100 + "%";
-    progress_bar_inner.appendChild(span);
-    progress_bar.appendChild(progress_bar_inner);
-    col2.appendChild(progress_bar);
-    progress.appendChild(col1);
-    progress.appendChild(col2);
-    cell.appendChild(progress);
-
-    // Add the other cells.
-    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].multimapped_reads);
-    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].filtered_reads);
-    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].chimeric_reads);
-
-    // Set the sorting classes of td elements
-    row.cells[0].className = "sort-sample";
-    row.cells[1].className = "sort-totalreads";
-    row.cells[2].className = "sort-uniquereads";
-    row.cells[3].className = "sort-readmulti";
-    row.cells[4].className = "sort-readfilter";
-    row.cells[5].className = "sort-readchimeric";
-  }
-}
+// Well - p7
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-well-p7").innerHTML = ''
+  var ctx = document.getElementById("chart-well-p7").getContext("2d");
+  generateMatrixChart(data.p7_index_counts, ctx, 255, 105, 180);
+});
+  
+// Well - RT plate 1
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_01").innerHTML = ''
+  var ctx = document.getElementById("chart-rt_plate_01").getContext("2d");
 
-  generate_star_table(data.samples_qc);
-
-  const list = new List("sample-alignment-table", {
-    sortClass: "table-sort",
-    listClass: "table-tbody",
-    valueNames: ["sort-sample", "sort-totalreads", "sort-uniquereads", "sort-readmulti", "sort-readfilter", "sort-readchimeric"],
-  });
-
+  // Display "No data" if there if undefined.
+  if (data.rt_barcode_counts.P01 == undefined) {
+    document.getElementById("rt_plate_01").innerHTML = "<div style='text-align:center'><b>Plate not used</b></div>";
+  }else{
+    generateMatrixChart(data.rt_barcode_counts.P01, ctx, 255, 140, 0);
+  }
 });
 
-//--------------------------------------------
-// Table - Hashing summary.
-//--------------------------------------------
-
-// For each hashing barcode, generate a row in the table.
-// The row will contain the following information:
-// 1. Hashing barcode (name)
-// 2. Total counts
-// 3. Total count (correct)
-// 4. Total count (corrected)
-// 5. Total count (correct - upstream)
-function generate_hashing_table(data) {
-  document.getElementById("sample-hashing-table").innerHTML = '<table class="table" id="sample-hashing-table"> <thead> <tr> <th> <button class="table-sort" data-sort="sort-hashbarcode">Hash barcode</button> </th> <th> <button class="table-sort" data-sort="sort-totalcounts">Total counts</button> </th> <th> <button class="table-sort" data-sort="sort-totalcountscorrect">No. correct<br><small>(11nt prior to poly-A)</small></button> </th> <th> <button style="color: #d63939" class="table-sort" data-sort="sort-totalcountscorrected">No. rescued<br><small>(11nt prior to poly-A)</small></button> </th> <th> <button style="color: #d63939" class="table-sort" data-sort="sort-totalcountscorrectupstream">No. correct<br><small>(>11nt prior to poly-A)</small></button> </th> </tr> </thead> <tbody class="table-tbody"> <tr></tr> </tbody> </table>'
-  
-  var table = document.getElementById("sample-hashing-table");
-  for (var sample in data) {
-    var row = table.insertRow(-1);
-    row.insertCell(0).innerHTML = sample;
-    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct + data[sample].n_corrected + data[sample].n_correct_upstream);
-    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct);
-    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_corrected);
-    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct_upstream);
-
-    // Set the sorting classes of td elements
-    row.cells[0].className = "sort-hashbarcode";
-    row.cells[1].className = "sort-totalcounts";
-    row.cells[2].className = "sort-totalcountscorrect";
-    row.cells[3].className = "sort-totalcountscorrected";
-    row.cells[4].className = "sort-totalcountscorrectupstream";
-  }
-}
+// Well - RT plate 2
 document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_02").innerHTML = ''
+  var ctx = document.getElementById("chart-rt_plate_02").getContext("2d");
 
-  generate_hashing_table(data.hashing);
+  // Display "No data" if there if undefined.
+  if (data.rt_barcode_counts.P02 == undefined) {
+    document.getElementById("rt_plate_02").innerHTML = "<div style='text-align:center'><b>Plate not used</b></div>";
 
-  const list = new List("sample-hashing-table", {
-    sortClass: "table-sort",
-    listClass: "table-tbody",
-    valueNames: ["sort-hashbarcode", "sort-totalcounts", "sort-totalcountscorrect", "sort-totalcountscorrected", "sort-totalcountscorrectupstream"],
-  });
+  }else{
+    generateMatrixChart(data.rt_barcode_counts.P02, ctx, 255, 140, 0);
+  }
+});
 
+// Well - RT plate 3
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_03").innerHTML = ''
+  var ctx = document.getElementById("chart-rt_plate_03").getContext("2d");
+    // Display "No data" if there if undefined.
+  if (data.rt_barcode_counts.P03 == undefined) {
+    document.getElementById("rt_plate_03").innerHTML = "<div style='text-align:center'><b>Plate not used</b></div>";
+
+  }else{
+    generateMatrixChart(data.rt_barcode_counts.P03, ctx, 255, 140, 0);
+  }
+});
+
+// Well - RT plate 4
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("chart-rt_plate_04").innerHTML = ''
+  var ctx = document.getElementById("chart-rt_plate_04").getContext("2d");
+
+  if (data.rt_barcode_counts.P04 == undefined) {
+    document.getElementById("rt_plate_04").innerHTML = "<div style='text-align:center'><b>Plate not used</b></div>";
+  }else{
+    generateMatrixChart(data.rt_barcode_counts.P04, ctx, 255, 140, 0);
+  }
+  
 });
 
 //--------------------------------------------
@@ -467,118 +344,341 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("chart-ligation").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-ligation");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
+  var ctx = document.getElementById("chart-ligation").getContext("2d");
 
-    // Add XY chart.
-    var chart = root.container.children.push(
-      am5xy.XYChart.new(root, {
-        panX: true,
-        panY: false,
-        wheelX: "panX",
-        wheelY: "zoomX",
-        pinchZoomX: true,
-      })
-    );
-
-    // Add cursor.
-    var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
-    cursor.lineY.set("visible", false);
-
-    // Create axes.
-    var xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 5 });
-    xRenderer.labels.template.setAll({
-      rotation: -90,
-      centerY: am5.p50,
-      centerX: am5.p100,
-      paddingRight: 1,
-      fontSize: 4,
+  // Order on name LIG01, LIG02, LIG03, LIG04, LIG05, LIG06, LIG07, LIG08, LIG09, LIG10, LIG11, LIG12, etc.
+  var ligation_barcode_counts = [];
+  for (var i = 0; i < data.ligation_barcode_counts.length; i++) {
+    ligation_barcode_counts.push({
+      barcode: data.ligation_barcode_counts[i].barcode,
+      frequency: data.ligation_barcode_counts[i].frequency,
+      // Remove 0 from the index if it is present.
+      index: data.ligation_barcode_counts[i].barcode.replace("LIG", "").replace("LIG0", ""),
     });
+  }
 
-    // Remove grid.
-    xRenderer.grid.template.setAll({ strokeOpacity: 0 });
-    
-    var xAxis = chart.xAxes.push(
-      am5xy.CategoryAxis.new(root, {
-        maxDeviation: 0.2,
-        categoryField: "barcode",
-        renderer: xRenderer,
-        tooltip: am5.Tooltip.new(root, {}),
-      })
-    );
+  // Sort the array by index
+  ligation_barcode_counts.sort(function (a, b) {
+    return a.index - b.index;
+  });
 
-    var yRenderer = am5xy.AxisRendererY.new(root, { minGridDistance: 30 });
-    yRenderer.labels.template.setAll({
-      fontSize: 6,
-      textAlign: "center",
-      fontWeight: "bold",
-      stroke: "white",
-      strokeWidth: 0.5,
-    });
 
-    var yAxis = chart.yAxes.push(
-      am5xy.ValueAxis.new(root, {
-        maxDeviation: 0.3,
-        renderer: yRenderer,
-      })
-    );
-
-    // Create series.
-    var series = chart.series.push(
-      am5xy.ColumnSeries.new(root, {
-        name: "Series 1",
-        xAxis: xAxis,
-        yAxis: yAxis,
-        valueYField: "frequency",
-        sequencedInterpolation: true,
-        categoryXField: "barcode",
-        sort: false,
-        tooltip: am5.Tooltip.new(root, {
-          labelText: "{valueY}",
-        }),
-      })
-    );
-
-    // Colors.
-    series.columns.template.setAll({ cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0.1, stroke: "black", strokeWidth: 0.1 });
-
-    // Set data.
-    xAxis.data.setAll(data.ligation_barcode_counts);
-    series.data.setAll(data.ligation_barcode_counts);
-
-    // Add labels.
-    add_label(root, xAxis, yAxis, "Ligation barcode", "Frequency");
-
-    // Color the first 96 bars in red
-    series.columns.template.adapters.add("fill", function (fill, target) {
-      if (series.columns.indexOf(target) <= 96) {
-        return am5.color("#d63939");
-      } 
-      if (series.columns.indexOf(target) > 96 & series.columns.indexOf(target) <= 192) {
-        return am5.color("#1f77b4");
+  chart_ligation = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: ligation_barcode_counts.map(function (d) {
+        return d.barcode;
+      }),
+      datasets: [
+        {
+          label: "Frequency",
+          data: ligation_barcode_counts.map(function (d) {
+            return d.frequency;
+          }),
+          // Color the first 96 barcodes in red, the next 96 in blue, the next 96 in green and the last 96 in yellowu sing context.
+          backgroundColor(context) {
+            if (context.dataIndex < 96) {
+              return 'rgba(255, 99, 132, 0.9)';
+            } else if (context.dataIndex < 192) {
+              return 'rgba(54, 162, 235, 0.9)';
+            } else if (context.dataIndex < 288) {
+              return 'rgba(255, 205, 86, 0.9)';
+            } else {
+              return 'rgba(75, 192, 192, 0.9)';
+            }
+          },
+          borderColor: [
+            'rgba(0, 0, 0)',
+          ],
+          borderWidth: .1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            maxRotation: 90,
+            minRotation: 90,
+          }
+        },
       }
-      if (series.columns.indexOf(target) > 192 & series.columns.indexOf(target) <= 288) {
-        return am5.color("#ff7f0e");
-      }
-      if (series.columns.indexOf(target) > 288 & series.columns.indexOf(target) <= 384) {
-        return am5.color("#2ca02c");
-      }
-    });
-
-    // Add export menu.
-    var exporting = am5plugins_exporting.Exporting.new(root, {
-      menu: am5plugins_exporting.ExportingMenu.new(root, {}),
-      dataSource: data.ligation_barcode_counts,
-    });
-
-    // Animation.
-    series.appear(1000);
-    chart.appear(1000, 100);
+    },
   });
 });
+
+//--------------------------------------------
+// Chart - Top 15 uncorrectable barcodes.
+//--------------------------------------------
+
+
+function generateChart_uncorrectables(id, data, color) {
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById(id).innerHTML = '';
+    var ctx = document.getElementById(id).getContext("2d");
+
+    // Order on frequency
+    var chartData = [];
+    for (var i = 0; i < data.length; i++) {
+      chartData.push({
+        barcode: data[i].barcode,
+        frequency: data[i].frequency,
+      });
+    }
+
+    // Sort the array by frequency
+    chartData.sort(function (a, b) {
+      return b.frequency - a.frequency;
+    });
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: chartData.map(function (d) {
+          return d.barcode;
+        }),
+        datasets: [
+          {
+            label: "Frequency",
+            data: chartData.map(function (d) {
+              return d.frequency;
+            }),
+            backgroundColor: color,
+            borderColor: [
+              'rgba(0, 0, 0)',
+            ],
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 90,
+              minRotation: 90,
+            }
+          },
+          y: {
+            ticks: {
+              font: {
+                family: "Courier New",
+                size: 15,
+              },
+            },
+          }
+        }
+      },
+    });
+  });
+}
+
+// Usage example:
+generateChart_uncorrectables("chart-top_uncorrectables_p5", data.top_uncorrectables.p5, color = "#d63939");
+generateChart_uncorrectables("chart-top_uncorrectables_p7", data.top_uncorrectables.p7, color = "#1f77b4");
+generateChart_uncorrectables("chart-top_uncorrectables_lig", data.top_uncorrectables.ligation, color = "#ff7f0e");
+generateChart_uncorrectables("chart-top_uncorrectables_rt", data.top_uncorrectables.rt, color = "#2ca02c");
+
+//--------------------------------------------
+// Export data to JSON table.
+//--------------------------------------------
+
+// Print data to json-table (div)
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("json-data").innerHTML = JSON.stringify(data, undefined, 2);
+});
+
+//--------------------------------------------
+// Table - STARSolo summary.
+//--------------------------------------------
+
+function generate_starsolo_table(data) {
+  const table = document.getElementById("sample-starsolo-table");
+  table.innerHTML = `
+    <table class="tablesorter" id="sample-starsolo-table">
+      <thead>
+        <tr>
+          <th style="text-align:center">
+            Sample
+          </th>
+          <th style="text-align:center">
+            Total input reads
+          </th>
+          <th style="text-align:center">
+            Total mapped reads
+          </th>
+          <th style="text-align:center">
+            Total multimapped reads
+          </th>
+          <th style="text-align:center">
+            Total correct reads<br>(CB, UMI, gene)
+          </th>
+          <th style="text-align:center">
+            Total exonic reads
+          </th>
+          <th style="text-align:center">
+            Total intronic reads
+          </th>
+          <th style="text-align:center">
+            Total intergenic reads
+          </th>
+          <th style="text-align:center">
+            Total mitochondrial reads
+          </th>
+          <th style="text-align:center">
+          Total exonic antisense reads
+          </th>
+          <th style="text-align:center">
+            Total intronic antisense reads
+          </th>
+          <th style="text-align:center">
+          Mean reads per cell
+          </th>
+          <th style="text-align:center">
+          Mean genes per cell
+          </th>
+          <th style="text-align:center">
+          Mean UMIs per cell
+          </th>
+          <th style="text-align:center">
+          Estimated cells
+          </th>
+          <th style="text-align:center">
+          Sequencing saturation
+          </th>
+        </tr>
+      </thead>
+      <tbody class="table-tbody">
+        <tr></tr>
+      </tbody>
+    </table>`;
+
+  for (const sample in data) {
+    const row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = sample;
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_pairs_success);
+    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_mapped_reads);
+    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_multimapped_reads);
+    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_correct_reads_genes);
+    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_exonic_reads);
+    row.insertCell(6).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_intronic_reads);
+    row.insertCell(7).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_intergenic_reads);
+    row.insertCell(8).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_mitochondrial_reads);
+    row.insertCell(9).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_exonicAS_reads);
+    row.insertCell(10).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_intronicAS_reads);
+    row.insertCell(11).innerHTML = Intl.NumberFormat("en-US").format(data[sample].mean_reads_per_cell);
+    row.insertCell(12).innerHTML = Intl.NumberFormat("en-US").format(data[sample].mean_genes_per_cell);
+    row.insertCell(13).innerHTML = Intl.NumberFormat("en-US").format(data[sample].mean_umis_per_cell);
+    row.insertCell(14).innerHTML = Intl.NumberFormat("en-US").format(data[sample].estimated_cells);
+
+    // Add a progress bar for the sequencing_saturation
+    const cell = row.insertCell(15);
+    const progress = createElement("div", "row align-items-center");
+    const col1 = createElement("div", "col-12 col-lg-auto", `${Math.round(data[sample].sequencing_saturation * 100)}%`);
+    const col2 = createElement("div", "col");
+    const progress_bar = createElement("div", "progress");
+    progress_bar.style.width = "3rem";
+    const progress_bar_inner = createElement("div", "progress-bar");
+    progress_bar_inner.style.width = `${data[sample].sequencing_saturation * 100}%`;
+    progress_bar_inner.setAttribute("role", "progressbar");
+    progress_bar_inner.setAttribute("aria-valuenow", data[sample].sequencing_saturation);
+    progress_bar_inner.setAttribute("aria-valuemin", "0");
+    progress_bar_inner.setAttribute("aria-valuemax", "100");
+    const span = createElement("span", "visually-hidden", `${data[sample].sequencing_saturation}%`);
+    progress_bar_inner.appendChild(span);
+    progress_bar.appendChild(progress_bar_inner);
+    col2.appendChild(progress_bar);
+    progress.appendChild(col1);
+    progress.appendChild(col2);
+    cell.appendChild(progress);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  generate_starsolo_table(data.sample_succes);
+
+  // Sort using tablesorter
+  $("#sample-starsolo-table").tablesorter({
+    sortList: [[0, 0]],
+  });
+  
+});
+
+//--------------------------------------------
+// Table - Hashing summary.
+//--------------------------------------------
+
+// For each hashing barcode, generate a row in the table.
+// The row will contain the following information:
+// 1. Experiment name
+// 2. Hashing Sample
+// 3. Total count (correct)
+// 4. Total count (corrected)
+// 5. Total count (correct - upstream)
+function generate_hashing_table(data) {
+  const table = document.getElementById("sample-hashing-table");
+  table.innerHTML = `
+    <table class="tablesorter" id="sample-hashing-table">
+      <thead>
+        <tr>
+          <th style="text-align:center">
+            Hashing barcode
+          </th>
+          <th style="text-align:center">
+            Total count (correct)
+          </th>
+          <th style="text-align:center">
+            Total count (corrected)
+          </th>
+          <th style="text-align:center">
+            Total count (correct - upstream)
+          </th>
+        </tr>
+      </thead>
+      <tbody class="table-tbody">
+        <tr></tr>
+      </tbody>
+    </table>`;
+      
+  for (var sample in data) {
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = sample;
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct + data[sample].n_corrected + data[sample].n_correct_upstream);
+    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct);
+    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_corrected);
+    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct_upstream);
+  }
+}
+document.addEventListener("DOMContentLoaded", function () {
+  generate_hashing_table(data.hashing);
+
+  $("#sample-hashing-table").tablesorter({
+    sortList: [[0, 0]],
+  });
+
+});
+
 
 //--------------------------------------------
 // Chart - Sankey diagram of barcodes.
@@ -748,11 +848,10 @@ var data_sankey_barcodes = [
 ];
 
 document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-sankey_barcodes").innerHTML = ''
+  document.getElementById("chart-sankey").innerHTML = ''
   am5.ready(function () {
     // Initialize root element.
-    var root = am5.Root.new("chart-sankey_barcodes");
-    root._logo.dispose();
+    var root = am5.Root.new("chart-sankey");
     root.setThemes([am5themes_Animated.new(root)]);
 
     // Create series.
@@ -810,396 +909,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Set data.
     series.data.setAll(data_sankey_barcodes);
 
-    // Add export menu.
-    var exporting = am5plugins_exporting.Exporting.new(root, {
-      menu: am5plugins_exporting.ExportingMenu.new(root, {}),
-      dataSource: data_sankey_barcodes,
-    });
-
     // Animation.
     series.appear(1000, 100);
   });
 });
-
-//--------------------------------------------
-// Chart - Heatmap of 96-well plate.
-//--------------------------------------------
-
-// p5 plate
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-well-p5").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-well-p5");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Heatmap(root, data.p5_index_counts, am5.color(0xe486a0));
-  });
-});
-
-// p7 plate
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-well-p7").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-well-p7");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Heatmap(root, data.p7_index_counts, am5.color(0x9ecfdc));
-  });
-});
-
-// RT plate 01
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-rt_plate_01").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-rt_plate_01");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-    // Check if data is available.
-    createChart_Heatmap(root, data.rt_barcode_counts["P01"], am5.color(0xfa1e44));
-  });
-});
-
-// RT plate 02
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-rt_plate_02").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-rt_plate_02");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Heatmap(root, data.rt_barcode_counts["P02"], am5.color(0xffc825));
-  });
-});
-
-// RT plate 03
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-rt_plate_03").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-rt_plate_03");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Heatmap(root, data.rt_barcode_counts["P03"], am5.color(0x5bb08f));
-  });
-});
-
-// RT plate 04
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-rt_plate_04").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-rt_plate_04");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Heatmap(root, data.rt_barcode_counts["P04"], am5.color(0x01b4ee));
-  });
-});
-
-//--------------------------------------------
-// Chart - Top 10 uncorrectable barcodes (p5).
-//--------------------------------------------
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-top_uncorrectables_p5").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-top_uncorrectables_p5");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Uncorrectable(root, data.top_uncorrectables["p5"], am5.color(0xe95d5d));
-  });
-});
-
-//--------------------------------------------
-// Chart - Top 10 uncorrectable barcodes (p7).
-//--------------------------------------------
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-top_uncorrectables_p7").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-top_uncorrectables_p7");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Uncorrectable(root, data.top_uncorrectables["p7"], am5.color(0x426da8));
-  });
-});
-
-//--------------------------------------------
-// Chart - Top 10 uncorrectable barcodes (ligation).
-//--------------------------------------------
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-top_uncorrectables_ligation").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-top_uncorrectables_ligation");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Uncorrectable(root, data.top_uncorrectables["ligation"], am5.color(0x297a18));
-  });
-});
-
-//--------------------------------------------
-// Chart - Top 10 uncorrectable barcodes (RT).
-//--------------------------------------------
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("chart-top_uncorrectables_rt").innerHTML = ''
-  am5.ready(function () {
-    // Initialize root element.
-    var root = am5.Root.new("chart-top_uncorrectables_rt");
-    root._logo.dispose();
-    root.setThemes([am5themes_Animated.new(root)]);
-
-    createChart_Uncorrectable(root, data.top_uncorrectables["rt"], am5.color(0xf27c6e));
-  });
-});
-
-//--------------------------------------------
-// Function - Create Uncorrectable barcode chart.
-//--------------------------------------------
-function createChart_Uncorrectable(root, data, color) {
-  // Add XY chart.
-  var chart = root.container.children.push(
-    am5xy.XYChart.new(root, {
-      panX: false,
-      panY: false,
-      wheelX: "none",
-      wheelY: "none",
-    })
-  );
-
-  // Add cursor.
-  var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
-  cursor.lineX.set("visible", false);
-
-  var yRenderer = am5xy.AxisRendererY.new(root, {
-    minGridDistance: 1,
-  });
-
-  // Change font of labels.
-  yRenderer.labels.template.setAll({
-    fontSize: 12,
-    fontFamily: "Courier New",
-    fill: am5.color(0x000000),
-  });
-
-  yRenderer.grid.template.set("barcode", 1);
-
-  var yAxis = chart.yAxes.push(
-    am5xy.CategoryAxis.new(root, {
-      categoryField: "barcode",
-      renderer: yRenderer,
-      tooltip: am5.Tooltip.new(root, { themeTags: ["axis"] }),
-    })
-  );
-
-  var xRenderer = am5xy.AxisRendererX.new(root, {
-    minGridDistance: 10,
-  });
-  xRenderer.labels.template.setAll({
-    fontSize: 8,
-    rotation: -90,
-    centerY: am5.p50,
-    centerX: am5.p100,
-    paddingRight: 15,
-  });
-
-  var xAxis = chart.xAxes.push(
-    am5xy.ValueAxis.new(root, {
-      renderer: xRenderer,
-    })
-  );
-
-  // Create series.
-  var series = chart.series.push(
-    am5xy.ColumnSeries.new(root, {
-      sequencedInterpolation: true,
-      xAxis: xAxis,
-      yAxis: yAxis,
-      valueXField: "frequency",
-      categoryYField: "barcode",
-      tooltip: am5.Tooltip.new(root, {
-        pointerOrientation: "left",
-        labelText: "{valueX}",
-      }),
-    })
-  );
-
-  series.columns.template.setAll({
-    cornerRadiusTR: 5,
-    cornerRadiusBR: 5,
-    strokeOpacity: 0,
-    stroke: "black",
-    fill: color,
-  });
-
-  // Set data.
-  yAxis.data.setAll(data.reverse());
-  series.data.setAll(data);
-
-  // Add labels
-  add_label(root, xAxis, yAxis, "Frequency", "Barcode");
-
-  // Add export menu.
-  var exporting = am5plugins_exporting.Exporting.new(root, {
-    menu: am5plugins_exporting.ExportingMenu.new(root, {}),
-    dataSource: data,
-  });
-
-  // Animation.
-  series.appear(1000);
-  chart.appear(1000, 100);
-}
-
-//--------------------------------------------
-// Function - Create heatmap of 96-well plate.
-//--------------------------------------------
-function createChart_Heatmap(root, data, max_color) {
-  // check if there's data
-  if (data == undefined || data.length == 0) {
-    var modal = am5.Modal.new(root, {
-      content: "Plate not used.",
-    });
-    modal.open();
-    return;
-  }
-
-  // Create XY chart
-  var chart = root.container.children.push(
-    am5xy.XYChart.new(root, {
-      panX: false,
-      panY: false,
-      wheelX: "none",
-      wheelY: "none",
-      layout: root.verticalLayout,
-    })
-  );
-
-  // Create axes and their renderers.
-  var yRenderer = am5xy.AxisRendererY.new(root, {
-    visible: true,
-    minGridDistance: 5,
-    inversed: true,
-  });
-
-  yRenderer.grid.template.set("visible", false);
-
-  var yAxis = chart.yAxes.push(
-    am5xy.CategoryAxis.new(root, {
-      maxDeviation: 0,
-      renderer: yRenderer,
-      categoryField: "row",
-    })
-  );
-
-  var xRenderer = am5xy.AxisRendererX.new(root, {
-    visible: false,
-    minGridDistance: 5,
-    opposite: true,
-  });
-
-  xRenderer.grid.template.set("visible", false);
-
-  var xAxis = chart.xAxes.push(
-    am5xy.CategoryAxis.new(root, {
-      renderer: xRenderer,
-      categoryField: "col",
-    })
-  );
-
-  // Create series with zero being the base value.
-  var series = chart.series.push(
-    am5xy.ColumnSeries.new(root, {
-      calculateAggregates: true,
-      stroke: am5.color(0xffffff),
-      clustered: false,
-      xAxis: xAxis,
-      yAxis: yAxis,
-      categoryXField: "col",
-      categoryYField: "row",
-      valueField: "frequency",
-    })
-  );
-
-  series.columns.template.setAll({
-    tooltipText: "{frequency}",
-    strokeOpacity: 1,
-    strokeWidth: 1,
-    stroke: am5.color(0xffffff),
-    width: am5.percent(100),
-    height: am5.percent(100),
-    cornerRadiusTL: 5,
-    cornerRadiusTR: 5,
-    cornerRadiusBL: 5,
-    cornerRadiusBR: 5,
-  });
-
-  // Show value on hover.
-  series.columns.template.events.on("pointerover", function (event) {
-    var di = event.target.dataItem;
-    if (di) {
-      heatLegend.showValue(di.get("value", 0));
-    }
-  });
-
-  // Add color legend.
-  series.events.on("datavalidated", function () {
-    heatLegend.set("startValue", 0);
-    heatLegend.set("endValue", series.getPrivate("valueHigh"));
-  });
-
-  // Set colors.
-  min_color = am5.color(0xffffff);
-  max_color = max_color;
-
-  series.set("heatRules", [
-    {
-      target: series.columns.template,
-      min: min_color,
-      max: max_color,
-      dataField: "value",
-      key: "fill",
-    },
-  ]);
-
-  // Add heat legend.
-  var heatLegend = chart.bottomAxesContainer.children.push(
-    am5.HeatLegend.new(root, {
-      orientation: "horizontal",
-      startColor: min_color,
-      endColor: max_color,
-      startText: "No successful reads",
-      endText: "Max. no. of successful reads",
-      valueAxis: series.yAxis,
-    })
-  );
-
-  // Set data
-  series.data.setAll(data);
-
-  // Add extra hidden zero to the end of the data.
-  series.data.push({ row: "I", col: "12", frequency: 0 });
-
-  // Specify rows and columns.
-  yAxis.data.setAll([{ row: "A" }, { row: "B" }, { row: "C" }, { row: "D" }, { row: "E" }, { row: "F" }, { row: "G" }, { row: "H" }]);
-  xAxis.data.setAll([{ col: "1" }, { col: "2" }, { col: "3" }, { col: "4" }, { col: "5" }, { col: "6" }, { col: "7" }, { col: "8" }, { col: "9" }, { col: "10" }, { col: "11" }, { col: "12" }]); 
-
-  // Add export menu
-  var exporting = am5plugins_exporting.Exporting.new(root, {
-    menu: am5plugins_exporting.ExportingMenu.new(root, {}),
-    dataSource: data,
-  });
-
-  // Animation.
-  chart.appear(1000, 100);
-  series.appear(1000, 100);
-}
