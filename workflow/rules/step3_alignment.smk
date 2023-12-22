@@ -109,7 +109,8 @@ rule starSolo_align:
         """
         STAR {params.extra} --genomeDir {input.index} --runThreadN {threads} \
         --readFilesIn {input.R2} {input.R1} --readFilesCommand zcat \
-        --soloType CB_UMI_Complex --soloCBmatchWLtype Exact \
+        --soloFeatures GeneFull_Ex50pAS --soloType CB_UMI_Complex --soloCBmatchWLtype Exact \
+        --soloCellReadStats Standard \
         --soloCBposition 0_0_0_9 0_10_0_19 0_20_0_29 0_30_0_39 --soloUMIposition 0_40_0_47 \
         --soloCBwhitelist {input.whitelist_p7} {input.whitelist_p5} {input.whitelist_ligation} {input.whitelist_rt} \
         --soloCellFilter CellRanger2.2 {params.n_expected_cells} 0.99 10 \
