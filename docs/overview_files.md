@@ -2,12 +2,15 @@
 
 See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/workflow/examples/example_samplesheet.tsv).
 
-**sci-rocket** requires a sample sheet (.tsv) with at least the following required columns:
+**sci-rocket** requires a sample sheet (.tsv) with at least the following required columns.
 
-* Either one or both of the following columns:
+**Either one or both of the following columns:**
 
-  * **path_bcl**: Path to folder containing the BCL files.
-  * **path_bcl_fastq**: Path to folder containing the `Undetermined_S0_R1_001.fastq.gz` and `Undetermined_S0_R2_001.fastq.gz` files (if `bcl2fastq` has already been run).
+* **path_bcl**: Path to folder containing the BCL files.
+* **path_bcl_fastq**: Path to folder containing the `Undetermined_S0_R1_001.fastq.gz` and `Undetermined_S0_R2_001.fastq.gz` files (if `bcl2fastq` has already been run).
+
+**Additional required columns:**
+
 * **experiment_name**: Experiment name (e.g., experimentXYZ), used to associate all downstream files and underlying samples.
 * **p5**: PCR (p5) index(es) (e.g. A01:H01, or **column(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
 * **p7**: PCR (p7) index(es) (e.g. G01:G12, or **rows(s)** of a 96-well index plate) used to identify the sample during demultiplexing.
