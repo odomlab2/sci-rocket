@@ -41,11 +41,6 @@ class sciRecord:
         # Validate the sequences.
         self.__validate_R1()
 
-    def __validate_R1(self):
-        if len(self.read1.sequence) != 34:
-            print("R1 sequence is not 34 nucleotides (%s)!" % self.read1.name)
-            sys.exit(1)
-
     def __repr__(self):
         return "@{}:{}+{}\np7:\t{}:{} ({})\np5:\t{}:{} ({})\nlig:\t{}:{} ({})\nrt:\t{}:{} ({})\numi:\t{}\nhash:\t{}:{}({})\nfrom:\t{}".format(
             self.read1.name,
