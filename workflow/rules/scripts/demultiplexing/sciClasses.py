@@ -38,9 +38,6 @@ class sciRecord:
         self.cellular_sequence = None
         self.cellular_barcode = None
 
-        # Validate the sequences.
-        self.__validate_R1()
-
     def __repr__(self):
         return "@{}:{}+{}\np7:\t{}:{} ({})\np5:\t{}:{} ({})\nlig:\t{}:{} ({})\nrt:\t{}:{} ({})\numi:\t{}\nhash:\t{}:{}({})\nfrom:\t{}".format(
             self.read1.name,
