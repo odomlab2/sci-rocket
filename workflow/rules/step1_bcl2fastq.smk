@@ -13,16 +13,16 @@ def get_bcl2fastq_input(sequencing_name, experiment_name):
 
 def get_folder_undetermined(sequencing_name, experiment_name):
     """
-    Return the path to the folder containing the Undetermined fastq files (R1 and R2) for a given sequencing run from the samplesheet (path_bcl_fastq)
+    Return the path to the folder containing the Undetermined fastq files (R1 and R2) for a given sequencing run from the samplesheet (path_fastq)
     """
-    if "path_bcl_fastq" not in samples_unique.columns:
+    if "path_fastq" not in samples_unique.columns:
         return ""
     else:
-        if samples_unique.query("sequencing_name == @sequencing_name & experiment_name == @experiment_name").path_bcl_fastq.values[0] == "None":
+        if samples_unique.query("sequencing_name == @sequencing_name & experiment_name == @experiment_name").path_fastq.values[0] == "None":
             return ""
         else:
             # If yes, then use the path from the samplesheet.
-            return samples_unique.query("sequencing_name == @sequencing_name & experiment_name == @experiment_name").path_bcl_fastq.values[0]
+            return samples_unique.query("sequencing_name == @sequencing_name & experiment_name == @experiment_name").path_fastq.values[0]
 
 
 rule make_fake_samplesheet:

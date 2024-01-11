@@ -7,7 +7,7 @@ See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/work
 **Either one or both of the following columns:**
 
 * **path_bcl**: Path to folder containing the BCL files.
-* **path_bcl_fastq**: Path to folder containing the `Undetermined_S0_R1_001.fastq.gz` and `Undetermined_S0_R2_001.fastq.gz` files (if `bcl2fastq` has already been run).
+* **path_fastq**: Path to folder containing the `Undetermined_S0_R1_001.fastq.gz` and `Undetermined_S0_R2_001.fastq.gz` files (if `bcl2fastq` has already been run).
 
 **Additional required columns:**
 

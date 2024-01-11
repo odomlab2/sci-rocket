@@ -132,9 +132,9 @@ def sanity_samples(log, samples, barcodes, config):
         log.error("Sanity check (Sample sheet) - Missing required column(s): {}".format(", ".join(required_columns.difference(samples.columns))))
         return False
     
-    # Check if path_bcl or path_bcl_fastq exist in the sample sheet.
-    if "path_bcl" not in samples.columns and "path_bcl_fastq" not in samples.columns:
-        log.error("Sanity check (Sample sheet) - Missing either path_bcl or path_bcl_fastq column.")
+    # Check if path_bcl or path_fastq exist in the sample sheet.
+    if "path_bcl" not in samples.columns and "path_fastq" not in samples.columns:
+        log.error("Sanity check (Sample sheet) - Missing either path_bcl or path_fastq column.")
         return False
 
     # Check if the sample sheet contains species which are not defined in the config.
