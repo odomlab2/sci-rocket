@@ -3913,5 +3913,208 @@ var data = {
             "mean_umis_per_cell": 5
         }
     },
-    "hashing": {}
+    "hashing": {
+        "zfish_hash": {
+            "20uM_hash_P7_A1": {
+                "n_correct": 1897794,
+                "n_corrected": 90036,
+                "n_correct_upstream": 0
+            },
+            "20uM_hash_P7_B1": {
+                "n_correct": 845792,
+                "n_corrected": 57868,
+                "n_correct_upstream": 0
+            },
+            "20uM_hash_P7_C1": {
+                "n_correct": 871917,
+                "n_corrected": 58266,
+                "n_correct_upstream": 0
+            },
+            "20uM_hash_P7_D1": {
+                "n_correct": 971191,
+                "n_corrected": 185444,
+                "n_correct_upstream": 0
+            },
+            "20uM_hash_P7_E1": {
+                "n_correct": 674724,
+                "n_corrected": 25651,
+                "n_correct_upstream": 0
+            },
+            "20uM_hash_P7_F1": {
+                "n_correct": 730648,
+                "n_corrected": 89963,
+                "n_correct_upstream": 0
+            },
+            "20uM_hash_P7_G1": {
+                "n_correct": 434346,
+                "n_corrected": 44185,
+                "n_correct_upstream": 0
+            },
+            "20uM_hash_P7_H1": {
+                "n_correct": 634291,
+                "n_corrected": 37870,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_A2": {
+                "n_correct": 531451,
+                "n_corrected": 87571,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_B2": {
+                "n_correct": 252068,
+                "n_corrected": 31894,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_C2": {
+                "n_correct": 444419,
+                "n_corrected": 29537,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_D2": {
+                "n_correct": 388174,
+                "n_corrected": 55142,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_E2": {
+                "n_correct": 279853,
+                "n_corrected": 38278,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_F2": {
+                "n_correct": 185854,
+                "n_corrected": 7506,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_G2": {
+                "n_correct": 117206,
+                "n_corrected": 2022,
+                "n_correct_upstream": 0
+            },
+            "10uM_hash_P7_H2": {
+                "n_correct": 401594,
+                "n_corrected": 22572,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_A3": {
+                "n_correct": 77706,
+                "n_corrected": 1626,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_B3": {
+                "n_correct": 86635,
+                "n_corrected": 11047,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_C3": {
+                "n_correct": 61884,
+                "n_corrected": 3737,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_D3": {
+                "n_correct": 119326,
+                "n_corrected": 3358,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_E3": {
+                "n_correct": 58297,
+                "n_corrected": 3753,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_F3": {
+                "n_correct": 116406,
+                "n_corrected": 11533,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_G3": {
+                "n_correct": 73932,
+                "n_corrected": 2500,
+                "n_correct_upstream": 0
+            },
+            "5uM_hash_P7_H3": {
+                "n_correct": 57628,
+                "n_corrected": 1443,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_A4": {
+                "n_correct": 77987,
+                "n_corrected": 5126,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_B4": {
+                "n_correct": 67556,
+                "n_corrected": 4263,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_C4": {
+                "n_correct": 89270,
+                "n_corrected": 6952,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_D4": {
+                "n_correct": 64703,
+                "n_corrected": 4664,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_E4": {
+                "n_correct": 89396,
+                "n_corrected": 3476,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_F4": {
+                "n_correct": 51992,
+                "n_corrected": 1617,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_G4": {
+                "n_correct": 86400,
+                "n_corrected": 8048,
+                "n_correct_upstream": 0
+            },
+            "2.5uM_hash_P7_H4": {
+                "n_correct": 124647,
+                "n_corrected": 3862,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_A5": {
+                "n_correct": 54695,
+                "n_corrected": 1714,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_B5": {
+                "n_correct": 29780,
+                "n_corrected": 6237,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_C5": {
+                "n_correct": 49538,
+                "n_corrected": 1380,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_D5": {
+                "n_correct": 31282,
+                "n_corrected": 1700,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_E5": {
+                "n_correct": 81983,
+                "n_corrected": 8962,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_F5": {
+                "n_correct": 47431,
+                "n_corrected": 10923,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_G5": {
+                "n_correct": 31440,
+                "n_corrected": 2421,
+                "n_correct_upstream": 0
+            },
+            "1.25uM_hash_P7_H5": {
+                "n_correct": 75173,
+                "n_corrected": 5178,
+                "n_correct_upstream": 0
+            }
+        }
+    }
 }

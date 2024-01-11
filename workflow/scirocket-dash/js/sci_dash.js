@@ -485,6 +485,7 @@ function generateChart_uncorrectables(id, data, color) {
               font: {
                 family: "Courier New",
                 size: 15,
+                autoSkip: false,
               },
             },
           }
@@ -631,11 +632,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // For each hashing barcode, generate a row in the table.
 // The row will contain the following information:
-// 1. Experiment name
-// 2. Hashing Sample
-// 3. Total count (correct)
-// 4. Total count (corrected)
-// 5. Total count (correct - upstream)
+// 1. Hashing Sample
+// 2. Hashing barcode
+// 3. Total count (summed)
+// 4. Total count (correct)
+// 5. Total count (corrected)
+// 6. Total count (correct - upstream)
 function generate_hashing_table(data) {
   const table = document.getElementById("sample-hashing-table");
   table.innerHTML = `
@@ -643,7 +645,13 @@ function generate_hashing_table(data) {
       <thead>
         <tr>
           <th style="text-align:center">
+          Sample
+          </th>
+          <th style="text-align:center">
             Hashing barcode
+          </th>
+          <th style="text-align:center">
+            Total count (summarized)
           </th>
           <th style="text-align:center">
             Total count (correct)
@@ -662,14 +670,18 @@ function generate_hashing_table(data) {
     </table>`;
       
   for (var sample in data) {
-    var row = table.insertRow(-1);
-    row.insertCell(0).innerHTML = sample;
-    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct + data[sample].n_corrected + data[sample].n_correct_upstream);
-    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct);
-    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_corrected);
-    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_correct_upstream);
+    for (var hashing_barcode in data[sample]) {
+      const row = table.insertRow(-1);
+      row.insertCell(0).innerHTML = sample;
+      row.insertCell(1).innerHTML = hashing_barcode;
+      row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample][hashing_barcode].n_correct + data[sample][hashing_barcode].n_corrected + data[sample][hashing_barcode].n_correct_upstream);
+      row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample][hashing_barcode].n_correct);
+      row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample][hashing_barcode].n_corrected);
+      row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample][hashing_barcode].n_correct_upstream);
+    }
   }
 }
+
 document.addEventListener("DOMContentLoaded", function () {
   generate_hashing_table(data.hashing);
 
