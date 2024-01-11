@@ -23,26 +23,23 @@ def combine_pickle(pickle_dict, combined_dict):
 
         # Merge the hashing metrics (if applicable)
         if key == "hashing":
-            for hashing_sample in pickle_dict["hashing"]:
-                if hashing_sample not in combined_dict["hashing"]:
-                    combined_dict["hashing"][hashing_sample] = pickle_dict["hashing"][hashing_sample]
+            for sample_name in pickle_dict["hashing"]:
+                if sample_name not in combined_dict["hashing"]:
+                    combined_dict["hashing"][sample_name] = pickle_dict["hashing"][sample_name]
                 else:
-                    # Merge the overall hashing metrics.
-                    combined_dict["hashing"][hashing_sample]["n_correct"] += pickle_dict["hashing"][hashing_sample]["n_correct"]
-                    combined_dict["hashing"][hashing_sample]["n_corrected"] += pickle_dict["hashing"][hashing_sample]["n_corrected"]
-                    combined_dict["hashing"][hashing_sample]["n_correct_upstream"] += pickle_dict["hashing"][hashing_sample]["n_correct_upstream"]
+                    for hashing_name in pickle_dict["hashing"][sample_name]:
+                        # Merge the overall hashing metrics.
+                        combined_dict["hashing"][sample_name][hashing_name]["n_correct"] += pickle_dict["hashing"][sample_name][hashing_name]["n_correct"]
+                        combined_dict["hashing"][sample_name][hashing_name]["n_corrected"] += pickle_dict["hashing"][sample_name][hashing_name]["n_corrected"]
+                        combined_dict["hashing"][sample_name][hashing_name]["n_correct_upstream"] += pickle_dict["hashing"][sample_name][hashing_name]["n_correct_upstream"]
 
-                    # Merge the hashing metrics per hashing_name.
-                    for hashing_name in pickle_dict["hashing"][hashing_sample]["counts"]:
-                        if hashing_name not in combined_dict["hashing"][hashing_sample]["counts"]:
-                            combined_dict["hashing"][hashing_sample]["counts"][hashing_name] = pickle_dict["hashing"][hashing_sample]["counts"][hashing_name]
+                    # Merge the cellular sequences per hashing sample/barcode.
+                    for cellular_sequence in pickle_dict["hashing"][sample_name][hashing_name]["counts"]:
+                        if cellular_sequence not in combined_dict["hashing"][sample_name][hashing_name]["counts"]:
+                            combined_dict["hashing"][sample_name][hashing_name]["counts"][cellular_sequence] = pickle_dict["hashing"][sample_name][hashing_name]["counts"][cellular_sequence]
                         else:
-                            for cellular_barcode in pickle_dict["hashing"][hashing_sample]["counts"][hashing_name]:
-                                if cellular_barcode not in combined_dict["hashing"][hashing_sample]["counts"][hashing_name]:
-                                    combined_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode] = pickle_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]
-                                else:
-                                    combined_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["umi"].update(pickle_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["umi"])
-                                    combined_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["count"] += pickle_dict["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["count"]
+                            combined_dict["hashing"][sample_name][hashing_name]["counts"][cellular_sequence]["umi"].update(pickle_dict["hashing"][sample_name][hashing_name]["counts"][cellular_sequence]["umi"])
+                            combined_dict["hashing"][sample_name][hashing_name]["counts"][cellular_sequence]["count"] += pickle_dict["hashing"][sample_name][hashing_name]["counts"][cellular_sequence]["count"]
                                     
         elif key == "sample_succes":
             for sample in pickle_dict["sample_succes"]:

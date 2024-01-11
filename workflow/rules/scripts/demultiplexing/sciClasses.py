@@ -36,7 +36,7 @@ class sciRecord:
         # Sample this read belong to.
         self.sample_name = None
         self.cellular_sequence = None
-        self.cellular_barcode = None
+
 
     def __repr__(self):
         return "@{}:{}+{}\np7:\t{}:{} ({})\np5:\t{}:{} ({})\nlig:\t{}:{} ({})\nrt:\t{}:{} ({})\numi:\t{}\nhash:\t{}:{}({})\nfrom:\t{}".format(
@@ -135,10 +135,6 @@ class sciRecord:
     def cellular_sequence(self):
         return self.__cellular_sequence
 
-    @property
-    def cellular_barcode(self):
-        return self.__cellular_barcode
-
     @p5_sequence.setter
     def p5_sequence(self, p5_sequence):
         self.__p5_sequence = p5_sequence
@@ -206,10 +202,6 @@ class sciRecord:
     @sample_name.setter
     def sample_name(self, sample_name):
         self.__sample_name = sample_name
-
-    @cellular_barcode.setter
-    def cellular_barcode(self, cellular_barcode):
-        self.__cellular_barcode = cellular_barcode
 
     @cellular_sequence.setter
     def cellular_sequence(self, cellular_sequence):
@@ -315,11 +307,11 @@ class sciRecord:
         # Check length of the ligation barcode to determine the location of the other barcodes.
         if self.ligation_status == None or len(self.ligation_sequence) == 10:
             # Retrieve the RT barcode from R1 (last 10 bp).
-            self.rt_sequence = self.read1.sequence[-10:]
+            self.rt_sequence = self.read1.sequence[24:33]
         else:
             # Retrieve the RT barcode from R1 (last 10 bp, minus one).
-            self.rt_sequence = self.read1.sequence[-11:-1]
-
+            self.rt_sequence = self.read1.sequence[23:32]
+        
         try:
             self.rt_name = rt_barcodes[self.rt_sequence]
             self.rt_status = "Correct"
@@ -356,7 +348,6 @@ class sciRecord:
         Sets:
             sample_name (str): Name of the sample.
             cellular_sequence (str): Sequence of the cellular barcode.
-            cellular_barcode (str): Cellular barcode.
         """
         if self.p5_name != None and self.p7_name != None and self.rt_name != None and self.ligation_name != None:
             try:
@@ -364,7 +355,7 @@ class sciRecord:
             except KeyError:
                 self.sample_name = None
 
-        # Set the cellular barcode (sequence)
+        # Set the cellular sequence (sequence)
         if self.sample_name != None:
             if len(self.ligation_sequence) == 10:
                 self.cellular_sequence = self.p7_sequence + self.p5_sequence + self.ligation_sequence + self.rt_sequence
@@ -418,14 +409,14 @@ class sciRecord:
                     sequence_hash_raw = self.read2.sequence[start_poly - 11 : start_poly - 1]
 
                 try:
-                    name_hash = dict_hashing[self.sample_name]["sheet"][sequence_hash_raw]
+                    self.hashing_name = dict_hashing[self.sample_name]["sheet"][sequence_hash_raw]
                     self.hashing_sequence = sequence_hash_raw
                     self.hashing_status = "Correct"
                 except KeyError:
                     # Rescue the sequence directly prior to polyA.
                     self.hashing_sequence, self.hashing_name = self.__find_closest_match(sequence_hash_raw, dict_hashing[self.sample_name]["sheet"])
 
-                    if name_hash != None:
+                    if self.hashing_name != None:
                         self.hashing_status = "Corrected"
                     else:
                         # Check for the presence of any hash in the entire R2 sequence prior to poly-A.

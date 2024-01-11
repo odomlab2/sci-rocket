@@ -23,23 +23,22 @@ def write_cell_hashing_table(qc, out):
     # Create a list of dictionaries.
     array_hashing = []
     
-    # qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode] = {"umi": set(), "count": 0}
-    for hashing_sample in qc["hashing"]:
-        for hashing_name in qc["hashing"][hashing_sample]["counts"]:
-            for cellular_barcode in qc["hashing"][hashing_sample]["counts"][hashing_name]:
+    for sample_name in qc["hashing"]:
+        for hashing_name in qc["hashing"][sample_name]:
+            for cellular_barcode in qc["hashing"][sample_name][hashing_name]["counts"]:
                 array_hashing.append(
                     {
                         "experiment_name": qc["experiment_name"],
-                        "hashing_sample": hashing_sample,
-                        "hashing_barcode": hashing_name,
+                        "sample_name": sample_name,
+                        "hashing_name": hashing_name,
                         "cell_barcode": cellular_barcode,
-                        "count": qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["count"],
-                        "n_umi": len(qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode]["umi"])
+                        "count": qc["hashing"][sample_name][hashing_name]["counts"][cellular_barcode]["count"],
+                        "n_umi": len(qc["hashing"][sample_name][hashing_name]["counts"][cellular_barcode]["umi"])
                     }
                 )
 
     # Convert to pandas dataframe.
-    df_hashing = pd.DataFrame(columns=["experiment_name", "hashing_sample", "hash_barcode", "cell_barcode", "count", "n_umi"], data=array_hashing)
+    df_hashing = pd.DataFrame(columns=["experiment_name", "sample_name", "hashing_name", "cell_barcode", "count", "n_umi"], data=array_hashing)
 
     # Order on total hash count.
     df_hashing = df_hashing.sort_values(by=["count"], ascending=False)
@@ -51,14 +50,15 @@ def write_cell_hashing_table(qc, out):
     # Write to file.
     df_hashing.to_csv(out, sep="\t", index=False, header=True, encoding="utf-8", mode="w")
 
-    # Transform df_hashing into a dictionary with the hashing_sample column as key.
-    dict_hashing = df_hashing.to_dict(orient="index")
+    # Transform into a dictionary for sci-dashboard.
+    # Initialize the dictionary of sample_name and underlying hashing_name also a dictionary.
+    dict_hashing = {sample_name : {hashing_name : {} for hashing_name in qc["hashing"][sample_name]} for sample_name in qc["hashing"]}
 
-    # Add the hashing_sample metrics
-    for hashing_sample in qc["hashing"]:
-        dict_hashing[hashing_sample]["n_correct"] = qc["hashing"][hashing_sample]["n_correct"]
-        dict_hashing[hashing_sample]["n_corrected"] = qc["hashing"][hashing_sample]["n_corrected"]
-        dict_hashing[hashing_sample]["n_correct_upstream"] = qc["hashing"][hashing_sample]["n_correct_upstream"]
+    for sample_name in qc["hashing"]:
+        for hashing_name in qc["hashing"][sample_name]:
+            dict_hashing[sample_name][hashing_name]["n_correct"] = qc["hashing"][sample_name][hashing_name]["n_correct"]
+            dict_hashing[sample_name][hashing_name]["n_corrected"] = qc["hashing"][sample_name][hashing_name]["n_corrected"]
+            dict_hashing[sample_name][hashing_name]["n_correct_upstream"] = qc["hashing"][sample_name][hashing_name]["n_correct_upstream"]
 
     return dict_hashing
 
@@ -216,7 +216,3 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
-
-# path_pickle='/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/demux_reads/sx42b_qc.pickle'
-# path_hashing='/home/j103t/test/sx42b_hashing.tsv'
-# path_star='/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/alignment/'

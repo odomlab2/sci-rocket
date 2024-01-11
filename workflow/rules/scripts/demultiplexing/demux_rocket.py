@@ -1,4 +1,4 @@
-__version__ = "0.5"
+__version__ = "0.6"
 
 # Import modules.
 import argparse
@@ -167,11 +167,12 @@ def init_qc(experiment_name: str, dict_barcodes: dict, samples: pd.DataFrame, di
     # Hash-specific qc metrics and regex (per sample).
     if dict_hashing:
         qc["hashing"] = {}
+        qc["n_hashing"] = 0  # Total number of read-pairs with hashing barcode.
         for hashing_sample in dict_hashing:
             # Total number of read-pairs with correct(ed) hashing barcode.
             # For all (succesfull) reads, keep track of the number of times each hashing/UMI combination is seen per cellular barcode.
             # The counts contain the number of times a hashing barcode is seen per cell + distinct UMI's per cell.
-            # qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_barcode] = {"umi": set(), "count": 0}
+            # qc["hashing"][hashing_sample]["counts"][hashing_name][cellular_sequence] = {"umi": set(), "count": 0}
             qc["hashing"][hashing_sample] = {k: {"n_correct": 0, "n_corrected": 0, "n_correct_upstream": 0, "counts": {}} for k in dict_hashing[hashing_sample]["sheet"].values()}
 
     # Return the QC dictionary.
@@ -236,16 +237,17 @@ def update_qc(qc:dict, x:sciRecord):
 
         # Update hashing metrics (if applicable and if found).
         if x.hashing_name:
-            if x.cellular_barcode not in qc["hashing"][x.sample_name]["counts"][x.hashing_name]:
-                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode] = {"umi": set([x.umi_sequence]), "count": 1}
+            qc["n_hashing"] += 1
+            if x.cellular_sequence not in qc["hashing"][x.sample_name][x.hashing_name]["counts"]:
+                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_sequence] = {"umi": set([x.umi_sequence]), "count": 1}
             else:
-                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode]["umi"].add(x.umi_sequence)
-                qc["hashing"][x.hashing_sample]["counts"][x.hashing_name][x.cellular_barcode]["count"] += 1
+                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_sequence]["umi"].add(x.umi_sequence)
+                qc["hashing"][x.sample_name][x.hashing_name]["counts"][x.cellular_sequence]["count"] += 1
 
             # Update the number of correct/corrected/upstream hashing barcodes.
-            qc["hashing"][x.hashing_sample][x.hashing_name]["n_correct"] += 1 if x.hashing_status == "Correct" else 0
-            qc["hashing"][x.hashing_sample][x.hashing_name]["n_corrected"] += 1 if x.hashing_status == "Corrected" else 0
-            qc["hashing"][x.hashing_sample][x.hashing_name]["n_correct_upstream"] += 1 if x.hashing_status == "Corrected upstream" else 0
+            qc["hashing"][x.sample_name][x.hashing_name]["n_correct"] += 1 if x.hashing_status == "Correct" else 0
+            qc["hashing"][x.sample_name][x.hashing_name]["n_corrected"] += 1 if x.hashing_status == "Corrected" else 0
+            qc["hashing"][x.sample_name][x.hashing_name]["n_correct_upstream"] += 1 if x.hashing_status == "Corrected upstream" else 0
 
     else:
         # Count as a failed read-pair.
@@ -390,8 +392,6 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
 
     Read-pairs are discarded if:
         - The R1 read is empty.
-        - The R1 read is shorter than 34nt.
-        - The R1 read is longer than 34nt.
         - One of the barcodes (p5, p7, ligation and/or RT) is not found within R1.
 
     When a experiment/sample has a hashing sheet attached, the hashing barcode is retrieved from the R2 sequence and added to the read-name of R2.
@@ -497,7 +497,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
         qc = update_qc(qc, x)
 
         if qc["n_pairs"] % 1000000 == 0:
-            log.info("Processed %d read-pairs (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
+            if dict_hashing:
+                log.info("Done: %d read-pairs processed (%d discarded, %d hashing reads)", qc["n_pairs"], qc["n_pairs_failure"], qc["n_hashing"])
+            else:
+                log.info("Done: %d read-pairs processed (%d discarded,)", qc["n_pairs"], qc["n_pairs_failure"])
 
         # endregion --------------------------------------------------------------------------------------------------------------------------------
 
@@ -528,7 +531,10 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
 
     # endregion --------------------------------------------------------------------------------------------------------------------------------
 
-    log.info("Done: %d read-pairs processed (%d discarded)", qc["n_pairs"], qc["n_pairs_failure"])
+    if dict_hashing:
+        log.info("Done: %d read-pairs processed (%d discarded, %d hashing reads)", qc["n_pairs"], qc["n_pairs_failure"], qc["n_hashing"])
+    else:
+        log.info("Done: %d read-pairs processed (%d discarded,)", qc["n_pairs"], qc["n_pairs_failure"])
 
 
 def init_logger():
@@ -629,13 +635,13 @@ if __name__ == "__main__":
 # args = parser.parse_args(
 #     [
 #         "--r1",
-#         "/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/raw_reads_split/R1_34-of-50.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_hashing/raw_reads_split/R1_6-of-10.fastq.gz",
 #         "--r2",
-#         "/omics/groups/OE0538/internal/projects/liver_fcg/data/sci-rocket/sx42b/raw_reads_split/R2_34-of-50.fastq.gz",
+#         "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_hashing/raw_reads_split/R2_6-of-10.fastq.gz",
 #         "--experiment_name",
-#         "sx42b",
+#         "test_hashing",
 #         "--samples",
-#         "/omics/groups/OE0538/internal/projects/liver_fcg/metadata/sx42b_samplesheet.tsv",
+#         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/testing/testing_samplesheet.tsv",
 #         "--barcodes",
 #         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv",
 #         "--out",
