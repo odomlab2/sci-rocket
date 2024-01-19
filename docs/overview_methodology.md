@@ -111,3 +111,6 @@ The major output files are the following:
    - `{experiment_name}/alignment/{sample_name}_{species}_Solo.out/`
 3. **Demultiplexing/alignment overview**:
    - `{experiment_name}/sci-dash/`
+4. **Logging and benchmarking**:
+   - `{experiment_name}/logs/`
+   - `{experiment_name}/benchmarking/`

@@ -88,6 +88,8 @@ rule generate_hybrid_vcf:
     threads: 2
     resources:
         mem_mb=1024 * 2,
+    benchmark:
+        "benchmarks/generate_hybrid_vcf_{strain1}_{strain2}.txt"
     conda:
         "envs/sci-haplotyping.yaml",
     message:
@@ -130,6 +132,8 @@ rule normalize_hybrid_vcf:
     threads: 1
     params:
         fasta=lambda w: config["species"]["mouse"]["genome"],
+    benchmark:
+        "benchmarks/normalize_hybrid_vcf_{strain1}_{strain2}.txt"
     conda:
         "envs/sci-haplotyping.yaml",
     message:
@@ -161,7 +165,7 @@ rule download_repeatmasker:
         wget -O resources/MGP/rmsk.txt.gz {params.url_repeatmasker}
 
         # Convert to BED format.
-        zgrep -E "\(.\)n" resources/MGP/rmsk.txt.gz | awk '{{print $6"\t"$7"\t"$8"\t"$11"\t"$12"\t"$13}}' > {output.repeatmasker}
+        zgrep -E "\\(.\)n" resources/MGP/rmsk.txt.gz | awk '{{print $6"\t"$7"\t"$8"\t"$11"\t"$12"\t"$13}}' > {output.repeatmasker}
 
         # Remove temporary file.
         rm resources/MGP/rmsk.txt.gz
@@ -198,6 +202,8 @@ rule run_haplotag:
     threads: 10
     resources:
         mem_mb=1024 * 40,
+    benchmark:
+        "benchmarks/run_haplotag_{strain1}_{strain2}.txt"
     params:
         fasta=lambda w: config["species"]["mouse"]["genome"],
     conda:
@@ -224,6 +230,8 @@ rule haplotype_split_h1:
     threads: 10
     resources:
         mem_mb=1024 * 10,
+    benchmark:
+        "benchmarks/haplotype_split_h1_{strain1}_{strain2}_{experiment_name}_{sample_name}.txt"
     conda:
         "envs/sci-haplotyping.yaml",
     shell:
@@ -243,6 +251,8 @@ rule haplotype_split_h2:
     threads: 10
     resources:
         mem_mb=1024 * 10,
+    benchmark:
+        "benchmarks/haplotype_split_h2_{strain1}_{strain2}_{experiment_name}_{sample_name}.txt"
     conda:
         "envs/sci-haplotyping.yaml",
     shell:
@@ -262,6 +272,8 @@ rule haplotype_split_ua:
     threads: 10
     resources:
         mem_mb=1024 * 10,
+    benchmark:
+        "benchmarks/haplotype_split_ua_{strain1}_{strain2}_{experiment_name}_{sample_name}.txt"
     conda:
         "envs/sci-haplotyping.yaml",
     shell:
@@ -282,6 +294,8 @@ rule count_haplotagged_reads:
     threads: 2
     resources:
         mem_mb=1024 * 10,
+    benchmark:
+        "benchmarks/count_haplotagged_reads_{strain1}_{strain2}_{experiment_name}_{sample_name}_{type}.txt"
     conda:
         "envs/sci-haplotyping.yaml",
     message:
@@ -304,6 +318,8 @@ rule join_counts:
     threads: 1
     resources:
         mem_mb=1024 * 20,
+    benchmark:
+        "benchmarks/join_counts_{strain1}_{strain2}_{experiment_name}_{sample_name}.txt"
     params:
         path_barcodes=config["path_barcodes"],
     conda:

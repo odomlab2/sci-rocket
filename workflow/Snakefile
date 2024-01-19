@@ -1,5 +1,5 @@
 # Set min. snakemake version for compatability.
-snakemake.utils.min_version("7.31.0")
+snakemake.utils.min_version("7.32.4")
 
 
 # Skeleton config, parameters will be overwritten by user-defined config file.
@@ -24,9 +24,11 @@ if "path_fastq" in samples.columns and "path_bcl" in samples.columns:
     print("Both BCL and FASTQ paths are specified in the samples file. Will start from FASTQ.")
 
 if "path_fastq" in samples.columns:
+    samples["path_fastq"] = samples["path_fastq"].str.rstrip("/")
     samples["path_bcl"] = samples["path_fastq"]
     samples["sequencing_name"] = samples["path_fastq"].str.split("/").str[-1]
 elif "path_bcl" in samples.columns:
+    samples["path_bcl"] = samples["path_bcl"].str.rstrip("/")
     samples["sequencing_name"] = samples["path_bcl"].str.split("/").str[-1]
 else:
     raise ValueError("Either path_bcl or path_fastq must be specified in the samples file.")

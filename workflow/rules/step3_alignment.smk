@@ -21,6 +21,8 @@ rule trim_fastp:
     threads: 10
     resources:
         mem_mb=1024 * 4,
+    benchmark:
+        "benchmarks/trim_fastp_{experiment_name}_{sample_name}.txt"
     params:
         extra=config["settings"]["fastp"],
     conda:
@@ -45,6 +47,8 @@ rule generate_index_STAR:
     threads: 20
     resources:
         mem_mb=1024 * 50,
+    benchmark:
+        "benchmarks/generate_index_STAR_{species}.txt"
     params:
         fasta=lambda w: config["species"][w.species]["genome"],
         gtf=lambda w: config["species"][w.species]["genome_gtf"],
@@ -96,6 +100,8 @@ rule starSolo_align:
     threads: 30
     resources:
         mem_mb=1024 * 60,
+    benchmark:
+        "benchmarks/starSolo_align_{experiment_name}_{sample_name}_{species}.txt"
     params:
         sampleName="{experiment_name}/alignment/{sample_name}_{species}_",
         extra=config["settings"]["star"],
@@ -132,6 +138,8 @@ rule sambamba_index:
     threads: 8
     resources:
         mem_mb=1024 * 2,
+    benchmark:
+        "benchmarks/sambamba_index_{experiment_name}_{sample_name}_{species}.txt"
     conda:
         "envs/sci-rocket.yaml",
     message:

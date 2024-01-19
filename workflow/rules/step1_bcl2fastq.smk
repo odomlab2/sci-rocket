@@ -51,6 +51,8 @@ rule bcl2fastq:
     threads: 40
     resources:
         mem_mb=1024 * 40,
+    benchmark:
+        "benchmarks/bcl2fastq_{experiment_name}_{sequencing_name}.txt"
     params:
         path_out="{experiment_name}/raw_reads/{sequencing_name}/",
         extra=config["settings"]["bcl2fastq"],

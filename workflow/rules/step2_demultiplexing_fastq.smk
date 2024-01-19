@@ -20,6 +20,8 @@ rule split_R1:
     threads: 5
     resources:
         mem_mb=1024 * 20,
+    benchmark:
+        "benchmarks/split_R1_{experiment_name}.txt"
     params:
         out=lambda w: [
             f"-o {w.experiment_name}/raw_reads_split/R1_{i}-of-"
@@ -49,6 +51,8 @@ rule split_R2:
     threads: 5
     resources:
         mem_mb=1024 * 20,
+    benchmark:
+        "benchmarks/split_R2_{experiment_name}.txt"
     params:
         out=lambda w: [
             f"-o {w.experiment_name}/raw_reads_split/R2_{i}-of-"
@@ -81,6 +85,8 @@ rule demultiplex_fastq_split:
     threads: 1
     resources:
         mem_mb=1024 * 5,
+    benchmark:
+        "benchmarks/demultiplex_fastq_split_{experiment_name}_{scatteritem}.txt"
     params:
         path_samples=config["path_samples"],
         path_barcodes=config["path_barcodes"],
@@ -114,6 +120,8 @@ rule gather_demultiplexed_sequencing:
     threads: 1
     resources:
         mem_mb=1024 * 10,
+    benchmark:
+        "benchmarks/gather_demultiplexed_sequencing_{experiment_name}.txt"
     params:
         path_demux_scatter=lambda w: "{experiment_name}/demux_reads_scatter/".format(
             experiment_name=w.experiment_name
@@ -148,6 +156,8 @@ rule gather_demultiplexed_samples:
     threads: 1
     resources:
         mem_mb=1024 * 10,
+    benchmark:
+        "benchmarks/gather_demultiplexed_samples_{experiment_name}_{sample_name}.txt"
     message:
         "Combining the sample-specific fastq.fz files ({wildcards.experiment_name})."
     shell:

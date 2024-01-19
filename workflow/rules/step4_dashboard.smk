@@ -30,6 +30,8 @@ rule sci_dash:
     threads: 1
     resources:
         mem_mb=1024 * 2,
+    benchmark:
+        "benchmarks/sci_dash_{experiment_name}.txt"
     params:
         # Optional hashing output. 
         metrics_hashing="{experiment_name}/hashing/{experiment_name}_hashing_metrics.tsv"
