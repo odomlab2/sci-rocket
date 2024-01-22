@@ -203,7 +203,7 @@ rule run_haplotag:
     resources:
         mem_mb=1024 * 40,
     benchmark:
-        "benchmarks/run_haplotag_{strain1}_{strain2}.txt"
+        "benchmarks/run_haplotag_{strain1}_{strain2}_{experiment_name}_{sample_name}.txt"
     params:
         fasta=lambda w: config["species"]["mouse"]["genome"],
     conda:
