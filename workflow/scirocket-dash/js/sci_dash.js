@@ -484,9 +484,19 @@ function generateChart_uncorrectables(id, data, color) {
             ticks: {
               font: {
                 family: "Courier New",
-                size: 15,
+                size: 12,
                 autoSkip: false,
               },
+            },
+          },
+          x: {
+            ticks: {
+              font: {
+                family: "Courier New",
+                size: 10,
+              },
+              maxRotation: 90,
+              minRotation: 90,
             },
           }
         }
@@ -524,43 +534,43 @@ function generate_starsolo_table(data) {
             Sample
           </th>
           <th style="text-align:center">
-            Total input reads
+            Input reads
           </th>
           <th style="text-align:center">
-            Total mapped reads
+            Mapped reads<br><sub>(Genome; %)</sub>
           </th>
           <th style="text-align:center">
-            Total multimapped reads
+          Mapped reads<br><sub>(Genome - Unique; %)</sub>
           </th>
           <th style="text-align:center">
-            Total correct reads<br>(CB, UMI, gene)
+          Mapped reads<br><sub>(Genes; %)</sub>
           </th>
           <th style="text-align:center">
-            Total exonic reads
+          Mapped reads<br><sub>(Genes - Unique; %)</sub>
           </th>
           <th style="text-align:center">
-            Total intronic reads
+            # intronic reads
           </th>
           <th style="text-align:center">
-            Total intergenic reads
+            # intergenic reads
           </th>
           <th style="text-align:center">
-            Total mitochondrial reads
+            # mitochondrial reads
           </th>
           <th style="text-align:center">
-          Total exonic antisense reads
+          # exonic (AS) reads
           </th>
           <th style="text-align:center">
-            Total intronic antisense reads
+            # intronic (AS) reads
           </th>
           <th style="text-align:center">
-          Mean reads per cell
+          Reads per cell<br><sub>(Mean)</sub>
           </th>
           <th style="text-align:center">
-          Mean genes per cell
+          Genes per cell<br><sub>(Mean)</sub>
           </th>
           <th style="text-align:center">
-          Mean UMIs per cell
+          UMI per cell<br><sub>(Mean)</sub>
           </th>
           <th style="text-align:center">
           Estimated cells
@@ -578,11 +588,11 @@ function generate_starsolo_table(data) {
   for (const sample in data) {
     const row = table.insertRow(-1);
     row.insertCell(0).innerHTML = sample;
-    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].n_pairs_success);
-    row.insertCell(2).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_mapped_reads);
-    row.insertCell(3).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_multimapped_reads);
-    row.insertCell(4).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_correct_reads_genes);
-    row.insertCell(5).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_exonic_reads);
+    row.insertCell(1).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_reads);
+    row.insertCell(2).innerHTML = `${roundToOne(data[sample].perc_mapped_reads_genome * 100)}%`;
+    row.insertCell(3).innerHTML = `${roundToOne(data[sample].perc_unique_reads_genome_unique * 100)}%`;
+    row.insertCell(4).innerHTML = `${roundToOne(data[sample].perc_mapped_reads_gene * 100)}%`;
+    row.insertCell(5).innerHTML = `${roundToOne(data[sample].perc_unique_reads_gene_unique * 100)}%`;
     row.insertCell(6).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_intronic_reads);
     row.insertCell(7).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_intergenic_reads);
     row.insertCell(8).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_mitochondrial_reads);
@@ -590,7 +600,7 @@ function generate_starsolo_table(data) {
     row.insertCell(10).innerHTML = Intl.NumberFormat("en-US").format(data[sample].total_intronicAS_reads);
     row.insertCell(11).innerHTML = Intl.NumberFormat("en-US").format(data[sample].mean_reads_per_cell);
     row.insertCell(12).innerHTML = Intl.NumberFormat("en-US").format(data[sample].mean_genes_per_cell);
-    row.insertCell(13).innerHTML = Intl.NumberFormat("en-US").format(data[sample].mean_umis_per_cell);
+    row.insertCell(13).innerHTML = Intl.NumberFormat("en-US").format(data[sample].mean_umi_per_cell);
     row.insertCell(14).innerHTML = Intl.NumberFormat("en-US").format(data[sample].estimated_cells);
 
     // Add a progress bar for the sequencing_saturation
@@ -651,16 +661,16 @@ function generate_hashing_table(data) {
             Hashing barcode
           </th>
           <th style="text-align:center">
-            Total count (summarized)
+            Total count<br><sub>(summarized)</sub>
           </th>
           <th style="text-align:center">
-            Total count (correct)
+            Total count<br><sub>(correct)</sub>
           </th>
           <th style="text-align:center">
-            Total count (corrected)
+            Total count<br><sub>(corrected)</sub>
           </th>
           <th style="text-align:center">
-            Total count (correct - upstream)
+          Total count<br><sub>(correct:upstream)</sub>
           </th>
         </tr>
       </thead>
