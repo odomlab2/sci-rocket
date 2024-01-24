@@ -228,7 +228,3 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
-
-
-path_pickle = "/home/j103t/odomLab/manuscript_scirocket/workflow/test_haplotyping/demux_reads/test_haplotyping_qc.pickle"
-path_star = "/home/j103t/odomLab/manuscript_scirocket/workflow/test_haplotyping/alignment/"
