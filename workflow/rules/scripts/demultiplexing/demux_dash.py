@@ -143,34 +143,46 @@ def combine_logs(path_pickle, path_star, path_hashing):
         with open(path_solo[0], "r") as handle:
             for line in handle:
                 line = line.split(",")
-                if line[0] == "Sequencing Saturation":
+                if line[0] == "Number of Reads":
+                    qc_json["sample_succes"][sample]["total_reads"] = int(line[1].strip())
+                elif line[0] == "Sequencing Saturation":
                     qc_json["sample_succes"][sample]["sequencing_saturation"] = float(line[1].strip())
+                elif line[0] == "Reads Mapped to Genome: Unique+Multiple":
+                    qc_json["sample_succes"][sample]["perc_mapped_reads_genome"] = float(line[1].strip())
+                elif line[0] == "Reads Mapped to Genome: Unique":
+                    qc_json["sample_succes"][sample]["perc_unique_reads_genome_unique"] = float(line[1].strip())
+                elif line[0] == "Reads Mapped to GeneFull_Ex50pAS: Unique+Multiple GeneFull_Ex50pAS":
+                    qc_json["sample_succes"][sample]["perc_mapped_reads_gene"] = float(line[1].strip())
+                elif line[0] == "Reads Mapped to GeneFull_Ex50pAS: Unique GeneFull_Ex50pAS":
+                    qc_json["sample_succes"][sample]["perc_unique_reads_gene_unique"] = float(line[1].strip())
                 elif line[0] == "Estimated Number of Cells":
                     qc_json["sample_succes"][sample]["estimated_cells"] = int(line[1].strip())
+                elif line[0] == "Mean Reads per Cell":
+                    qc_json["sample_succes"][sample]["mean_reads_per_cell"] = int(line[1].strip())
+                elif line[0] == "Mean UMI per Cell":
+                    qc_json["sample_succes"][sample]["mean_umi_per_cell"] = int(line[1].strip())
+                elif line[0] == "Mean GeneFull_Ex50pAS per Cell":
+                    qc_json["sample_succes"][sample]["mean_genes_per_cell"] = int(line[1].strip())
 
         # Load the CellReads.stats file and extract several sample-wise statistics.
         path_cellreads = glob.glob(path_star + sample + "_*/*/CellReads.stats", recursive=True)
         df_cellreads = pd.read_csv(path_cellreads[0], sep="\t", header=0, index_col=0)
 
+        # Only keep the filtered cells.
+        path_filtered_barcodes = glob.glob(path_star + sample + "_*/*/filtered/barcodes.tsv", recursive=True)
+        df_cellreads = df_cellreads[df_cellreads.index.isin(pd.read_csv(path_filtered_barcodes[0], sep="\t", header=None, index_col=0).index)]
+
         # Summarize all cells.
         df_cellreads_summed = df_cellreads.sum(axis=0)
-        df_cellreads_mean = df_cellreads.mean(axis=0)
 
         # Add the sample-wise statistics to the dictionary.
-        qc_json["sample_succes"][sample]["total_mapped_reads"] = int(df_cellreads_summed.genomeU + df_cellreads_summed.genomeM)
-        qc_json["sample_succes"][sample]["total_unique_reads"] = int(df_cellreads_summed.genomeU)
-        qc_json["sample_succes"][sample]["total_multimapped_reads"] = int(df_cellreads_summed.genomeM)
-        qc_json["sample_succes"][sample]["total_correct_reads_genes"] = int(df_cellreads_summed.countedU + df_cellreads_summed.countedM)
         qc_json["sample_succes"][sample]["total_exonic_reads"] = int(df_cellreads_summed.exonic)
         qc_json["sample_succes"][sample]["total_intronic_reads"] = int(df_cellreads_summed.intronic)
         qc_json["sample_succes"][sample]["total_intergenic_reads"] = int(df_cellreads_summed.genomeU + df_cellreads_summed.genomeM - df_cellreads_summed.exonic - df_cellreads_summed.intronic)
         qc_json["sample_succes"][sample]["total_mitochondrial_reads"] = int(df_cellreads_summed.mito)
         qc_json["sample_succes"][sample]["total_exonicAS_reads"] = int(df_cellreads_summed.exonicAS)
         qc_json["sample_succes"][sample]["total_intronicAS_reads"] = int(df_cellreads_summed.intronicAS)
-        qc_json["sample_succes"][sample]["mean_reads_per_cell"] = int(df_cellreads_mean.genomeU + df_cellreads_mean.genomeM)
-        qc_json["sample_succes"][sample]["mean_genes_per_cell"] = int(df_cellreads_mean.nGenesUnique)
-        qc_json["sample_succes"][sample]["mean_umis_per_cell"] = int(df_cellreads_mean.nUMIunique)
-
+        
     # endregion ----------------------------------------------------------------------------------------------------------
 
     # region Write / import hashing statistics. --------------------------------------------------------------------------
@@ -216,3 +228,7 @@ def main(arguments):
 if __name__ == "__main__":
     main(sys.argv[1:])
     sys.exit()
+
+
+path_pickle = "/home/j103t/odomLab/manuscript_scirocket/workflow/test_haplotyping/demux_reads/test_haplotyping_qc.pickle"
+path_star = "/home/j103t/odomLab/manuscript_scirocket/workflow/test_haplotyping/alignment/"
