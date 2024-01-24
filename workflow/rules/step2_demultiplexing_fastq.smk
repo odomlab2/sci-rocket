@@ -19,7 +19,7 @@ rule split_R1:
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 20,
+        mem_mb=1024 * 10,
     benchmark:
         "benchmarks/split_R1_{experiment_name}.txt"
     params:
@@ -50,7 +50,7 @@ rule split_R2:
         ),
     threads: 5
     resources:
-        mem_mb=1024 * 20,
+        mem_mb=1024 * 10,
     benchmark:
         "benchmarks/split_R2_{experiment_name}.txt"
     params:
