@@ -635,11 +635,11 @@ if __name__ == "__main__":
 # args = parser.parse_args(
 #     [
 #         "--r1",
-#         "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_hashing/raw_reads_split/R1_6-of-10.fastq.gz",
+#         "/home/j103t/odomLab/manuscript_scirocket/workflow/sx42b/raw_reads/Undetermined_S0_R1_001.fastq.gz",
 #         "--r2",
-#         "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_hashing/raw_reads_split/R2_6-of-10.fastq.gz",
+#         "/home/j103t/odomLab/manuscript_scirocket/workflow/sx42b/raw_reads/Undetermined_S0_R2_001.fastq.gz",
 #         "--experiment_name",
-#         "test_hashing",
+#         "sx42b",
 #         "--samples",
 #         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/testing/testing_samplesheet.tsv",
 #         "--barcodes",

@@ -307,10 +307,10 @@ class sciRecord:
         # Check length of the ligation barcode to determine the location of the other barcodes.
         if self.ligation_status == None or len(self.ligation_sequence) == 10:
             # Retrieve the RT barcode from R1 (last 10 bp).
-            self.rt_sequence = self.read1.sequence[24:33]
+            self.rt_sequence = self.read1.sequence[24:34]
         else:
             # Retrieve the RT barcode from R1 (last 10 bp, minus one).
-            self.rt_sequence = self.read1.sequence[23:32]
+            self.rt_sequence = self.read1.sequence[23:33]
         
         try:
             self.rt_name = rt_barcodes[self.rt_sequence]
