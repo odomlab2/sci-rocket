@@ -52,5 +52,5 @@ rule sci_dash:
         --path_hashing {params.metrics_hashing}
 
         # Remove all empty (leftover) folders.
-        find . -empty -type d -delete
+        find ./{wildcards.experiment_name}/ -empty -type d -delete
         """
