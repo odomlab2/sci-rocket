@@ -137,7 +137,7 @@ def combine_logs(path_pickle, path_star, path_hashing):
     for sample in qc_json["sample_succes"]:
 
         # Find the STARsolo GeneFull summary that matches the sample name.
-        path_solo = glob.glob(path_star + sample + "_*/*/Summary.csv", recursive=True)
+        path_solo = glob.glob(path_star + sample + "_*_Solo.out/GeneFull_Ex50pAS/Summary.csv", recursive=True)
 
         # Load the STARsolo GeneFull summary file and extract several statistics.
         with open(path_solo[0], "r") as handle:
@@ -165,11 +165,11 @@ def combine_logs(path_pickle, path_star, path_hashing):
                     qc_json["sample_succes"][sample]["mean_genes_per_cell"] = int(line[1].strip())
 
         # Load the CellReads.stats file and extract several sample-wise statistics.
-        path_cellreads = glob.glob(path_star + sample + "_*/*/CellReads.stats", recursive=True)
+        path_cellreads = glob.glob(path_star + sample + "_*_Solo.out/GeneFull_Ex50pAS/CellReads.stats", recursive=True)
         df_cellreads = pd.read_csv(path_cellreads[0], sep="\t", header=0, index_col=0)
 
         # Only keep the filtered cells.
-        path_filtered_barcodes = glob.glob(path_star + sample + "_*/*/filtered/barcodes.tsv", recursive=True)
+        path_filtered_barcodes = glob.glob(path_star + sample + "_*_Solo.out/GeneFull_Ex50pAS/filtered/barcodes.tsv", recursive=True)
         df_cellreads = df_cellreads[df_cellreads.index.isin(pd.read_csv(path_filtered_barcodes[0], sep="\t", header=None, index_col=0).index)]
 
         # Summarize all cells.
