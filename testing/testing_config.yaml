@@ -25,7 +25,7 @@ dir_output: "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflo
 species:
   mouse:
     genome: "/omics/groups/OE0538/internal/projects/sharedData/GRCm39/genome/GRCm39.primary_assembly.genome.fa"
-    genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/GRCm39/annotation/gencode.vM31.basic.annotation.gtf"
+    genome_gtf: "/omics/groups/OE0538/internal/projects/sharedData/GRCm39/annotation/gencode.vM34.basic.annotation.gtf"
     star_index: ""
   zebrafish:
     genome: "/omics/groups/OE0538/internal/projects/sharedData/GRCz11/Danio_rerio_GRCZ11.dna.chr-only.fa"

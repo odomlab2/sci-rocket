@@ -98,10 +98,10 @@ rule merge_sequencing_runs:
     message: "Merge sequencing runs ({wildcards.experiment_name})."
     shell:
         """
-        # If only one sequencing run, then just move it.
+        # If only one sequencing run, then just hardlink it (and remove the original).
         if [ {params.total_sequencing_runs} -eq 1 ]; then
-            mv {input.R1} {output.R1}
-            mv {input.R2} {output.R2}
+            ln {input.R1} {output.R1}
+            ln {input.R2} {output.R2}
         else
             cat {input.R1} > {output.R1}
             cat {input.R2} > {output.R2}
