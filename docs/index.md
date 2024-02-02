@@ -6,8 +6,10 @@ Please see the set-up instructions below for more information on how to install 
 
 ## Pre-requirements
 
+> There is currently no LSF support yet in latest snakemake (v8). For LSF clusters (e.g. DKFZ), we recommend using snakemake v7.32.4 instead.
+
 1. A conda system, e.g., [conda](https://docs.conda.io/en/latest/), [mamba](https://mamba.readthedocs.io/en/latest/) or [micromamba](https://micromamba.readthedocs.io/en/latest/)
-2. Snakemake (v7.32.4) and a cluster-specific Snakemake configuration for batch-job submission (see instructions below).
+2. Snakemake and a cluster-specific Snakemake configuration for batch-job submission (see instructions below).
       * E.g., [LSF](https://github.com/Snakemake-Profiles/lsf) or [SLURM](https://github.com/Snakemake-Profiles/slurm)
 
 We make use of pre-defined environment(s) which houses all software dependencies (`workflow/envs/`). These are installed automatically by Snakemake when running the workflow (`--use-conda`).
@@ -23,8 +25,8 @@ We make use of pre-defined environment(s) which houses all software dependencies
 2. Download and install snakemake (e.g. using conda or micromamba):
 
       ```bash
-      # This will install snakemake (7.32.4) into a new conda environment called 'snakemake'
-      micromamba create -c conda-forge -c bioconda -n snakemake snakemake==7.32.4 mamba
+      # This will install snakemake (7.32.4) + Python 3.11.7 into a new conda environment called 'snakemake'
+      micromamba create -c conda-forge -c bioconda -n snakemake snakemake==7.32.4 python==3.11.7 mamba
       # Switch to the 'snakemake' environment
       micromamba activate snakemake
       ```
