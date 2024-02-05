@@ -136,13 +136,19 @@ def generate_hybrid_genotype(args):
                 qc['n_noninformative_F1'] += 1
                 continue
             
-            # Determine the genotype of the F1 hybrid.
-            geno_f1 = tuple(sorted(set(geno_h1) | set(geno_h2)))
+            # Determine the genotype of the F1 hybrid. Keep the order of the alleles.            
+            geno_h1_uniq = list(set(geno_h1))
+            geno_h2_uniq = list(set(geno_h2))
+            geno_f1 = tuple(geno_h1_uniq + geno_h2_uniq)
             
+            # Convert to integers.
+            geno_f1 = tuple([int(g) for g in geno_f1])
+                
             # Heterozygous (diploid) F1 genotype.
             if(len(geno_f1) == 2 and geno_f1[0] != geno_f1[1]):
                 qc['n_informative_hetero'] += 1
-                if(geno_f1 == (0, 1)):
+                
+                if(geno_f1 == (0, 1) or geno_f1 == (1, 0)):
                     qc['n_informative_hetero_0/1'] += 1
 
             # Heterozygous (multi-allelic) F1 genotype.
@@ -163,7 +169,7 @@ def generate_hybrid_genotype(args):
             r.samples[args.h1]['HP'] = "."
             if(args.h2): 
                 r.samples[args.h2]['HP'] = "."
-            r.samples[args.cross_name]['HP'] = tuple([block_number + '-1', block_number+'-2'])
+            r.samples[args.cross_name]['HP'] = tuple([block_number + '-1', block_number + '-2'])
 
             # Add the F1 genotype to the output VCF.
             fVCF_out.write(r)
