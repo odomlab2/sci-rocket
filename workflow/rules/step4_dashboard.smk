@@ -29,7 +29,7 @@ rule sci_dash:
         dash_json="{experiment_name}/sci-dash/js/qc_data.js",
     threads: 1
     resources:
-        mem_mb=1024 * 2,
+        mem_mb=1024 * 10,
     benchmark:
         "benchmarks/sci_dash_{experiment_name}.txt"
     params:
