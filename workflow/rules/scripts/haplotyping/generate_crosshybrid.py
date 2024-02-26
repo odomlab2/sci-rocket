@@ -114,11 +114,12 @@ def generate_hybrid_genotype(args):
                 qc['n_indels'] += 1
 
             # Retrieve the haplotypes.
-            geno_h1 = v.samples[args.h1]['GT']
             if(args.h2):
+                geno_h1 = v.samples[args.h1]['GT']
                 geno_h2 = v.samples[args.h2]['GT']
             else:
-                geno_h2 = tuple([0] * len(v.alleles))
+                geno_h1 = tuple([0] * len(v.alleles))
+                geno_h2 = v.samples[args.h1]['GT']
 
             # Clean haplotypes (None to 0).
             geno_h1 = tuple([0 if(g == None) else g for g in geno_h1])
@@ -143,7 +144,7 @@ def generate_hybrid_genotype(args):
             
             # Convert to integers.
             geno_f1 = tuple([int(g) for g in geno_f1])
-                
+            
             # Heterozygous (diploid) F1 genotype.
             if(len(geno_f1) == 2 and geno_f1[0] != geno_f1[1]):
                 qc['n_informative_hetero'] += 1
