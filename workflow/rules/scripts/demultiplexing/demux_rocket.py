@@ -535,6 +535,14 @@ def sciseq_sample_demultiplexing(log: logging.Logger, experiment_name: str, samp
         log.info("Done: %d read-pairs processed (%d discarded, %d hashing reads)", qc["n_pairs"], qc["n_pairs_failure"], qc["n_hashing"])
     else:
         log.info("Done: %d read-pairs processed (%d discarded,)", qc["n_pairs"], qc["n_pairs_failure"])
+        
+    # Close the file handlers.
+    for fh in dict_fh.values():
+        if isinstance(fh, dict):
+            for sub_fh in fh.values():
+                sub_fh.close()
+        else:
+            fh.close()
 
 
 def init_logger():
@@ -635,13 +643,13 @@ if __name__ == "__main__":
 # args = parser.parse_args(
 #     [
 #         "--r1",
-#         "/home/j103t/odomLab/manuscript_scirocket/workflow/sx42b/raw_reads/Undetermined_S0_R1_001.fastq.gz",
+#         "/home/j103t/odomLab/manuscript_scirocket/sx42b/raw_reads/Undetermined_S0_R1_001.fastq.gz",
 #         "--r2",
-#         "/home/j103t/odomLab/manuscript_scirocket/workflow/sx42b/raw_reads/Undetermined_S0_R2_001.fastq.gz",
+#         "/home/j103t/odomLab/manuscript_scirocket/sx42b/raw_reads/Undetermined_S0_R2_001.fastq.gz",
 #         "--experiment_name",
 #         "sx42b",
 #         "--samples",
-#         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/testing/testing_samplesheet.tsv",
+#         "/omics/groups/OE0606/internal/jvanriet/git/manuscript_scirocket/config/testing_samplesheet.tsv",
 #         "--barcodes",
 #         "/omics/groups/OE0606/internal/jvanriet/git/sci-rocket/workflow/examples/example_barcodes.tsv",
 #         "--out",
