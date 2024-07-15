@@ -236,7 +236,7 @@ rule haplotype_split_h1:
         "envs/sci-haplotyping.yaml",
     shell:
         """
-        sambamba view -t {threads} -h -f bam -F "[HP]==1 and [CR]!=null and [GX]!=null" {input.bam} > {output.bam}
+        sambamba view -t {threads} -h -f bam -F "[HP]==1 and [CR]!=null and [GX]!=null and [UR]!=null" {input.bam} > {output.bam}
         sambamba index -t {threads} {output.bam}
         """
 
@@ -257,7 +257,7 @@ rule haplotype_split_h2:
         "envs/sci-haplotyping.yaml",
     shell:
         """
-        sambamba view -t {threads} -h -f bam -F "[HP]==2 and [CR]!=null and [GX]!=null" {input.bam} > {output.bam}
+        sambamba view -t {threads} -h -f bam -F "[HP]==2 and [CR]!=null and [GX]!=null and [UR]!=null" {input.bam} > {output.bam}
         sambamba index -t {threads} {output.bam}
         """
 
@@ -278,10 +278,9 @@ rule haplotype_split_ua:
         "envs/sci-haplotyping.yaml",
     shell:
         """
-        sambamba view -t {threads} -h -f bam -F "[HP]==null and [CR]!=null and [GX]!=null" {input.bam} > {output.bam}
+        sambamba view -t {threads} -h -f bam -F "[HP]==null and [CR]!=null and [GX]!=null and [UR]!=null" {input.bam} > {output.bam}
         sambamba index -t {threads} {output.bam}
         """
-
 
 rule count_haplotagged_reads:
     input:
