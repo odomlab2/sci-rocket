@@ -236,7 +236,7 @@ rule haplotype_split_h1:
         "envs/sci-haplotyping.yaml",
     shell:
         """
-        sambamba view -t {threads} -h -f bam -F "[HP]==1 and [CR]!=null and [GX]!=null and [UR]!=null" {input.bam} > {output.bam}
+        sambamba view -t {threads} -h -f bam -F "[HP]==1" {input.bam} > {output.bam}
         sambamba index -t {threads} {output.bam}
         """
 
@@ -257,7 +257,7 @@ rule haplotype_split_h2:
         "envs/sci-haplotyping.yaml",
     shell:
         """
-        sambamba view -t {threads} -h -f bam -F "[HP]==2 and [CR]!=null and [GX]!=null and [UR]!=null" {input.bam} > {output.bam}
+        sambamba view -t {threads} -h -f bam -F "[HP]==2" {input.bam} > {output.bam}
         sambamba index -t {threads} {output.bam}
         """
 
@@ -278,14 +278,32 @@ rule haplotype_split_ua:
         "envs/sci-haplotyping.yaml",
     shell:
         """
-        sambamba view -t {threads} -h -f bam -F "[HP]==null and [CR]!=null and [GX]!=null and [UR]!=null" {input.bam} > {output.bam}
+        sambamba view -t {threads} -h -f bam -F "[HP]==null" {input.bam} > {output.bam}
+        sambamba index -t {threads} {output.bam}
+        """
+
+rule filter_barcodes_reads:
+    input:
+        bam="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam",
+        bai="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam.bai"
+    output:
+        bam=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}_fixed.bam"),
+        bai=temp("{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}_fixed.bam.bai")
+    threads: 2
+    resources:
+        mem_mb=1024 * 10,
+    conda:
+        "envs/sci-haplotyping.yaml",
+    shell:
+        """
+        samtools view -h {input.bam} | grep -E "@|UR:Z:[ATCG]" | grep -E "@|CR:Z:[ATCG]" | grep -E "@|GX:Z:[A-Z]" | samtools view -bS -h > {output.bam}
         sambamba index -t {threads} {output.bam}
         """
 
 rule count_haplotagged_reads:
     input:
-        bam="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam",
-        bai="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}.bam.bai"
+        bam="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}_fixed.bam",
+        bai="{experiment_name}/haplotyping/{sample_name}_mouse_Aligned.sortedByCoord.out.haplotagged_{strain1}_{strain2}.chrX_{type}_fixed.bam.bai"
     output:
         counts=temp("{experiment_name}/haplotyping/{sample_name}_{strain1}_{strain2}_haplotagged_readcounts_{type}.txt"),
     log:
