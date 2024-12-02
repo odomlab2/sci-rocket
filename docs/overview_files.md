@@ -28,9 +28,21 @@ See [example sample-sheet](https://github.com/odomlab2/sci-rocket/blob/main/work
 >   * p7 (2 rows): `G01:G12,H01:H12`
 > * The **rt** is used to denote the RT barcode belonging to a particular sample / cell. The indexes are translated to all relevant combinations within the sequencing-run. To specify one or multiple RT strips, use the following format:
 >   * One RT: `P01-A01`
->   * Multiple RT (1 strip): `P01-A01:P01-A12`
->   * Multiple RT (Multiple strips): `P01-A01:P01-H03`; This will include all RT barcodes from P01-A01 to P01-H03.
->   * Multiple RT (Multiple strips + plates): `P01-A01:P01-D12,P02-A01:P02-B12`; This will include all RT barcodes from P01-A01 to P01-D12 and P02-A01 to P02-B12.
+>   * Multiple RT (1 row): `P01-A01:P01-A12`
+>   * Multiple RT (1 column): `P01-A01:P01-H01`
+>   * Multiple RT (2 columns): `P01-A01:P01-H02`
+>   * Multiple RT (rectangular region): `P01-B02:P01-E04`; This will include all RT barcodes from the rectangle with P01-B02 at the top left and P01-E04 at the bottom right:
+>
+> | P01  | 1 | 2 | 3 | 4 | 5 |
+> | ---  | - | - | - | - | - |
+> | A    | . | . | . | . | . |
+> | B    | . | X | X | X | . |
+> | C    | . | X | X | X | . |
+> | D    | . | X | X | X | . |
+> | E    | . | X | X | X | . |
+> | F    | . | . | . | . | . |
+>
+>   * Multiple RT (multiple plates): `P01-B02:P01-E04,P02-A01:P02-A12`; This will include the same RT barcodes from P01 as the previous example, plus row A from P02.
 >
 > * **species** should be present in the `config.yaml` file with their respective genome sequences (.fa) and gene-annotations (.gtf) used to generate mapping indexes.
 
