@@ -120,6 +120,8 @@ rule starSolo_align:
         --soloCBposition 0_0_0_9 0_10_0_19 0_20_0_29 0_30_0_39 --soloUMIposition 0_40_0_47 \
         --soloCBwhitelist {input.whitelist_p7} {input.whitelist_p5} {input.whitelist_ligation} {input.whitelist_rt} \
         --soloCellFilter CellRanger2.2 {params.n_expected_cells} 0.99 10 \
+        --outTmpDir {output.dir_tmp} \
+        --outTmpKeep all \
         --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.sampleName} >& {log}
 
         # Convert the barcodes to the barcode naming scheme.
